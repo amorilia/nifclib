@@ -46,7 +46,7 @@ static Stream *S;
 static int ERR;
 static int STOP;
 
-#define READERARGLST NifStream *r
+#define READERARGLST register NifStream *r
 #define READER R
 #define GETMEM(SIZE) GetMem (SIZE)
 
@@ -224,12 +224,14 @@ static void
 			NPF ("realloc failed.\n", EM);
 			return NULL;
 		}
+		NIFF_REALLOCS++;
 	}
 	MM[MM_cnt] = malloc (size);
 	if (!MM[MM_cnt]) {
 		NPF ("malloc failed.\n", EM);
 		return NULL;
 	}
+	NIFF_MALLOCS++;
 	MM[MM_cnt] = memset (MM[MM_cnt], 0, size);
 	if (!MM[MM_cnt]) {
 		NPF ("memset failed.\n", EM);
@@ -239,7 +241,7 @@ static void
 	return MM[MM_cnt++];
 }
 
-static int VersionCheck(unsigned int a, unsigned int b);
+static inline int VersionCheck(unsigned int a, unsigned int b);
 static void ReadNifObject(char *name);
 static void TellFilePos(READERARGLST);
 static void CreateRpHash();
@@ -263,6 +265,11 @@ readnif(char *fname)
 		return 0;
 	}
 	S = (Stream *)R;
+	NIFF_FSIZE = 0;
+	NIFF_BLOCK_COUNT = 0;
+	NIFF_OBJECT_COUNT = 0;
+	NIFF_MALLOCS = 0;
+	NIFF_REALLOCS = 0;
 	fseek (R->f, 0, SEEK_END);
 	long fsize = ftell (R->f);
 	fseek (R->f, 0, SEEK_SET);
@@ -280,6 +287,7 @@ readnif(char *fname)
 	dbg (" Num_Block_Types: %d\n", h->Num_Block_Types);
 	dbg (" User Version: %d\n", User_Version);
 	dbg (" User Version 2: %d\n", User_Version_2);
+	NIFF_BLOCK_COUNT = h->Num_Blocks;
 	if (STOP) {
 		NifStream_free (R);
 		QuitMM ();
@@ -300,8 +308,8 @@ readnif(char *fname)
 			dbg ("reading zblock #%d", i);
 			DO (SizedString *n = GETMEM (sizeof(SizedString));)
 			DO (readSizedString (n, 0);)
-			dbg (", name = \"%s\",", n->Value);
-			char *tname = n->Value;
+			dbg (", name = \"%s\",", (char *)(n->Value));
+			char *tname = (char *)(n->Value);
 			DO (ReadNifObject(tname);)
 			dbg (" done.");
 			TellFilePos (READER);
@@ -327,7 +335,7 @@ readnif(char *fname)
 				NPFF (EBUG, "*** tidx(%d) out of range\n", tidx);
 				break;
 			}
-			char *tname = h->Block_Types[tidx].Value;
+			char *tname = (char *)(h->Block_Types[tidx].Value);
 			//dbg ("%p\n", tname);
 			//dbg ("%s\n", tname);
 			dbg ("reading NIFOBJECT \"%s\"", tname);
@@ -354,6 +362,7 @@ readnif(char *fname)
 	//} else {
 		if (!STOP) {
 			dbg ("read ok\n");
+			NIFF_FSIZE = fsize;
 			result = 1;
 		}
 	//}
@@ -363,8 +372,8 @@ readnif(char *fname)
 	return result;
 }
 
-static int
-VersionCheck(unsigned int a, unsigned int b)
+static inline int
+VersionCheck(register unsigned int a, register unsigned int b)
 {
 	if (a == 0 && b == 0)
 		return 1;
@@ -4302,6 +4311,7 @@ ReadNifObject(char *name)
 		return;
 	}
 	rproc ();
+	NIFF_OBJECT_COUNT++;
 	//TellFilePos (READER);
 }
 
@@ -4530,26 +4540,29 @@ readStringIndex(READERARGLST)
    		---/   nif types reader   / /---
 					       ---/*//*/*/
 
-void readSizedString(SizedString * obj, unsigned int ARG)
+#define PROTECT_LEN(LEN, MAX, PROC)\
+	if ((LEN) > (MAX)) {\
+		NPFF (ENIF,	"*** "PROC" invalid length read:%d\n", LEN);\
+		return;\
+	}
+
+#define READ(TYPE, BUF, LEN, BYTES, PROC)\
+	int r = R->read_##TYPE (S, BUF, LEN);\
+	if (r != (LEN * BYTES))\
+		NPF (PROC": EOF reached\n", EIO);
+
+void
+readSizedString(SizedString * obj, unsigned int ARG)
 {
 	obj->Length = readuint (READER);
-	//dbg ("   SizedString - L:%d", obj->Length);
-	if (obj->Length > 0xffff) {
-		NPFF (EBUG,
-			"*** SizedString len too high:%d\n", obj->Length);
-		return;
-	}
-	// init 1d array
-	obj->Value = GETMEM ((obj->Length+1) * sizeof (char));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Length); i++)
-		obj->Value[i] = readchar (READER);
-	obj->Value[obj->Length] = '\0'; // terminate it !
-	//dbg (", %s\n", obj->Value);
+	PROTECT_LEN (obj->Length, 0xffff, "SizedString")
+	obj->Value = GETMEM (obj->Length + 1);
+	READ (char, obj->Value, obj->Length, 1, "SizedString")
+	obj->Value[obj->Length] = '\0';// terminate it !
 }
 
-void readstring (string * obj, unsigned int ARG)
+void
+readstring(string * obj, unsigned int ARG)
 {
 	if (VersionCheck (0, 0x14000005)) {
 		readSizedString (&obj->String, 0);
@@ -4559,60 +4572,62 @@ void readstring (string * obj, unsigned int ARG)
 	}
 }
 
-void readByteArray (ByteArray * obj, unsigned int ARG)
+void
+readByteArray(ByteArray * obj, unsigned int ARG)
 {
 	obj->Data_Size = readuint (READER);
-	// init 1d array
-	obj->Data = GETMEM ((obj->Data_Size) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Data_Size); i++)
-		obj->Data[i] = readbyte (READER);
+	PROTECT_LEN (obj->Data_Size, 2000000, "readByteArray")
+	obj->Data = GETMEM (obj->Data_Size);
+	READ (byte, obj->Data, obj->Data_Size, 1, "readByteArray")
 }
 
-void readByteMatrix (ByteMatrix * obj, unsigned int ARG)
+void
+readByteMatrix(ByteMatrix * obj, unsigned int ARG)
 {
 	obj->Data_Size_1 = readuint (READER);
+	PROTECT_LEN (obj->Data_Size_1, 0xff, "readByteMatrix")
 	obj->Data_Size_2 = readuint (READER);
-	// init 2d array
-	obj->Data = GETMEM ((obj->Data_Size_2) * sizeof (byte *));
-	int i, j;
-	for (i = 0; i < (obj->Data_Size_2); i++)
-		obj->Data[i] = GETMEM ((obj->Data_Size_1) * sizeof (byte));
-	// read 2d array
-	for (i = 0; i < (obj->Data_Size_2); i++)
-		for (j = 0; j < (obj->Data_Size_1); j++)
-			obj->Data[i][j] = readbyte (READER);
+	PROTECT_LEN (obj->Data_Size_2, 0xff, "readByteMatrix")
+	int len = obj->Data_Size_1 * obj->Data_Size_2;
+	obj->Data = GETMEM (len);
+	READ (byte, obj->Data, len, 1, "readByteMatrix")
 }
 
 void readColor3 (Color3 * obj, unsigned int ARG)
 {
-	obj->r = readfloat (READER);
+	READ (float, &(obj->r), 3, SIZEOFDWORD, "readColor3")
+	/*obj->r = readfloat (READER);
+	obj->g = readfloat (READER);
+	obj->b = readfloat (READER);*/
+}
+
+void
+readByteColor3(ByteColor3 * obj, unsigned int ARG)
+{
+	READ (byte, &(obj->r), 3, 1, "readByteColor3")
+	/*obj->r = readbyte (READER);
+	obj->g = readbyte (READER);
+	obj->b = readbyte (READER);*/
+}
+
+void
+readColor4(Color4 * obj, unsigned int ARG)
+{
+	READ (float, &(obj->r), 4, SIZEOFDWORD, "readColor4")
+	/*obj->r = readfloat (READER);
 	obj->g = readfloat (READER);
 	obj->b = readfloat (READER);
+	obj->a = readfloat (READER);*/
 }
 
-void readByteColor3 (ByteColor3 * obj, unsigned int ARG)
+void
+readByteColor4(ByteColor4 * obj, unsigned int ARG)
 {
-	obj->r = readbyte (READER);
+	READ (byte, &(obj->r), 4, 1, "readByteColor4")
+	/*obj->r = readbyte (READER);
 	obj->g = readbyte (READER);
 	obj->b = readbyte (READER);
-}
-
-void readColor4 (Color4 * obj, unsigned int ARG)
-{
-	obj->r = readfloat (READER);
-	obj->g = readfloat (READER);
-	obj->b = readfloat (READER);
-	obj->a = readfloat (READER);
-}
-
-void readByteColor4 (ByteColor4 * obj, unsigned int ARG)
-{
-	obj->r = readbyte (READER);
-	obj->g = readbyte (READER);
-	obj->b = readbyte (READER);
-	obj->a = readbyte (READER);
+	obj->a = readbyte (READER);*/
 }
 
 void readFilePath (FilePath * obj, unsigned int ARG)

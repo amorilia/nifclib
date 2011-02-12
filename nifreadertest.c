@@ -83,6 +83,12 @@ time_interval(struct timeval *a, struct timeval *b)
 	return ( (b->tv_sec - a->tv_sec) * 1000000 ) + (b->tv_usec - a->tv_usec);
 }
 
+static long total_bytes = 0;
+static int total_blocks = 0;
+static int total_niobjects = 0;
+static int total_malloc_calls = 0;
+static int total_reallocs = 0;
+
 int
 main(int argc, char **argv)
 {
@@ -102,7 +108,12 @@ main(int argc, char **argv)
 	gettimeofday (&tstop, NULL);
 	long ttaken = time_interval (&tstart, &tstop) / (1000*1000);
 	printf ("files done %d (%ld files per second)\n", cnt, cnt / ttaken);
-	printf ("time taken: %.2ld:%.2ld\n", ttaken / 60, ttaken % 60);
+	printf ("time taken: %ld %.2ld:%.2ld\n", ttaken, ttaken / 60, ttaken % 60);
+	printf ("total bytes read: %ld\n", total_bytes);
+	printf ("major niff blocks parsed: %d\n", total_blocks);
+	printf ("total niff objects parsed: %d\n", total_niobjects);
+	printf ("total malloc calls: %d\n", total_malloc_calls);
+	printf ("total reallocs: %d\n", total_reallocs);
     return 0;
 }  // end main
 
@@ -117,8 +128,14 @@ DoReadNif(char *fname)
 			if (fname[len-3] == 'n' || fname[len-3] == 'N')
 				if (fname[len-4] == '.') {
 					if (!readnif (fname)) {
-						printf ("files ok %d\n", cnt);
-						exit (1);
+							printf ("files ok %d\n", cnt);
+							exit (1);
+					} else {
+						total_bytes += NIFF_FSIZE;
+						total_blocks += NIFF_BLOCK_COUNT;
+						total_niobjects += NIFF_OBJECT_COUNT;
+						total_malloc_calls += NIFF_MALLOCS;
+						total_reallocs += NIFF_REALLOCS;
 					}
 					cnt++;
 	}

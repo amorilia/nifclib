@@ -21,6 +21,8 @@
 #ifndef __NIF_READER2_H__
 #define __NIF_READER2_H__
 
+#include "niff.h"
+
 #define T_BYTE 0
 #define T_FLOAT 1
 #define T_QUATERNION 2
@@ -30,7 +32,12 @@
 #define T_VECTOR3 6
 
 int readnif(char *fname);
-
+// a few stat fields
+long NIFF_FSIZE;
+int NIFF_BLOCK_COUNT;
+int NIFF_OBJECT_COUNT;
+int NIFF_MALLOCS;
+int NIFF_REALLOCS;
 #define byte unsigned char
 
 typedef struct {
@@ -1167,53 +1174,50 @@ struct NiMeshHWInstance;
 struct NiFurSpringController;
 
 typedef struct {
-	unsigned int Length;
-	// [Length], [(null)]
-	char *Value;
+	NIFuint Length;
+	NIFchar *Value;
 } SizedString;
 
 typedef struct {
 	SizedString String;
-	unsigned int Index;
+	NIFuint Index;
 } string;
 
 typedef struct {
-	unsigned int Data_Size;
-	// [Data_Size], [(null)]
-	byte *Data;
+	NIFuint Data_Size;
+	NIFbyte *Data;
 } ByteArray;
 
 typedef struct {
-	unsigned int Data_Size_1;
-	unsigned int Data_Size_2;
-	// [Data_Size_2], [Data_Size_1]
-	byte **Data;
+	NIFuint Data_Size_1;
+	NIFuint Data_Size_2;
+	NIFbyte *Data;
 } ByteMatrix;
 
 typedef struct {
-	float r;
-	float g;
-	float b;
+	NIFfloat r;
+	NIFfloat g;
+	NIFfloat b;
 } Color3;
 
 typedef struct {
-	byte r;
-	byte g;
-	byte b;
+	NIFbyte r;
+	NIFbyte g;
+	NIFbyte b;
 } ByteColor3;
 
 typedef struct {
-	float r;
-	float g;
-	float b;
-	float a;
+	NIFfloat r;
+	NIFfloat g;
+	NIFfloat b;
+	NIFfloat a;
 } Color4;
 
 typedef struct {
-	byte r;
-	byte g;
-	byte b;
-	byte a;
+	NIFbyte r;
+	NIFbyte g;
+	NIFbyte b;
+	NIFbyte a;
 } ByteColor4;
 
 typedef struct {
