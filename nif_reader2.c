@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include "nif_reader2.h"
 #include "utils.h"
+#include "niff.h"
 
 static void *GetMem (size_t size);
 
@@ -39,11 +40,13 @@ dbg(const char *format, ...)
 	return done;
 }
 
-static FILE *R;
+//static FILE *R;
+static NifStream *R;
+static Stream *S;
 static int ERR;
 static int STOP;
 
-#define READERARGLST FILE *r
+#define READERARGLST NifStream *r
 #define READER R
 #define GETMEM(SIZE) GetMem (SIZE)
 
@@ -253,17 +256,16 @@ static void ReleaseRpHash();
 int
 readnif(char *fname)
 {
-	R = fopen (fname, "r");
+	R = NifStream_create (fname, 1*1024*1024);
 	printf ("%s\n", fname);
 	if (!R) {
 		dbg ("*** Can't open \"%s\"\n", fname);
 		return 0;
 	}
-	//char *fbuf = GETMEM (1*1024*1024);
-	//setvbuf (R, fbuf, _IOFBF, 1*1024*1024);
-	fseek (R, 0, SEEK_END);
-	long fsize = ftell (R);
-	fseek (R, 0, SEEK_SET);
+	S = (Stream *)R;
+	fseek (R->f, 0, SEEK_END);
+	long fsize = ftell (R->f);
+	fseek (R->f, 0, SEEK_SET);
 	ERR = ENONE;
 	STOP = 0;
 	InitMM ();
@@ -272,13 +274,14 @@ readnif(char *fname)
 	//
 	// header
 	//
+	dbg ("Getting header ...\n");
 	readHeader (h, 0);
 	dbg (" Num_Blocks: %d\n", h->Num_Blocks);
 	dbg (" Num_Block_Types: %d\n", h->Num_Block_Types);
 	dbg (" User Version: %d\n", User_Version);
 	dbg (" User Version 2: %d\n", User_Version_2);
 	if (STOP) {
-		fclose (R);
+		NifStream_free (R);
 		QuitMM ();
 		return 0;
 	}
@@ -341,20 +344,20 @@ readnif(char *fname)
 			readFooter (f, 0);
 	}
 	int result = 0;
-	if (ftell(R) != fsize)// {
+	if (ftell(R->f) != fsize)// {
 	// according to nifskope it is ok for a nif to contain
 	// extra bytes: morrowind/DoD/DameCecilia2Hair.nif
 	// I have truncated the useless bytes and it loads it just
 	// fine.
 		dbg ("WRN extra bytes: %ld/%ld [bytes] were read.\n",
-			ftell(R), fsize);
+			ftell(R->f), fsize);
 	//} else {
 		if (!STOP) {
 			dbg ("read ok\n");
 			result = 1;
 		}
 	//}
-	fclose (R);
+	NifStream_free (R);
 	QuitMM ();
 	ReleaseRpHash ();
 	return result;
@@ -4309,8 +4312,9 @@ ReadNifObject(char *name)
 static void
 TellFilePos(READERARGLST)
 {
-	long pos = ftell (r);
-	dbg (" fptr is at 0x%.8X\n", pos);
+	long pos = ftell (r->f) - r->buf_len + r->buf_pos;
+	dbg (" fptr is at 0x%.8X, buf_len:%d, buf_pos:%d \n",
+		pos, r->buf_len, r->buf_pos);
 }
 			/*
    		---/   binary reader   / /---
@@ -4330,8 +4334,8 @@ readbool(READERARGLST)
 	}
 	else {
 		unsigned int b;
-		int rr = fread (&b, sizeof(unsigned int), 1, r);
-		if (rr != 1) {
+		int rr = r->read_uint (S, &b, 1);
+		if (rr != 4) {
 			NPF ("readbool: EOF", EIO);
 			return 0;
 		}
@@ -4344,7 +4348,7 @@ static byte
 readbyte(READERARGLST)
 {
 	byte b;
-	int rr = fread (&b, 1, 1, r);
+	int rr = r->read_byte (S, &b, 1);
 	if (rr != 1) {
 		NPF ("readbyte: EOF", EIO);
 		return 0;
@@ -4357,8 +4361,8 @@ static unsigned int
 readuint(READERARGLST)
 {
 	unsigned int b;
-	int rr = fread (&b, sizeof(unsigned int), 1, r);
-	if (rr != 1) {
+	int rr = r->read_uint (S, &b, 1);
+	if (rr != 4) {
 		NPF ("readuint: EOF", EIO);
 		return 0;
 	}
@@ -4370,8 +4374,8 @@ static unsigned short
 readushort(READERARGLST)
 {
 	unsigned short b;
-	int rr = fread (&b, sizeof(unsigned short), 1, r);
-	if (rr != 1) {
+	int rr = r->read_ushort (S, &b, 1);
+	if (rr != 2) {
 		NPF ("readushort: EOF", EIO);
 		return 0;
 	}
@@ -4383,8 +4387,8 @@ static int
 readint(READERARGLST)
 {
 	int b;
-	int rr = fread (&b, sizeof(int), 1, r);
-	if (rr != 1) {
+	int rr = r->read_int (S, &b, 1);
+	if (rr != 4) {
 		NPF ("readint: EOF", EIO);
 		return 0;
 	}
@@ -4396,8 +4400,8 @@ static short
 readshort(READERARGLST)
 {
 	short b;
-	int rr = fread (&b, sizeof(short), 1, r);
-	if (rr != 1) {
+	int rr = r->read_short (S, &b, 1);
+	if (rr != 2) {
 		NPF ("readshort: EOF", EIO);
 		return 0;
 	}
@@ -4416,14 +4420,15 @@ readBlockTypeIndex(READERARGLST)
 static char
 readchar(READERARGLST)
 {
-	char b;
-	int rr = fread (&b, sizeof(char), 1, r);
+	unsigned char b;
+	// TODO: fix the entire thing (change to NIFchar)
+	int rr = r->read_char (S, &b, 1);
 	if (rr != 1) {
 		NPF ("readchar: EOF", EIO);
 		return '\0';
 	}
 	INFO ("readchar", "%c", b);
-	return b;
+	return (char)b;
 }
 
 static unsigned int
@@ -4446,8 +4451,8 @@ static float
 readfloat(READERARGLST)
 {
 	float b;
-	int rr = fread (&b, sizeof(float), 1, r);
-	if (rr != 1) {
+	int rr = r->read_float (S, &b, 1);
+	if (rr != 4) {
 		NPF ("readfloat: EOF", EIO);
 		return 0;
 	}
@@ -4460,33 +4465,25 @@ readHeaderString(READERARGLST)
 {
 	//'\n' terminated string
 	const int BS = 1024;
-	char buf[BS];
-	int len = 0;
-	for (;;) {
-		int res = fread (&buf[len], sizeof(char), 1, r);
-		if (res != 1) {
-			NPF ("readHeaderString: EOF reached\n", EIO);
-			return NULL;
-		}
-		if (buf[len] == '\n') {// found it!
-			char *result = GETMEM (len + 1);
-			if (!result) {
-				NPF ("readHeaderString: malloc failed\n", EM);
-				return NULL;
-			}
-			memcpy (&result[0], &buf[0], len);
-			result[len] = '\0';
-			INFO ("readHeaderString", "%s", result);
-			return result;
-		}
-		len++;
-		if (len == BS) {
-			NPF ("readHeaderString: buffer overflow\n", ENIF);
-			return NULL;
-		}
+	unsigned char buf[BS];
+	int rr = r->read_char_cond (S, &buf[0], BS, '\n');
+	if (rr <= 0 || buf[rr-1] != '\n') {
+		NPF ("readHeaderString: EOF reached\n", EIO);
+		return NULL;
 	}
-	NPF ("readHeaderString: Assertion failed\n", EBUG);
-	return NULL;
+	if (rr == BS - 1) {
+		NPF ("readHeaderString: buffer overflow\n", ENIF);
+		return NULL;
+	}
+	char *result = GETMEM (rr);
+	if (!result) {
+		NPF ("readHeaderString: malloc failed\n", EM);
+		return NULL;
+	}
+	memcpy (&result[0], &buf[0], rr);
+	result[rr] = '\0';
+	INFO ("readHeaderString", "%s", result);
+	return result;
 }
 
 static char *
@@ -4849,6 +4846,7 @@ void readExportInfo (ExportInfo * obj, unsigned int ARG)
 void
 readHeader(Header * obj, unsigned int ARG)
 {
+	//BDBG = 1;
 	int i;
 	obj->Header_String = readHeaderString (READER);
 	InitVersion (obj->Header_String);
@@ -4921,6 +4919,7 @@ readHeader(Header * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0x0A000100, 0))
 		obj->Unknown_Int_2 = readuint (READER);
+	//BDBG = 0;
 }
 
 void readStringPalette (StringPalette * obj, unsigned int ARG)

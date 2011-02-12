@@ -90,10 +90,10 @@ main(int argc, char **argv)
 	/*if (argc == 2)
 		return !readnif (argv[1]);*/
 	/*gettimeofday (&tstart, NULL);
-	int r = readnif ("");
+	int r = readnif ("/mnt/archive/rain/temp/nifs/morrowind/DoD/mjy_blanknif.NIF");
 	gettimeofday (&tstop, NULL);
 	long ttaken = time_interval (&tstart, &tstop);
-	printf ("time %ld seconds \n", ttaken/1000);
+	printf ("time %.2f milliseconds \n", ttaken/1000.0f);
 	return !r;*/
 
 	char *dir = ".";
@@ -101,7 +101,8 @@ main(int argc, char **argv)
 	pathwalk (dir, DoReadNif);
 	gettimeofday (&tstop, NULL);
 	long ttaken = time_interval (&tstart, &tstop) / (1000*1000);
-	printf ("files done %d (%ld files per second)\n", cnt, cnt / (ttaken ? ttaken : 1));
+	printf ("files done %d (%ld files per second)\n", cnt, cnt / ttaken);
+	printf ("time taken: %.2ld:%.2ld\n", ttaken / 60, ttaken % 60);
     return 0;
 }  // end main
 
