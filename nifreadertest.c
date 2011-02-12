@@ -83,7 +83,7 @@ time_interval(struct timeval *a, struct timeval *b)
 	return ( (b->tv_sec - a->tv_sec) * 1000000 ) + (b->tv_usec - a->tv_usec);
 }
 
-static long total_bytes = 0;
+static long long total_bytes = 0;
 static int total_blocks = 0;
 static int total_niobjects = 0;
 static int total_malloc_calls = 0;
@@ -109,7 +109,7 @@ main(int argc, char **argv)
 	long ttaken = time_interval (&tstart, &tstop) / (1000*1000);
 	printf ("files done %d (%ld files per second)\n", cnt, cnt / ttaken);
 	printf ("time taken: %ld %.2ld:%.2ld\n", ttaken, ttaken / 60, ttaken % 60);
-	printf ("total bytes read: %ld\n", total_bytes);
+	printf ("total bytes read: %lld\n", total_bytes);
 	printf ("major niff blocks parsed: %d\n", total_blocks);
 	printf ("total niff objects parsed: %d\n", total_niobjects);
 	printf ("total malloc calls: %d\n", total_malloc_calls);
