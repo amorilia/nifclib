@@ -31,7 +31,7 @@ static void *GetMem (size_t size);
 static int
 dbg(const char *format, ...)
 {
-	//return 0;
+	return 0;
 	va_list arg;
 	int done;
 	va_start (arg, format);
@@ -78,23 +78,23 @@ NPFF(int ecode, const char *msg, ...)
 	STOP = 1;
 }
 
-static byte readbool (READERARGLST);
-static byte readbyte (READERARGLST);
-static unsigned int readuint (READERARGLST);
-static unsigned short readushort (READERARGLST);
-static int readint (READERARGLST);
-static short readshort (READERARGLST);
-static unsigned short readBlockTypeIndex (READERARGLST);
-static char readchar (READERARGLST);
-static unsigned int readFileVersion (READERARGLST);
-static unsigned short readFlags (READERARGLST);
-static float readfloat (READERARGLST);
-static char *readHeaderString (READERARGLST);
-static char *readLineString (READERARGLST);
-static unsigned int readPtr (READERARGLST);
-static unsigned int readRef (READERARGLST);
-static unsigned int readStringOffset (READERARGLST);
-static unsigned int readStringIndex (READERARGLST);
+static inline byte readbool (READERARGLST);
+static inline byte readbyte (READERARGLST);
+static inline unsigned int readuint (READERARGLST);
+static inline unsigned short readushort (READERARGLST);
+static inline int readint (READERARGLST);
+static inline short readshort (READERARGLST);
+static inline unsigned short readBlockTypeIndex (READERARGLST);
+static inline char readchar (READERARGLST);
+static inline unsigned int readFileVersion (READERARGLST);
+static inline unsigned short readFlags (READERARGLST);
+static inline float readfloat (READERARGLST);
+static inline char *readHeaderString (READERARGLST);
+static inline char *readLineString (READERARGLST);
+static inline unsigned int readPtr (READERARGLST);
+static inline unsigned int readRef (READERARGLST);
+static inline unsigned int readStringOffset (READERARGLST);
+static inline unsigned int readStringIndex (READERARGLST);
 
 void
 readTEMPLATE(TEMPLATE *obj, unsigned int ARG, int t)
@@ -259,7 +259,7 @@ int
 readnif(char *fname)
 {
 	R = NifStream_create (fname, 1*1024*1024);
-	printf ("%s\n", fname);
+	dbg ("%s\n", fname);
 	if (!R) {
 		dbg ("*** Can't open \"%s\"\n", fname);
 		return 0;
@@ -4333,7 +4333,7 @@ TellFilePos(READERARGLST)
 static int BDBG = 0;
 #define INFO(m,f,val) if (BDBG) dbg ("  "m": "f"\n", val)
 
-static byte
+static inline byte
 readbool(READERARGLST)
 {
 	// A boolean; 32-bit from 4.0.0.2, and 8-bit from 4.1.0.1 on.
@@ -4354,7 +4354,7 @@ readbool(READERARGLST)
 	}
 }
 
-static byte
+static inline byte
 readbyte(READERARGLST)
 {
 	byte b;
@@ -4367,7 +4367,7 @@ readbyte(READERARGLST)
 	return b;
 }
 
-static unsigned int
+static inline unsigned int
 readuint(READERARGLST)
 {
 	unsigned int b;
@@ -4380,7 +4380,7 @@ readuint(READERARGLST)
 	return b;
 }
 
-static unsigned short
+static inline unsigned short
 readushort(READERARGLST)
 {
 	unsigned short b;
@@ -4393,7 +4393,7 @@ readushort(READERARGLST)
 	return b;
 }
 
-static int
+static inline int
 readint(READERARGLST)
 {
 	int b;
@@ -4406,7 +4406,7 @@ readint(READERARGLST)
 	return b;
 }
 
-static short
+static inline short
 readshort(READERARGLST)
 {
 	short b;
@@ -4419,7 +4419,7 @@ readshort(READERARGLST)
 	return b;
 }
 
-static unsigned short
+static inline unsigned short
 readBlockTypeIndex(READERARGLST)
 {
 	unsigned short b = readushort (READER);
@@ -4427,7 +4427,7 @@ readBlockTypeIndex(READERARGLST)
 	return b;
 }
 
-static char
+static inline char
 readchar(READERARGLST)
 {
 	unsigned char b;
@@ -4441,7 +4441,7 @@ readchar(READERARGLST)
 	return (char)b;
 }
 
-static unsigned int
+static inline unsigned int
 readFileVersion(READERARGLST)
 {
 	unsigned int b = readuint (READER);
@@ -4449,7 +4449,7 @@ readFileVersion(READERARGLST)
 	return b;
 }
 
-static unsigned short
+static inline unsigned short
 readFlags(READERARGLST)
 {
 	unsigned short b = readushort (READER);
@@ -4457,7 +4457,7 @@ readFlags(READERARGLST)
 	return b;
 }
 
-static float
+static inline float
 readfloat(READERARGLST)
 {
 	float b;
@@ -4470,7 +4470,7 @@ readfloat(READERARGLST)
 	return b;
 }
 
-static char *
+static inline char *
 readHeaderString(READERARGLST)
 {
 	//'\n' terminated string
@@ -4496,7 +4496,7 @@ readHeaderString(READERARGLST)
 	return result;
 }
 
-static char *
+static inline char *
 readLineString(READERARGLST)
 {
 	char *result = readHeaderString (READER);
@@ -4504,7 +4504,7 @@ readLineString(READERARGLST)
 	return result;
 }
 
-static unsigned int
+static inline unsigned int
 readPtr(READERARGLST)
 {
 	unsigned int b = readuint (READER);
@@ -4512,7 +4512,7 @@ readPtr(READERARGLST)
 	return b;
 }
 
-static unsigned int
+static inline unsigned int
 readRef(READERARGLST)
 {
 	unsigned int b = readuint (READER);
@@ -4520,7 +4520,7 @@ readRef(READERARGLST)
 	return b;
 }
 
-static unsigned int
+static inline unsigned int
 readStringOffset(READERARGLST)
 {
 	unsigned int b = readuint (READER);
@@ -4528,7 +4528,7 @@ readStringOffset(READERARGLST)
 	return b;
 }
 
-static unsigned int
+static inline unsigned int
 readStringIndex(READERARGLST)
 {
 	unsigned int b = readuint (READER);
@@ -4547,9 +4547,11 @@ readStringIndex(READERARGLST)
 	}
 
 #define READ(TYPE, BUF, LEN, BYTES, PROC)\
-	int r = R->read_##TYPE (S, BUF, LEN);\
-	if (r != (LEN * BYTES))\
-		NPF (PROC": EOF reached\n", EIO);
+	{\
+		int r = R->read_##TYPE (S, BUF, LEN);\
+		if (r != (LEN * BYTES))\
+			NPF (PROC": EOF reached\n", EIO);\
+	}
 
 void
 readSizedString(SizedString * obj, unsigned int ARG)
@@ -4596,41 +4598,28 @@ readByteMatrix(ByteMatrix * obj, unsigned int ARG)
 void readColor3 (Color3 * obj, unsigned int ARG)
 {
 	READ (float, &(obj->r), 3, SIZEOFDWORD, "readColor3")
-	/*obj->r = readfloat (READER);
-	obj->g = readfloat (READER);
-	obj->b = readfloat (READER);*/
 }
 
 void
 readByteColor3(ByteColor3 * obj, unsigned int ARG)
 {
 	READ (byte, &(obj->r), 3, 1, "readByteColor3")
-	/*obj->r = readbyte (READER);
-	obj->g = readbyte (READER);
-	obj->b = readbyte (READER);*/
 }
 
 void
 readColor4(Color4 * obj, unsigned int ARG)
 {
 	READ (float, &(obj->r), 4, SIZEOFDWORD, "readColor4")
-	/*obj->r = readfloat (READER);
-	obj->g = readfloat (READER);
-	obj->b = readfloat (READER);
-	obj->a = readfloat (READER);*/
 }
 
 void
 readByteColor4(ByteColor4 * obj, unsigned int ARG)
 {
 	READ (byte, &(obj->r), 4, 1, "readByteColor4")
-	/*obj->r = readbyte (READER);
-	obj->g = readbyte (READER);
-	obj->b = readbyte (READER);
-	obj->a = readbyte (READER);*/
 }
 
-void readFilePath (FilePath * obj, unsigned int ARG)
+void
+readFilePath(FilePath * obj, unsigned int ARG)
 {
 	if (VersionCheck (0, 0x14000005)) {
 		readSizedString (&obj->String, 0);
@@ -4640,89 +4629,107 @@ void readFilePath (FilePath * obj, unsigned int ARG)
 	}
 }
 
-void readFooter (Footer * obj, unsigned int ARG)
+void
+readFooter(Footer * obj, unsigned int ARG)
 {
 	if (VersionCheck (0x0303000D, 0)) {
 		obj->Num_Roots = readuint (READER);
-	}
-	if (VersionCheck (0x0303000D, 0)) {
+		PROTECT_LEN (obj->Num_Roots, 0xff, "readFooter")
 		// init 1d array
-		obj->Roots = GETMEM ((obj->Num_Roots) * sizeof (unsigned int));
+		obj->Roots = GETMEM ((obj->Num_Roots) * sizeof (NIFuint));
 		// read 1d array
-		int i;
+		READ (uint, obj->Roots, obj->Num_Roots, SIZEOFDWORD, "readFooter")
+		/*int i;
 		for (i = 0; i < (obj->Num_Roots); i++)
-			obj->Roots[i] = readRef (READER);
+			obj->Roots[i] = readRef (READER);*/
 	}
 }
 
-void readLODRange (LODRange * obj, unsigned int ARG)
+void
+readLODRange(LODRange * obj, unsigned int ARG)
 {
-	obj->Near_Extent = readfloat (READER);
-	obj->Far_Extent = readfloat (READER);
+	READ (float, &(obj->Near_Extent), 2, SIZEOFDWORD, "readLODRange")
+	/*obj->Near_Extent = readfloat (READER);
+	obj->Far_Extent = readfloat (READER);*/
 	if (VersionCheck (0, 0x03010000)) {
 		// init 1d array
-		obj->Unknown_Ints = GETMEM ((3) * sizeof (unsigned int));
+		obj->Unknown_Ints = GETMEM ((3) * sizeof (NIFuint));
 		// read 1d array
-		int i;
+		READ (uint, obj->Unknown_Ints, 3, SIZEOFDWORD, "readLODRange")
+		/*int i;
 		for (i = 0; i < (3); i++)
-			obj->Unknown_Ints[i] = readuint (READER);
+			obj->Unknown_Ints[i] = readuint (READER);*/
 	}
 }
 
-void readMatchGroup (MatchGroup * obj, unsigned int ARG)
+void
+readMatchGroup(MatchGroup * obj, unsigned int ARG)
 {
 	obj->Num_Vertices = readushort (READER);
 	// init 1d array
 	obj->Vertex_Indices =
-	    GETMEM ((obj->Num_Vertices) * sizeof (unsigned short));
+	    GETMEM ((obj->Num_Vertices) * sizeof (NIFushort));
 	// read 1d array
-	int i;
+	READ (ushort, obj->Vertex_Indices, obj->Num_Vertices, SIZEOFWORD, "readMatchGroup")
+	/*int i;
 	for (i = 0; i < (obj->Num_Vertices); i++)
-		obj->Vertex_Indices[i] = readushort (READER);
+		obj->Vertex_Indices[i] = readushort (READER);*/
 }
 
-void readVector3 (Vector3 * obj, unsigned int ARG)
+void
+readVector3(Vector3 * obj, unsigned int ARG)
 {
-	obj->x = readfloat (READER);
+	READ (float, &(obj->x), 3, SIZEOFDWORD, "readVector3")
+	/*obj->x = readfloat (READER);
+	obj->y = readfloat (READER);
+	obj->z = readfloat (READER);*/
+}
+
+void
+readVector4(Vector4 * obj, unsigned int ARG)
+{
+	READ (float, &(obj->x), 4, SIZEOFDWORD, "readVector4")
+	/*obj->x = readfloat (READER);
 	obj->y = readfloat (READER);
 	obj->z = readfloat (READER);
+	obj->w = readfloat (READER);*/
 }
 
-void readVector4 (Vector4 * obj, unsigned int ARG)
+void
+readQuaternion(Quaternion * obj, unsigned int ARG)
 {
+	READ (float, &(obj->x), 4, SIZEOFDWORD, "readQuaternion")
+	/*obj->w = readfloat (READER);
 	obj->x = readfloat (READER);
 	obj->y = readfloat (READER);
-	obj->z = readfloat (READER);
-	obj->w = readfloat (READER);
+	obj->z = readfloat (READER);*/
 }
 
-void readQuaternion (Quaternion * obj, unsigned int ARG)
+void
+readQuaternionXYZW(QuaternionXYZW * obj, unsigned int ARG)
 {
-	obj->w = readfloat (READER);
-	obj->x = readfloat (READER);
+	READ (float, &(obj->x), 4, SIZEOFDWORD, "readQuaternionXYZW")
+	/*obj->x = readfloat (READER);
 	obj->y = readfloat (READER);
 	obj->z = readfloat (READER);
+	obj->w = readfloat (READER);*/
 }
 
-void readQuaternionXYZW (QuaternionXYZW * obj, unsigned int ARG)
+void
+readMatrix22(Matrix22 * obj, unsigned int ARG)
 {
-	obj->x = readfloat (READER);
-	obj->y = readfloat (READER);
-	obj->z = readfloat (READER);
-	obj->w = readfloat (READER);
-}
-
-void readMatrix22 (Matrix22 * obj, unsigned int ARG)
-{
-	obj->m11 = readfloat (READER);
+	READ (float, &(obj->m11), 4, SIZEOFDWORD, "readMatrix22")
+	/*obj->m11 = readfloat (READER);
 	obj->m21 = readfloat (READER);
 	obj->m12 = readfloat (READER);
-	obj->m22 = readfloat (READER);
+	obj->m22 = readfloat (READER);*/
 }
 
-void readMatrix33 (Matrix33 * obj, unsigned int ARG)
+void
+readMatrix33(Matrix33 * obj, unsigned int ARG)
 {
-	obj->m11 = readfloat (READER);
+	READ (float, &(obj->m11), 9, SIZEOFDWORD, "readMatrix33")
+	/*obj->m11 = readfloat (READER);
 	obj->m21 = readfloat (READER);
 	obj->m31 = readfloat (READER);
 	obj->m12 = readfloat (READER);
@@ -4730,12 +4737,14 @@ void readMatrix33 (Matrix33 * obj, unsigned int ARG)
 	obj->m32 = readfloat (READER);
 	obj->m13 = readfloat (READER);
 	obj->m23 = readfloat (READER);
-	obj->m33 = readfloat (READER);
+	obj->m33 = readfloat (READER);*/
 }
 
-void readMatrix44 (Matrix44 * obj, unsigned int ARG)
+void
+readMatrix44(Matrix44 * obj, unsigned int ARG)
 {
-	obj->m11 = readfloat (READER);
+	READ (float, &(obj->m11), 16, SIZEOFDWORD, "readMatrix44")
+	/*obj->m11 = readfloat (READER);
 	obj->m21 = readfloat (READER);
 	obj->m31 = readfloat (READER);
 	obj->m41 = readfloat (READER);
@@ -4750,47 +4759,57 @@ void readMatrix44 (Matrix44 * obj, unsigned int ARG)
 	obj->m14 = readfloat (READER);
 	obj->m24 = readfloat (READER);
 	obj->m34 = readfloat (READER);
-	obj->m44 = readfloat (READER);
+	obj->m44 = readfloat (READER);*/
 }
 
-void readMipMap (MipMap * obj, unsigned int ARG)
+void
+readMipMap(MipMap * obj, unsigned int ARG)
 {
-	obj->Width = readuint (READER);
+	READ (uint, &(obj->Width), 3, SIZEOFDWORD, "readMipMap")
+	/*obj->Width = readuint (READER);
 	obj->Height = readuint (READER);
-	obj->Offset = readuint (READER);
+	obj->Offset = readuint (READER);*/
 }
 
-void readNodeGroup (NodeGroup * obj, unsigned int ARG)
+void
+readNodeGroup(NodeGroup * obj, unsigned int ARG)
 {
 	obj->Num_Nodes = readuint (READER);
+	PROTECT_LEN (obj->Num_Nodes, 2000000, "readNodeGroup")
 	// init 1d array
 	obj->Nodes = GETMEM ((obj->Num_Nodes) * sizeof (unsigned int));
 	// read 1d array
-	int i;
+	READ (uint, obj->Nodes, obj->Num_Nodes, SIZEOFDWORD, "readNodeGroup")
+	/*int i;
 	for (i = 0; i < (obj->Num_Nodes); i++)
-		obj->Nodes[i] = readPtr (READER);
+		obj->Nodes[i] = readPtr (READER);*/
 }
 
-void readShortString (ShortString * obj, unsigned int ARG)
+void
+readShortString(ShortString * obj, unsigned int ARG)
 {
 	obj->Length = readbyte (READER);
 	// init 1d array
-	obj->Value = GETMEM ((obj->Length) * sizeof (char));
+	obj->Value = GETMEM (obj->Length);
 	// read 1d array
-	int i;
+	READ (char, obj->Value, obj->Length, 1, "readShortString")
+	/*int i;
 	for (i = 0; i < (obj->Length); i++)
-		obj->Value[i] = readchar (READER);
+		obj->Value[i] = readchar (READER);*/
 }
 
-void readSkinShape (SkinShape * obj, unsigned int ARG)
+void
+readSkinShape(SkinShape * obj, unsigned int ARG)
 {
 	obj->Shape = readPtr (READER);
 	obj->Skin_Instance = readRef (READER);
 }
 
-void readSkinShapeGroup (SkinShapeGroup * obj, unsigned int ARG)
+void
+readSkinShapeGroup(SkinShapeGroup * obj, unsigned int ARG)
 {
 	obj->Num_Link_Pairs = readuint (READER);
+	PROTECT_LEN (obj->Num_Link_Pairs, 2000000, "readSkinShapeGroup")
 	// init 1d array
 	obj->Link_Pairs = GETMEM ((obj->Num_Link_Pairs) * sizeof (SkinShape));
 	// read 1d array
@@ -4799,19 +4818,22 @@ void readSkinShapeGroup (SkinShapeGroup * obj, unsigned int ARG)
 		readSkinShape (&obj->Link_Pairs[i], 0);
 }
 
-void readSkinWeight (SkinWeight * obj, unsigned int ARG)
+void
+readSkinWeight(SkinWeight * obj, unsigned int ARG)
 {
 	obj->Index = readushort (READER);
 	obj->Weight = readfloat (READER);
 }
 
-void readAVObject (AVObject * obj, unsigned int ARG)
+void
+readAVObject(AVObject * obj, unsigned int ARG)
 {
 	readSizedString (&obj->Name, 0);
 	obj->AV_Object = readPtr (READER);
 }
 
-void readControllerLink (ControllerLink * obj, unsigned int ARG)
+void
+readControllerLink(ControllerLink * obj, unsigned int ARG)
 {
 	if (VersionCheck (0, 0x0A010000)) {
 		readstring (&obj->Target_Name, 0);
@@ -4827,7 +4849,6 @@ void readControllerLink (ControllerLink * obj, unsigned int ARG)
 		obj->Unknown_Short_0 = readushort (READER);
 	}
 	if (VersionCheck (0x0A01006A, 0)
-	    && ((User_Version == 10) || (User_Version == 11))
 	    && ((User_Version == 10) || (User_Version == 11))) {
 		obj->Priority = readbyte (READER);
 	}
@@ -4849,7 +4870,8 @@ void readControllerLink (ControllerLink * obj, unsigned int ARG)
 	}
 }
 
-void readExportInfo (ExportInfo * obj, unsigned int ARG)
+void
+readExportInfo(ExportInfo * obj, unsigned int ARG)
 {
 	if (VersionCheck (0, 0x0A000102))
 		obj->Unknown = readuint (READER);
@@ -4880,8 +4902,10 @@ readHeader(Header * obj, unsigned int ARG)
 		obj->User_Version = readuint (READER);
 		User_Version = obj->User_Version;
 	}
-	if (VersionCheck (0x0303000D, 0))
+	if (VersionCheck (0x0303000D, 0)) {
 		obj->Num_Blocks = readuint (READER);
+		PROTECT_LEN (obj->Num_Blocks, 2000000, "readHeader")
+	}
 	if (VersionCheck (0x0A010000, 0)
 	    && ((User_Version == 10) || (User_Version == 11) ||
 		(User_Version == 1))) {
@@ -4896,9 +4920,8 @@ readHeader(Header * obj, unsigned int ARG)
 		((User_Version == 10) || (User_Version == 11) ||
 		(User_Version == 1)))
 		readExportInfo (&obj->Export_Info, 0);
-	if (VersionCheck (0x0A000100, 0))
-		obj->Num_Block_Types = readushort (READER);
 	if (VersionCheck (0x0A000100, 0)) {
+		obj->Num_Block_Types = readushort (READER);
 		// init 1d array
 		obj->Block_Types =
 		    GETMEM ((obj->Num_Block_Types) * sizeof (SizedString));
@@ -4911,20 +4934,24 @@ readHeader(Header * obj, unsigned int ARG)
 		obj->Block_Type_Index =
 		    GETMEM ((obj->Num_Blocks) * sizeof (unsigned short));
 		// read 1d array
-		for (i = 0; i < (obj->Num_Blocks); i++)
-			obj->Block_Type_Index[i] = readBlockTypeIndex (READER);
+		READ (ushort, obj->Block_Type_Index, obj->Num_Blocks, SIZEOFWORD, "readHeader")
+		/*for (i = 0; i < (obj->Num_Blocks); i++)
+			obj->Block_Type_Index[i] = readBlockTypeIndex (READER);*/
 	}
 	if (VersionCheck (0x14020007, 0)) {
 		// init 1d array
 		obj->Block_Size =
 		    GETMEM ((obj->Num_Blocks) * sizeof (unsigned int));
 		// read 1d array
-		for (i = 0; i < (obj->Num_Blocks); i++)
-			obj->Block_Size[i] = readuint (READER);
+		READ (uint, obj->Block_Size, obj->Num_Blocks, SIZEOFDWORD, "readHeader")
+		/*for (i = 0; i < (obj->Num_Blocks); i++)
+			obj->Block_Size[i] = readuint (READER);*/
 	}
 	if (VersionCheck (0x14010003, 0)) {
 		obj->Num_Strings = readuint (READER);
+		PROTECT_LEN (obj->Num_Strings, 0xffff, "readHeader")
 		obj->Max_String_Length = readuint (READER);
+		PROTECT_LEN (obj->Max_String_Length, 0xffff, "readHeader")
 		// init 1d array
 		obj->Strings =
 		    GETMEM ((obj->Num_Strings) * sizeof (SizedString));
@@ -4937,37 +4964,41 @@ readHeader(Header * obj, unsigned int ARG)
 	//BDBG = 0;
 }
 
-void readStringPalette (StringPalette * obj, unsigned int ARG)
+void
+readStringPalette(StringPalette * obj, unsigned int ARG)
 {
 	readSizedString (&obj->Palette, 0);
 	obj->Length = readuint (READER);
 }
 
-void readTBC (TBC * obj, unsigned int ARG)
+void
+readTBC(TBC * obj, unsigned int ARG)
 {
-	obj->t = readfloat (READER);
+	READ (float, &(obj->t), 3, SIZEOFDWORD, "readTBC")
+	/*obj->t = readfloat (READER);
 	obj->b = readfloat (READER);
-	obj->c = readfloat (READER);
+	obj->c = readfloat (READER);*/
 }
 
-void readKey (Key * obj, unsigned int ARG, int t)
+void
+readKey(Key * obj, unsigned int ARG, int t)
 {
 	obj->Time = readfloat (READER);
 	readTEMPLATE (&obj->Value, 0, t);
-	if ((ARG == 2)) {
+	if (ARG == 2) {
 		readTEMPLATE (&obj->Forward, 0, t);
-	}
-	if ((ARG == 2)) {
 		readTEMPLATE (&obj->Backward, 0, t);
 	}
-	if ((ARG == 3)) {
+	else if (ARG == 3) {
 		readTBC (&obj->TBC, 0);
 	}
 }
 
-void readKeyGroup (KeyGroup * obj, unsigned int ARG, int t)
+void
+readKeyGroup(KeyGroup * obj, unsigned int ARG, int t)
 {
 	obj->Num_Keys = readuint (READER);
+	PROTECT_LEN (obj->Num_Keys, 2000000, "readKeyGroup")
 	if ((obj->Num_Keys != 0)) {
 		obj->Interpolation = readuint (READER);
 	}
@@ -4979,34 +5010,36 @@ void readKeyGroup (KeyGroup * obj, unsigned int ARG, int t)
 		readKey (&obj->Keys[i], obj->Interpolation, t);
 }
 
-void readQuatKey (QuatKey * obj, unsigned int ARG)
+void
+readQuatKey(QuatKey * obj, unsigned int ARG)
 {
 	if (VersionCheck (0, 0x0A010000)) {
 		obj->Time = readfloat (READER);
 	}
-	if ((ARG != 4)) {
+	if (ARG != 4) {
 		if (VersionCheck(0x0A01006A, 0))
 			obj->Time = readfloat (READER);
 		readTEMPLATE (&obj->Value, 0, T_QUATERNION);
 	}
-	if ((ARG == 3)) {
+	if (ARG == 3) {
 		readTBC (&obj->TBC, 0);
 	}
 }
 
-void readTexCoord (TexCoord * obj, unsigned int ARG)
+void
+readTexCoord(TexCoord * obj, unsigned int ARG)
 {
-	obj->u = readfloat (READER);
-	obj->v = readfloat (READER);
+	READ (float, &(obj->u), 2, SIZEOFDWORD, "readTexCoord")
+	/*obj->u = readfloat (READER);
+	obj->v = readfloat (READER);*/
 }
 
-void readTexDesc (TexDesc * obj, unsigned int ARG)
+void
+readTexDesc(TexDesc * obj, unsigned int ARG)
 {
 	obj->Source = readRef (READER);
 	if (VersionCheck (0, 0x14000005)) {
 		obj->Clamp_Mode = readuint (READER);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		obj->Filter_Mode = readuint (READER);
 	}
 	if (VersionCheck (0x14010003, 0)) {
@@ -5020,8 +5053,6 @@ void readTexDesc (TexDesc * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0, 0x0A040001)) {
 		obj->PS2_L = readshort (READER);
-	}
-	if (VersionCheck (0, 0x0A040001)) {
 		obj->PS2_K = readshort (READER);
 	}
 	if (VersionCheck (0, 0x0401000C)) {
@@ -5029,36 +5060,28 @@ void readTexDesc (TexDesc * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Has_Texture_Transform = readbool (READER);
-	}
-	if (VersionCheck (0x0A010000, 0) && (obj->Has_Texture_Transform != 0)) {
-		readTexCoord (&obj->Translation, 0);
-	}
-	if (VersionCheck (0x0A010000, 0) && (obj->Has_Texture_Transform != 0)) {
-		readTexCoord (&obj->Tiling, 0);
-	}
-	if (VersionCheck (0x0A010000, 0) && (obj->Has_Texture_Transform != 0)) {
-		obj->W_Rotation = readfloat (READER);
-	}
-	if (VersionCheck (0x0A010000, 0) && (obj->Has_Texture_Transform != 0)) {
-		obj->Transform_Type_ = readuint (READER);
-	}
-	if (VersionCheck (0x0A010000, 0) && (obj->Has_Texture_Transform != 0)) {
-		readTexCoord (&obj->Center_Offset, 0);
+		if (obj->Has_Texture_Transform) {
+			readTexCoord (&obj->Translation, 0);
+			readTexCoord (&obj->Tiling, 0);
+			obj->W_Rotation = readfloat (READER);
+			obj->Transform_Type_ = readuint (READER);
+			readTexCoord (&obj->Center_Offset, 0);
+		}
 	}
 }
 
-void readShaderTexDesc (ShaderTexDesc * obj, unsigned int ARG)
+void
+readShaderTexDesc(ShaderTexDesc * obj, unsigned int ARG)
 {
 	obj->Is_Used = readbool (READER);
-	if ((obj->Is_Used != 0)) {
+	if (obj->Is_Used) {
 		readTexDesc (&obj->Texture_Data, 0);
-	}
-	if ((obj->Is_Used != 0)) {
 		obj->Map_Index = readuint (READER);
 	}
 }
 
-void readTexSource (TexSource * obj, unsigned int ARG)
+void
+readTexSource(TexSource * obj, unsigned int ARG)
 {
 	obj->Use_External = readbyte (READER);
 	if ((obj->Use_External == 1)) {
@@ -5075,14 +5098,17 @@ void readTexSource (TexSource * obj, unsigned int ARG)
 	}
 }
 
-void readTriangle (Triangle * obj, unsigned int ARG)
+void
+readTriangle(Triangle * obj, unsigned int ARG)
 {
-	obj->v1 = readushort (READER);
+	READ (ushort, &(obj->v1), 3, SIZEOFWORD, "readTriangle")
+	/*obj->v1 = readushort (READER);
 	obj->v2 = readushort (READER);
-	obj->v3 = readushort (READER);
+	obj->v3 = readushort (READER);*/
 }
 
-void readSkinPartition (SkinPartition * obj, unsigned int ARG)
+void
+readSkinPartition(SkinPartition * obj, unsigned int ARG)
 {
 	//BDBG = 1;
 	obj->Num_Vertices = readushort (READER);
@@ -5093,9 +5119,10 @@ void readSkinPartition (SkinPartition * obj, unsigned int ARG)
 	// init 1d array
 	obj->Bones = GETMEM ((obj->Num_Bones) * sizeof (unsigned short));
 	// read 1d array
-	int i, j;
-	for (i = 0; i < (obj->Num_Bones); i++)
-		obj->Bones[i] = readushort (READER);
+	int i;//, j;
+	READ (ushort, obj->Bones, obj->Num_Bones, SIZEOFWORD, "readSkinPartition")
+	/*for (i = 0; i < (obj->Num_Bones); i++)
+		obj->Bones[i] = readushort (READER);*/
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Has_Vertex_Map = readbyte (READER);
 	}
@@ -5105,8 +5132,9 @@ void readSkinPartition (SkinPartition * obj, unsigned int ARG)
 		obj->Vertex_Map =
 		    GETMEM ((obj->Num_Vertices) * sizeof (unsigned short));
 		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			obj->Vertex_Map[i] = readushort (READER);
+		READ (ushort, obj->Vertex_Map, obj->Num_Vertices, SIZEOFWORD, "readSkinPartition")
+		/*for (i = 0; i < (obj->Num_Vertices); i++)
+			obj->Vertex_Map[i] = readushort (READER);*/
 	}
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Has_Vertex_Weights = readbool (READER);
@@ -5114,26 +5142,31 @@ void readSkinPartition (SkinPartition * obj, unsigned int ARG)
 	if (VersionCheck (0, 0x0A000102) || 
 		(obj->Has_Vertex_Weights != 0 && VersionCheck (0x0A010000, 0)) ) {
 		// init 2d array
-		obj->Vertex_Weights =
+		int cnt = (obj->Num_Vertices * obj->Num_Weights_Per_Vertex);
+		PROTECT_LEN (cnt, 2000000, "readSkinPartition")
+		obj->Vertex_Weights = GETMEM (cnt * sizeof (NIFfloat));
+		READ (float, obj->Vertex_Weights, cnt, SIZEOFDWORD, "readSkinPartition")
+		/*obj->Vertex_Weights =
 		    GETMEM ((obj->Num_Vertices) * sizeof (float *));
 		for (i = 0; i < (obj->Num_Vertices); i++)
 			obj->Vertex_Weights[i] =
 			    GETMEM ((obj->Num_Weights_Per_Vertex) *
 				    sizeof (float));
 		// read 2d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
+		for (i = 0; i < (obj->Num_Vertices); i++) {
 			for (j = 0; j < (obj->Num_Weights_Per_Vertex); j++) {
 				//dbg ("[i][j] = [%d][%d]\n", i, j);
 				obj->Vertex_Weights[i][j] = readfloat (READER);
-			}
+			}*/
 	}
 	//dbg (" --- Strip_Lengths\n");
 	// init 1d array
 	obj->Strip_Lengths =
 	    GETMEM ((obj->Num_Strips) * sizeof (unsigned short));
 	// read 1d array
-	for (i = 0; i < (obj->Num_Strips); i++)
-		obj->Strip_Lengths[i] = readushort (READER);
+	READ (ushort, obj->Strip_Lengths, obj->Num_Strips, SIZEOFWORD, "readSkinPartition")
+	/*for (i = 0; i < (obj->Num_Strips); i++)
+		obj->Strip_Lengths[i] = readushort (READER);*/
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Has_Faces = readbyte (READER);
 	}
@@ -5147,9 +5180,11 @@ void readSkinPartition (SkinPartition * obj, unsigned int ARG)
 			    GETMEM ((obj->Strip_Lengths[i]) *
 				    sizeof (unsigned short));
 		// read 2d array
-		for (i = 0; i < (obj->Num_Strips); i++)
-			for (j = 0; j < (obj->Strip_Lengths[i]); j++)
-				obj->Strips[i][j] = readushort (READER);
+		for (i = 0; i < (obj->Num_Strips); i++) {
+			READ (ushort, obj->Strips[i], obj->Strip_Lengths[i], SIZEOFWORD, "readSkinPartition")
+		}
+			/*for (j = 0; j < (obj->Strip_Lengths[i]); j++)
+				obj->Strips[i][j] = readushort (READER);*/
 	}
 	//dbg (" --- Strips\n");
 	if ((VersionCheck (0, 0x0A000102) && (obj->Num_Strips == 0)) ||
@@ -5166,8 +5201,12 @@ void readSkinPartition (SkinPartition * obj, unsigned int ARG)
 	if ((obj->Has_Bone_Indices != 0)) {
 		//if (VersionCheck (0x04000002, 0x04000002))
 			//printf ("4.0.0.2\n");
+		int cnt = (obj->Num_Vertices * obj->Num_Weights_Per_Vertex);
+		PROTECT_LEN (cnt, 2000000, "readSkinPartition")
+		obj->Bone_Indices = GETMEM (cnt * sizeof (NIFbyte));
+		READ (byte, obj->Bone_Indices, cnt, 1, "readSkinPartition")
 		// init 2d array
-		obj->Bone_Indices =
+		/*obj->Bone_Indices =
 		    GETMEM ((obj->Num_Vertices) * sizeof (byte *));
 		for (i = 0; i < (obj->Num_Vertices); i++)
 			obj->Bone_Indices[i] =
@@ -5176,7 +5215,7 @@ void readSkinPartition (SkinPartition * obj, unsigned int ARG)
 		// read 2d array
 		for (i = 0; i < (obj->Num_Vertices); i++)
 			for (j = 0; j < (obj->Num_Weights_Per_Vertex); j++)
-				obj->Bone_Indices[i][j] = readbyte (READER);
+				obj->Bone_Indices[i][j] = readbyte (READER);*/
 	}
 	//BDBG = 0;
 }

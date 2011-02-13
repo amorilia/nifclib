@@ -1222,13 +1222,13 @@ typedef struct {
 
 typedef struct {
 	SizedString String;
-	unsigned int Index;
+	NIFuint Index;
 } FilePath;
 
 typedef struct {
-	unsigned int Num_Roots;
+	NIFuint Num_Roots;
 	// [Num_Roots], [(null)]
-	unsigned int *Roots;
+	NIFuint *Roots;
 } Footer;
 
 typedef struct {
@@ -1245,86 +1245,86 @@ typedef struct {
 } MatchGroup;
 
 typedef struct {
-	float x;
-	float y;
-	float z;
+	NIFfloat x;
+	NIFfloat y;
+	NIFfloat z;
 } Vector3;
 
 typedef struct {
-	float x;
-	float y;
-	float z;
-	float w;
+	NIFfloat x;
+	NIFfloat y;
+	NIFfloat z;
+	NIFfloat w;
 } Vector4;
 
 typedef struct {
-	float w;
-	float x;
-	float y;
-	float z;
+	NIFfloat w;
+	NIFfloat x;
+	NIFfloat y;
+	NIFfloat z;
 } Quaternion;
 
 typedef struct {
-	float x;
-	float y;
-	float z;
-	float w;
+	NIFfloat x;
+	NIFfloat y;
+	NIFfloat z;
+	NIFfloat w;
 } QuaternionXYZW;
 
 typedef struct {
-	float m11;
-	float m21;
-	float m12;
-	float m22;
+	NIFfloat m11;
+	NIFfloat m21;
+	NIFfloat m12;
+	NIFfloat m22;
 } Matrix22;
 
 typedef struct {
-	float m11;
-	float m21;
-	float m31;
-	float m12;
-	float m22;
-	float m32;
-	float m13;
-	float m23;
-	float m33;
+	NIFfloat m11;
+	NIFfloat m21;
+	NIFfloat m31;
+	NIFfloat m12;
+	NIFfloat m22;
+	NIFfloat m32;
+	NIFfloat m13;
+	NIFfloat m23;
+	NIFfloat m33;
 } Matrix33;
 
 typedef struct {
-	float m11;
-	float m21;
-	float m31;
-	float m41;
-	float m12;
-	float m22;
-	float m32;
-	float m42;
-	float m13;
-	float m23;
-	float m33;
-	float m43;
-	float m14;
-	float m24;
-	float m34;
-	float m44;
+	NIFfloat m11;
+	NIFfloat m21;
+	NIFfloat m31;
+	NIFfloat m41;
+	NIFfloat m12;
+	NIFfloat m22;
+	NIFfloat m32;
+	NIFfloat m42;
+	NIFfloat m13;
+	NIFfloat m23;
+	NIFfloat m33;
+	NIFfloat m43;
+	NIFfloat m14;
+	NIFfloat m24;
+	NIFfloat m34;
+	NIFfloat m44;
 } Matrix44;
 
 typedef struct {
-	unsigned int Width;
-	unsigned int Height;
-	unsigned int Offset;
+	NIFuint Width;
+	NIFuint Height;
+	NIFuint Offset;
 } MipMap;
 
 typedef struct {
-	unsigned int Num_Nodes;
+	NIFuint Num_Nodes;
 	// [Num_Nodes], [(null)]
-	unsigned int *Nodes;
+	NIFuint *Nodes;
 } NodeGroup;
 
 typedef struct {
-	byte Length;
+	NIFbyte Length;
 	// [Length], [(null)]
-	char *Value;
+	NIFchar *Value;
 } ShortString;
 
 typedef struct {
@@ -1397,9 +1397,9 @@ typedef struct {
 	// [Num_Block_Types], [(null)]
 	SizedString *Block_Types;
 	// [Num_Blocks], [(null)]
-	unsigned short *Block_Type_Index;
+	NIFushort *Block_Type_Index;
 	// [Num_Blocks], [(null)]
-	unsigned int *Block_Size;
+	NIFuint *Block_Size;
 	unsigned int Num_Strings;
 	unsigned int Max_String_Length;
 	// [Num_Strings], [(null)]
@@ -1413,9 +1413,9 @@ typedef struct {
 } StringPalette;
 
 typedef struct {
-	float t;
-	float b;
-	float c;
+	NIFfloat t;
+	NIFfloat b;
+	NIFfloat c;
 } TBC;
 
 typedef struct {
@@ -1441,8 +1441,8 @@ typedef struct {
 } QuatKey;
 
 typedef struct {
-	float u;
-	float v;
+	NIFfloat u;
+	NIFfloat v;
 } TexCoord;
 
 typedef struct {
@@ -1498,7 +1498,7 @@ typedef struct {
 	// DUPLICATE FIELD NAME Vertex_Map - fixed
 	byte Has_Vertex_Weights;
 	// [Num_Vertices], [Num_Weights_Per_Vertex]
-	float **Vertex_Weights;
+	NIFfloat *Vertex_Weights;
 	// DUPLICATE FIELD NAME Vertex_Weights - fixed
 	// [Num_Strips], [(null)]
 	unsigned short *Strip_Lengths;
@@ -1511,7 +1511,7 @@ typedef struct {
 	// DUPLICATE FIELD NAME Triangles - fixed
 	byte Has_Bone_Indices;
 	// [Num_Vertices], [Num_Weights_Per_Vertex]
-	byte **Bone_Indices;
+	byte *Bone_Indices;
 } SkinPartition;
 
 typedef struct {
