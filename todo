@@ -1,0 +1,59 @@
+[Done] - layout a coverage: number of calls per read*: long long ncalls[512]. A few bash scripts on the read procs - now they have a macro in their "header". Most frequent calls table created.
+
+- decide if loops should be #pragma pack(n):
+
+[Done] - there are const sized arrays: make sure no "malloc" is used for them. There is also at least one CONST*SIZE 2d array and vice versa -> // [Count], [5]
+
+- a lot of bytes can be read at once - yet it makes it complicated on data structure change, although these changes can not happen rapidly and in large amounts
+
+[*] - there are two views: binaryreader and client. To keep existing programs working existing client view must be kept intact, except if it prevents speed-read
+
+- all read procs may become inline, because of the rprocs called by the hash table
+
+- some procs may become macros - like readVector3, readTexCoord, etc.
+
+- it seems that the "<compound" may all become "inline"
+
+- autoremove the empty things like NiObject
+
+- use NIF types - NIFbyte, etc. (niff.h)
+
+- generator logic for records with same type fields (!= pointer):
+	if (AllFieldsAreTheSameType)
+		WhenReadingArrays do
+			if (LEN > 0)
+			READ(TYPE, BUF, LEN*NUM_FIELDS, sizeof(TYPE), PROCNAME)
+	BUF - &(obj->$FIELD[0].$FIELD0)
+	- NIFbyte, NIFchar, NIFshort, NIFushort, NIFint, NIFuint, NIFfloat
+
+- in a few places, SkinPartition, NiGeometryData and NiParticlesData, a change of ** to * was needed (where the field type of the record is the same or the type is a simple type and the arrays are not jagged) - think about how it can be done in the generator because these changes are great performance boosts
+	- NiPersistentSrcTextureRendererData
+	- NiPixelData
+
+- NiParticlesData and NiGeometryData have quite a lot in common
+
+- the most performance gain is when replacing two dimensional arrays with block reads:
+	SkinPartition, NiPixelData
+
+- the "TEMPLATE" things are artificial - no single function read templates with two or more different types, so TODO: morph the TEMPLATE - remove readTEMPALTE - its useless and just slows the things down
+
+- there are fixed size records - turn their readers into a blockreaders - pragmapack will be needed
+
+- argument changes to "r" - record
+
+- remove all '_' - they only make the lines longer
+
+- size of things should be const
+
+- change unsigned int to NIFuint, etc.
+
+- change sizeof(NIFuint) to SIZEOFDWORD, etc.
+
+- see if the generator can handle things like SkinTransform, SphereBV - all fields are the same type, except they are in different subtructures
+
+
+READ (WHAT, PUT_IT_WHERE, COUNT, sizeof(WHAT), PROCNAME)
+NIREAD NIRESULT read$NAME(NIOBJ);
+NIREAD NIRESULT read$NAME(NIOBJ, ARG);
+NIREAD NIRESULT read$NAME(NIOBJ, TARG);
+NIREAD NIRESULT read$NAME(NIOBJ, ARG, TARG);//readKey

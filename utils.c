@@ -119,7 +119,7 @@ strcopy(const char *src)
 	return tmp;
 }
 
-// the hash
+// the hash - possibly the worst hash ever made, but it does its job
 
 hash *
 hashcreate (int cap)

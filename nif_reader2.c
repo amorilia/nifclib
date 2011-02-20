@@ -26,6 +26,11 @@
 #include "utils.h"
 #include "niff.h"
 
+//int ncalls[512];
+#define COVERAGE
+/*#define COVERAGE\
+	printf ("%d\n", __LINE__);*/
+
 static void *GetMem (size_t size);
 
 static int
@@ -96,9 +101,10 @@ static inline unsigned int readRef (READERARGLST);
 static inline unsigned int readStringOffset (READERARGLST);
 static inline unsigned int readStringIndex (READERARGLST);
 
-void
+static inline void
 readTEMPLATE(TEMPLATE *obj, unsigned int ARG, int t)
 {
+	COVERAGE
 	obj->t = t;
 	if (t == T_BYTE) {
 		obj->d = GETMEM (sizeof(byte));
@@ -220,20 +226,20 @@ static void
 	if (MM_cnt == MM_cap) {
 		MM_cap += 1024;
 		MM = realloc (MM, MM_cap*sizeof(void *));
-		if (!MM) {
+		if (!MM) {// TODO: exit_proc a.k.a. catch (E) {}
 			NPF ("realloc failed.\n", EM);
 			return NULL;
 		}
 		NIFF_REALLOCS++;
 	}
 	MM[MM_cnt] = malloc (size);
-	if (!MM[MM_cnt]) {
+	if (!MM[MM_cnt]) {// TODO: exit_proc a.k.a. catch (E) {}
 		NPF ("malloc failed.\n", EM);
 		return NULL;
 	}
 	NIFF_MALLOCS++;
 	MM[MM_cnt] = memset (MM[MM_cnt], 0, size);
-	if (!MM[MM_cnt]) {
+	if (!MM[MM_cnt]) {// TODO: exit_proc a.k.a. catch (E) {}
 		NPF ("memset failed.\n", EM);
 		return NULL;
 	}
@@ -255,6 +261,13 @@ static void ReleaseRpHash();
    		---/   main loop   / /---
 					   ---/*/
 
+#define READ1(TYPE, BUF, LEN, BYTES, PROC)\
+	{\
+		int r = R->read_##TYPE (S, BUF, LEN);\
+		if (r != (LEN * BYTES))\
+			NPF (PROC": EOF reached\n", EIO);\
+	}
+
 int
 readnif(char *fname)
 {
@@ -273,6 +286,14 @@ readnif(char *fname)
 	fseek (R->f, 0, SEEK_END);
 	long fsize = ftell (R->f);
 	fseek (R->f, 0, SEEK_SET);
+
+	// just read the entire file in memory
+	/*byte *buf = malloc (fsize);
+	READ1 (byte, buf, fsize, 1, "speed")
+	free (buf);
+	NifStream_free (R);
+	return 1;*/
+
 	ERR = ENONE;
 	STOP = 0;
 	InitMM ();
@@ -844,13 +865,13 @@ RPBodyPartList()
 	if (STOP) return;
 	readBodyPartList (t, 0);
 }
-static void
+/*static void
 RPNiObject()
 {
 	NiObject *t = GETMEM (sizeof(NiObject));
 	if (STOP) return;
 	readNiObject (t, 0);
-}
+}*/
 static void
 RPNi3dsAlphaAnimator()
 {
@@ -3868,7 +3889,7 @@ CreateRpHash()
 	hashadd (RPHash, "InertiaMatrix", (char*)RPInertiaMatrix);
 	hashadd (RPHash, "DecalVectorArray", (char*)RPDecalVectorArray);
 	hashadd (RPHash, "BodyPartList", (char*)RPBodyPartList);
-	hashadd (RPHash, "NiObject", (char*)RPNiObject);
+	//hashadd (RPHash, "NiObject", (char*)RPNiObject);
 	hashadd (RPHash, "Ni3dsAlphaAnimator", (char*)RPNi3dsAlphaAnimator);
 	hashadd (RPHash, "Ni3dsAnimationNode", (char*)RPNi3dsAnimationNode);
 	hashadd (RPHash, "Ni3dsColorAnimator", (char*)RPNi3dsColorAnimator);
@@ -4553,9 +4574,10 @@ readStringIndex(READERARGLST)
 			NPF (PROC": EOF reached\n", EIO);\
 	}
 
-void
+inline void
 readSizedString(SizedString * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Length = readuint (READER);
 	PROTECT_LEN (obj->Length, 0xffff, "SizedString")
 	obj->Value = GETMEM (obj->Length + 1);
@@ -4563,9 +4585,10 @@ readSizedString(SizedString * obj, unsigned int ARG)
 	obj->Value[obj->Length] = '\0';// terminate it !
 }
 
-void
+inline void
 readstring(string * obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0, 0x14000005)) {
 		readSizedString (&obj->String, 0);
 	}
@@ -4577,6 +4600,7 @@ readstring(string * obj, unsigned int ARG)
 void
 readByteArray(ByteArray * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Data_Size = readuint (READER);
 	PROTECT_LEN (obj->Data_Size, 2000000, "readByteArray")
 	obj->Data = GETMEM (obj->Data_Size);
@@ -4586,6 +4610,7 @@ readByteArray(ByteArray * obj, unsigned int ARG)
 void
 readByteMatrix(ByteMatrix * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Data_Size_1 = readuint (READER);
 	PROTECT_LEN (obj->Data_Size_1, 0xff, "readByteMatrix")
 	obj->Data_Size_2 = readuint (READER);
@@ -4595,32 +4620,38 @@ readByteMatrix(ByteMatrix * obj, unsigned int ARG)
 	READ (byte, obj->Data, len, 1, "readByteMatrix")
 }
 
-void readColor3 (Color3 * obj, unsigned int ARG)
+inline void
+readColor3(Color3 * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->r), 3, SIZEOFDWORD, "readColor3")
 }
 
-void
+inline void
 readByteColor3(ByteColor3 * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (byte, &(obj->r), 3, 1, "readByteColor3")
 }
 
-void
+inline void
 readColor4(Color4 * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->r), 4, SIZEOFDWORD, "readColor4")
 }
 
-void
+inline void
 readByteColor4(ByteColor4 * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (byte, &(obj->r), 4, 1, "readByteColor4")
 }
 
 void
 readFilePath(FilePath * obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0, 0x14000005)) {
 		readSizedString (&obj->String, 0);
 	}
@@ -4632,175 +4663,116 @@ readFilePath(FilePath * obj, unsigned int ARG)
 void
 readFooter(Footer * obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0x0303000D, 0)) {
 		obj->Num_Roots = readuint (READER);
 		PROTECT_LEN (obj->Num_Roots, 0xff, "readFooter")
-		// init 1d array
 		obj->Roots = GETMEM ((obj->Num_Roots) * sizeof (NIFuint));
-		// read 1d array
 		READ (uint, obj->Roots, obj->Num_Roots, SIZEOFDWORD, "readFooter")
-		/*int i;
-		for (i = 0; i < (obj->Num_Roots); i++)
-			obj->Roots[i] = readRef (READER);*/
 	}
 }
 
 void
 readLODRange(LODRange * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->Near_Extent), 2, SIZEOFDWORD, "readLODRange")
 	/*obj->Near_Extent = readfloat (READER);
 	obj->Far_Extent = readfloat (READER);*/
 	if (VersionCheck (0, 0x03010000)) {
-		// init 1d array
-		obj->Unknown_Ints = GETMEM ((3) * sizeof (NIFuint));
-		// read 1d array
-		READ (uint, obj->Unknown_Ints, 3, SIZEOFDWORD, "readLODRange")
-		/*int i;
-		for (i = 0; i < (3); i++)
-			obj->Unknown_Ints[i] = readuint (READER);*/
+		READ (uint, &(obj->Unknown_Ints[0]), 3, SIZEOFDWORD, "readLODRange")
 	}
 }
 
-void
+inline void
 readMatchGroup(MatchGroup * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Num_Vertices = readushort (READER);
-	// init 1d array
 	obj->Vertex_Indices =
 	    GETMEM ((obj->Num_Vertices) * sizeof (NIFushort));
-	// read 1d array
 	READ (ushort, obj->Vertex_Indices, obj->Num_Vertices, SIZEOFWORD, "readMatchGroup")
-	/*int i;
-	for (i = 0; i < (obj->Num_Vertices); i++)
-		obj->Vertex_Indices[i] = readushort (READER);*/
 }
 
-void
+inline void
 readVector3(Vector3 * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->x), 3, SIZEOFDWORD, "readVector3")
-	/*obj->x = readfloat (READER);
-	obj->y = readfloat (READER);
-	obj->z = readfloat (READER);*/
 }
 
-void
+inline void
 readVector4(Vector4 * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->x), 4, SIZEOFDWORD, "readVector4")
-	/*obj->x = readfloat (READER);
-	obj->y = readfloat (READER);
-	obj->z = readfloat (READER);
-	obj->w = readfloat (READER);*/
 }
 
-void
+inline void
 readQuaternion(Quaternion * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->x), 4, SIZEOFDWORD, "readQuaternion")
-	/*obj->w = readfloat (READER);
-	obj->x = readfloat (READER);
-	obj->y = readfloat (READER);
-	obj->z = readfloat (READER);*/
 }
 
-void
+inline void
 readQuaternionXYZW(QuaternionXYZW * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->x), 4, SIZEOFDWORD, "readQuaternionXYZW")
-	/*obj->x = readfloat (READER);
-	obj->y = readfloat (READER);
-	obj->z = readfloat (READER);
-	obj->w = readfloat (READER);*/
 }
 
-void
+inline void
 readMatrix22(Matrix22 * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->m11), 4, SIZEOFDWORD, "readMatrix22")
-	/*obj->m11 = readfloat (READER);
-	obj->m21 = readfloat (READER);
-	obj->m12 = readfloat (READER);
-	obj->m22 = readfloat (READER);*/
 }
 
-void
+inline void
 readMatrix33(Matrix33 * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->m11), 9, SIZEOFDWORD, "readMatrix33")
-	/*obj->m11 = readfloat (READER);
-	obj->m21 = readfloat (READER);
-	obj->m31 = readfloat (READER);
-	obj->m12 = readfloat (READER);
-	obj->m22 = readfloat (READER);
-	obj->m32 = readfloat (READER);
-	obj->m13 = readfloat (READER);
-	obj->m23 = readfloat (READER);
-	obj->m33 = readfloat (READER);*/
 }
 
-void
+inline void
 readMatrix44(Matrix44 * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->m11), 16, SIZEOFDWORD, "readMatrix44")
-	/*obj->m11 = readfloat (READER);
-	obj->m21 = readfloat (READER);
-	obj->m31 = readfloat (READER);
-	obj->m41 = readfloat (READER);
-	obj->m12 = readfloat (READER);
-	obj->m22 = readfloat (READER);
-	obj->m32 = readfloat (READER);
-	obj->m42 = readfloat (READER);
-	obj->m13 = readfloat (READER);
-	obj->m23 = readfloat (READER);
-	obj->m33 = readfloat (READER);
-	obj->m43 = readfloat (READER);
-	obj->m14 = readfloat (READER);
-	obj->m24 = readfloat (READER);
-	obj->m34 = readfloat (READER);
-	obj->m44 = readfloat (READER);*/
 }
 
 void
 readMipMap(MipMap * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (uint, &(obj->Width), 3, SIZEOFDWORD, "readMipMap")
-	/*obj->Width = readuint (READER);
-	obj->Height = readuint (READER);
-	obj->Offset = readuint (READER);*/
 }
 
 void
 readNodeGroup(NodeGroup * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Num_Nodes = readuint (READER);
 	PROTECT_LEN (obj->Num_Nodes, 2000000, "readNodeGroup")
-	// init 1d array
 	obj->Nodes = GETMEM ((obj->Num_Nodes) * sizeof (unsigned int));
-	// read 1d array
 	READ (uint, obj->Nodes, obj->Num_Nodes, SIZEOFDWORD, "readNodeGroup")
-	/*int i;
-	for (i = 0; i < (obj->Num_Nodes); i++)
-		obj->Nodes[i] = readPtr (READER);*/
 }
 
 void
 readShortString(ShortString * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Length = readbyte (READER);
-	// init 1d array
 	obj->Value = GETMEM (obj->Length);
-	// read 1d array
 	READ (char, obj->Value, obj->Length, 1, "readShortString")
-	/*int i;
-	for (i = 0; i < (obj->Length); i++)
-		obj->Value[i] = readchar (READER);*/
 }
 
-void
+inline void
 readSkinShape(SkinShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Shape = readPtr (READER);
 	obj->Skin_Instance = readRef (READER);
 }
@@ -4808,6 +4780,7 @@ readSkinShape(SkinShape * obj, unsigned int ARG)
 void
 readSkinShapeGroup(SkinShapeGroup * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Num_Link_Pairs = readuint (READER);
 	PROTECT_LEN (obj->Num_Link_Pairs, 2000000, "readSkinShapeGroup")
 	// init 1d array
@@ -4818,9 +4791,10 @@ readSkinShapeGroup(SkinShapeGroup * obj, unsigned int ARG)
 		readSkinShape (&obj->Link_Pairs[i], 0);
 }
 
-void
+inline void
 readSkinWeight(SkinWeight * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Index = readushort (READER);
 	obj->Weight = readfloat (READER);
 }
@@ -4828,6 +4802,7 @@ readSkinWeight(SkinWeight * obj, unsigned int ARG)
 void
 readAVObject(AVObject * obj, unsigned int ARG)
 {
+	COVERAGE
 	readSizedString (&obj->Name, 0);
 	obj->AV_Object = readPtr (READER);
 }
@@ -4835,6 +4810,7 @@ readAVObject(AVObject * obj, unsigned int ARG)
 void
 readControllerLink(ControllerLink * obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0, 0x0A010000)) {
 		readstring (&obj->Target_Name, 0);
 		obj->Controller = readRef (READER);
@@ -4873,6 +4849,7 @@ readControllerLink(ControllerLink * obj, unsigned int ARG)
 void
 readExportInfo(ExportInfo * obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0, 0x0A000102))
 		obj->Unknown = readuint (READER);
 	readShortString (&obj->Creator, 0);
@@ -4881,16 +4858,13 @@ readExportInfo(ExportInfo * obj, unsigned int ARG)
 }
 
 void
-readHeader(Header * obj, unsigned int ARG)
+readHeader(Header *obj, unsigned int ARG)
 {
-	//BDBG = 1;
+	COVERAGE
 	int i;
 	obj->Header_String = readHeaderString (READER);
 	InitVersion (obj->Header_String);
 	if (VersionCheck (0, 0x03010000)) {
-		// init 1d array
-		obj->Copyright = GETMEM ((3) * sizeof (char *));
-		// read 1d array
 		for (i = 0; i < (3); i++)
 			obj->Copyright[i] = readLineString (READER);
 	}
@@ -4930,22 +4904,14 @@ readHeader(Header * obj, unsigned int ARG)
 			readSizedString (&obj->Block_Types[i], 0);
 	}
 	if (VersionCheck (0x0A000100, 0)) {
-		// init 1d array
 		obj->Block_Type_Index =
 		    GETMEM ((obj->Num_Blocks) * sizeof (unsigned short));
-		// read 1d array
 		READ (ushort, obj->Block_Type_Index, obj->Num_Blocks, SIZEOFWORD, "readHeader")
-		/*for (i = 0; i < (obj->Num_Blocks); i++)
-			obj->Block_Type_Index[i] = readBlockTypeIndex (READER);*/
 	}
 	if (VersionCheck (0x14020007, 0)) {
-		// init 1d array
 		obj->Block_Size =
 		    GETMEM ((obj->Num_Blocks) * sizeof (unsigned int));
-		// read 1d array
 		READ (uint, obj->Block_Size, obj->Num_Blocks, SIZEOFDWORD, "readHeader")
-		/*for (i = 0; i < (obj->Num_Blocks); i++)
-			obj->Block_Size[i] = readuint (READER);*/
 	}
 	if (VersionCheck (0x14010003, 0)) {
 		obj->Num_Strings = readuint (READER);
@@ -4961,28 +4927,27 @@ readHeader(Header * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0x0A000100, 0))
 		obj->Unknown_Int_2 = readuint (READER);
-	//BDBG = 0;
 }
 
 void
-readStringPalette(StringPalette * obj, unsigned int ARG)
+readStringPalette(StringPalette *obj, unsigned int ARG)
 {
+	COVERAGE
 	readSizedString (&obj->Palette, 0);
 	obj->Length = readuint (READER);
 }
 
 void
-readTBC(TBC * obj, unsigned int ARG)
+readTBC(TBC *obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->t), 3, SIZEOFDWORD, "readTBC")
-	/*obj->t = readfloat (READER);
-	obj->b = readfloat (READER);
-	obj->c = readfloat (READER);*/
 }
 
-void
-readKey(Key * obj, unsigned int ARG, int t)
+inline void
+readKey(Key *obj, unsigned int ARG, int t)
 {
+	COVERAGE
 	obj->Time = readfloat (READER);
 	readTEMPLATE (&obj->Value, 0, t);
 	if (ARG == 2) {
@@ -4994,9 +4959,10 @@ readKey(Key * obj, unsigned int ARG, int t)
 	}
 }
 
-void
-readKeyGroup(KeyGroup * obj, unsigned int ARG, int t)
+inline void
+readKeyGroup(KeyGroup *obj, unsigned int ARG, int t)
 {
+	COVERAGE
 	obj->Num_Keys = readuint (READER);
 	PROTECT_LEN (obj->Num_Keys, 2000000, "readKeyGroup")
 	if ((obj->Num_Keys != 0)) {
@@ -5010,9 +4976,10 @@ readKeyGroup(KeyGroup * obj, unsigned int ARG, int t)
 		readKey (&obj->Keys[i], obj->Interpolation, t);
 }
 
-void
-readQuatKey(QuatKey * obj, unsigned int ARG)
+inline void
+readQuatKey(QuatKey *obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0, 0x0A010000)) {
 		obj->Time = readfloat (READER);
 	}
@@ -5026,17 +4993,17 @@ readQuatKey(QuatKey * obj, unsigned int ARG)
 	}
 }
 
-void
-readTexCoord(TexCoord * obj, unsigned int ARG)
+inline void
+readTexCoord(TexCoord *obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (float, &(obj->u), 2, SIZEOFDWORD, "readTexCoord")
-	/*obj->u = readfloat (READER);
-	obj->v = readfloat (READER);*/
 }
 
 void
-readTexDesc(TexDesc * obj, unsigned int ARG)
+readTexDesc(TexDesc *obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Source = readRef (READER);
 	if (VersionCheck (0, 0x14000005)) {
 		obj->Clamp_Mode = readuint (READER);
@@ -5071,8 +5038,9 @@ readTexDesc(TexDesc * obj, unsigned int ARG)
 }
 
 void
-readShaderTexDesc(ShaderTexDesc * obj, unsigned int ARG)
+readShaderTexDesc(ShaderTexDesc *obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Is_Used = readbool (READER);
 	if (obj->Is_Used) {
 		readTexDesc (&obj->Texture_Data, 0);
@@ -5083,6 +5051,7 @@ readShaderTexDesc(ShaderTexDesc * obj, unsigned int ARG)
 void
 readTexSource(TexSource * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Use_External = readbyte (READER);
 	if ((obj->Use_External == 1)) {
 		readFilePath (&obj->File_Name, 0);
@@ -5098,146 +5067,103 @@ readTexSource(TexSource * obj, unsigned int ARG)
 	}
 }
 
-void
+inline void
 readTriangle(Triangle * obj, unsigned int ARG)
 {
+	COVERAGE
 	READ (ushort, &(obj->v1), 3, SIZEOFWORD, "readTriangle")
-	/*obj->v1 = readushort (READER);
-	obj->v2 = readushort (READER);
-	obj->v3 = readushort (READER);*/
 }
 
 void
 readSkinPartition(SkinPartition * obj, unsigned int ARG)
 {
-	//BDBG = 1;
+	COVERAGE
 	obj->Num_Vertices = readushort (READER);
 	obj->Num_Triangles = readushort (READER);
 	obj->Num_Bones = readushort (READER);
 	obj->Num_Strips = readushort (READER);
 	obj->Num_Weights_Per_Vertex = readushort (READER);
-	// init 1d array
 	obj->Bones = GETMEM ((obj->Num_Bones) * sizeof (unsigned short));
-	// read 1d array
-	int i;//, j;
 	READ (ushort, obj->Bones, obj->Num_Bones, SIZEOFWORD, "readSkinPartition")
-	/*for (i = 0; i < (obj->Num_Bones); i++)
-		obj->Bones[i] = readushort (READER);*/
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Has_Vertex_Map = readbyte (READER);
 	}
 	if (VersionCheck (0, 0x0A000102) ||
 		(obj->Has_Vertex_Map != 0 && VersionCheck (0x0A010000, 0)) ) {
-		// init 1d array
 		obj->Vertex_Map =
 		    GETMEM ((obj->Num_Vertices) * sizeof (unsigned short));
-		// read 1d array
 		READ (ushort, obj->Vertex_Map, obj->Num_Vertices, SIZEOFWORD, "readSkinPartition")
-		/*for (i = 0; i < (obj->Num_Vertices); i++)
-			obj->Vertex_Map[i] = readushort (READER);*/
 	}
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Has_Vertex_Weights = readbool (READER);
 	}
 	if (VersionCheck (0, 0x0A000102) || 
 		(obj->Has_Vertex_Weights != 0 && VersionCheck (0x0A010000, 0)) ) {
-		// init 2d array
 		int cnt = (obj->Num_Vertices * obj->Num_Weights_Per_Vertex);
 		PROTECT_LEN (cnt, 2000000, "readSkinPartition")
 		obj->Vertex_Weights = GETMEM (cnt * sizeof (NIFfloat));
 		READ (float, obj->Vertex_Weights, cnt, SIZEOFDWORD, "readSkinPartition")
-		/*obj->Vertex_Weights =
-		    GETMEM ((obj->Num_Vertices) * sizeof (float *));
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			obj->Vertex_Weights[i] =
-			    GETMEM ((obj->Num_Weights_Per_Vertex) *
-				    sizeof (float));
-		// read 2d array
-		for (i = 0; i < (obj->Num_Vertices); i++) {
-			for (j = 0; j < (obj->Num_Weights_Per_Vertex); j++) {
-				//dbg ("[i][j] = [%d][%d]\n", i, j);
-				obj->Vertex_Weights[i][j] = readfloat (READER);
-			}*/
 	}
-	//dbg (" --- Strip_Lengths\n");
-	// init 1d array
 	obj->Strip_Lengths =
 	    GETMEM ((obj->Num_Strips) * sizeof (unsigned short));
-	// read 1d array
 	READ (ushort, obj->Strip_Lengths, obj->Num_Strips, SIZEOFWORD, "readSkinPartition")
-	/*for (i = 0; i < (obj->Num_Strips); i++)
-		obj->Strip_Lengths[i] = readushort (READER);*/
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Has_Faces = readbyte (READER);
 	}
 	if ((VersionCheck (0, 0x0A000102) && (obj->Num_Strips != 0)) ||
 		((obj->Has_Faces != 0) && (obj->Num_Strips != 0) && VersionCheck (0x0A010000, 0))) {
-		// init 2d array
+		// for loop can not be avoided for now - jagged array
 		obj->Strips =
 		    GETMEM ((obj->Num_Strips) * sizeof (unsigned short *));
-		for (i = 0; i < (obj->Num_Strips); i++)
-			obj->Strips[i] =
-			    GETMEM ((obj->Strip_Lengths[i]) *
-				    sizeof (unsigned short));
-		// read 2d array
+		int i;
 		for (i = 0; i < (obj->Num_Strips); i++) {
+			obj->Strips[i] =
+			    GETMEM ((obj->Strip_Lengths[i]) * sizeof (unsigned short));
 			READ (ushort, obj->Strips[i], obj->Strip_Lengths[i], SIZEOFWORD, "readSkinPartition")
 		}
-			/*for (j = 0; j < (obj->Strip_Lengths[i]); j++)
-				obj->Strips[i][j] = readushort (READER);*/
 	}
-	//dbg (" --- Strips\n");
 	if ((VersionCheck (0, 0x0A000102) && (obj->Num_Strips == 0)) ||
 		((obj->Has_Faces != 0) && (obj->Num_Strips == 0) && VersionCheck (0x0A010000, 0))) {
-		// init 1d array
 		obj->Triangles =
 		    GETMEM ((obj->Num_Triangles) * sizeof (Triangle));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Triangles); i++)
-			readTriangle (&obj->Triangles[i], 0);
+		if (obj->Num_Triangles > 0)
+			READ(ushort, &(obj->Triangles[0].v1), obj->Num_Triangles*3, SIZEOFWORD, "readSkinPartition");
 	}
-	//dbg (" --- Triangle\n");
 	obj->Has_Bone_Indices = readbool (READER);
 	if ((obj->Has_Bone_Indices != 0)) {
-		//if (VersionCheck (0x04000002, 0x04000002))
-			//printf ("4.0.0.2\n");
 		int cnt = (obj->Num_Vertices * obj->Num_Weights_Per_Vertex);
 		PROTECT_LEN (cnt, 2000000, "readSkinPartition")
 		obj->Bone_Indices = GETMEM (cnt * sizeof (NIFbyte));
 		READ (byte, obj->Bone_Indices, cnt, 1, "readSkinPartition")
-		// init 2d array
-		/*obj->Bone_Indices =
-		    GETMEM ((obj->Num_Vertices) * sizeof (byte *));
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			obj->Bone_Indices[i] =
-			    GETMEM ((obj->Num_Weights_Per_Vertex) *
-				    sizeof (byte));
-		// read 2d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			for (j = 0; j < (obj->Num_Weights_Per_Vertex); j++)
-				obj->Bone_Indices[i][j] = readbyte (READER);*/
 	}
-	//BDBG = 0;
 }
 
-void readBoundingBox (BoundingBox * obj, unsigned int ARG)
+void
+readBoundingBox(BoundingBox * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Unknown_Int = readuint (READER);
+	// TODO: REPLACE with 3*3 + 3 + 3 floats read
+	// tradeof with future changes in Vector3 and/or Matrix33
 	readVector3 (&obj->Translation, 0);
 	readMatrix33 (&obj->Rotation, 0);
 	readVector3 (&obj->Radius, 0);
 }
 
-void readFurniturePosition (FurniturePosition * obj, unsigned int ARG)
+void
+readFurniturePosition(FurniturePosition * obj, unsigned int ARG)
 {
+	COVERAGE
 	readVector3 (&obj->Offset, 0);
 	obj->Orientation = readushort (READER);
 	obj->Position_Ref_1 = readbyte (READER);
 	obj->Position_Ref_2 = readbyte (READER);
 }
 
-void readhkTriangle (hkTriangle * obj, unsigned int ARG)
+inline void
+readhkTriangle(hkTriangle * obj, unsigned int ARG)
 {
+	COVERAGE
 	readTriangle (&obj->Triangle, 0);
 	obj->Welding_Info = readushort (READER);
 	if (VersionCheck (0, 0x14000005)) {
@@ -5245,65 +5171,65 @@ void readhkTriangle (hkTriangle * obj, unsigned int ARG)
 	}
 }
 
-void readMorph (Morph * obj, unsigned int ARG)
+void
+readMorph(Morph * obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0x0A01006A, 0)) {
 		readstring (&obj->Frame_Name, 0);
 	}
 	if (VersionCheck (0, 0x0A010000)) {
 		obj->Num_Keys = readuint (READER);
-	}
-	if (VersionCheck (0, 0x0A010000)) {
+		PROTECT_LEN (obj->Num_Keys, 2000000, "readMorph")
 		obj->Interpolation = readuint (READER);
-	}
-	int i;
-	if (VersionCheck (0, 0x0A010000)) {
 		// init 1d array
 		obj->Keys = GETMEM ((obj->Num_Keys) * sizeof (Key));
 		// read 1d array
+		int i;
 		for (i = 0; i < (obj->Num_Keys); i++)
 			readKey (&obj->Keys[i], obj->Interpolation, T_FLOAT);
 	}
 	if (VersionCheck (0x0A01006A, 0x0A020000)) {
 		obj->Unknown_Int = readuint (READER);
 	}
-	// init 1d array
+	PROTECT_LEN (ARG, 2000000, "readMorph")
 	obj->Vectors = GETMEM ((ARG) * sizeof (Vector3));
-	// read 1d array
-	for (i = 0; i < (ARG); i++)
-		readVector3 (&obj->Vectors[i], 0);
+	if (ARG > 0)
+		READ(float, &(obj->Vectors[0].x), ARG*3, SIZEOFDWORD, "readMorph");
 }
 
-void readParticle (Particle * obj, unsigned int ARG)
+void
+readParticle(Particle * obj, unsigned int ARG)
 {
+	COVERAGE
 	readVector3 (&obj->Velocity, 0);
 	readVector3 (&obj->Unknown_Vector, 0);
-	obj->Lifetime = readfloat (READER);
+	READ (float, &(obj->Lifetime), 3, SIZEOFDWORD, "readParticle")
+	/*obj->Lifetime = readfloat (READER);
 	obj->Lifespan = readfloat (READER);
-	obj->Timestamp = readfloat (READER);
+	obj->Timestamp = readfloat (READER);*/
 	obj->Unknown_Short = readushort (READER);
 	obj->Vertex_ID = readushort (READER);
 }
 
-void readSkinTransform (SkinTransform * obj, unsigned int ARG)
+void
+readSkinTransform(SkinTransform * obj, unsigned int ARG)
 {
+	COVERAGE
 	readMatrix33 (&obj->Rotation, 0);
 	readVector3 (&obj->Translation, 0);
 	obj->Scale = readfloat (READER);
 }
 
-void readSkinData (SkinData * obj, unsigned int ARG)
+void
+readSkinData(SkinData * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	readSkinTransform (&obj->Skin_Transform, 0);
 	readVector3 (&obj->Bounding_Sphere_Offset, 0);
 	obj->Bounding_Sphere_Radius = readfloat (READER);
 	if (VersionCheck (0x14030009, 0x14030009) && (User_Version == 131072)) {
-		// init 1d array
-		obj->Unknown_13_Shorts = GETMEM ((13) * sizeof (short));
-		// read 1d array
-		for (i = 0; i < (13); i++)
-			obj->Unknown_13_Shorts[i] = readshort (READER);
+		READ (short, &(obj->Unknown_13_Shorts[0]), 13, SIZEOFWORD, "readSkinData")
 	}
 	obj->Num_Vertices = readushort (READER);
 	if (VersionCheck (0, 0x04020100) || 
@@ -5312,26 +5238,33 @@ void readSkinData (SkinData * obj, unsigned int ARG)
 		obj->Vertex_Weights =
 		    GETMEM ((obj->Num_Vertices) * sizeof (SkinWeight));
 		// read 1d array
+		int i;
 		for (i = 0; i < (obj->Num_Vertices); i++)
 			readSkinWeight (&obj->Vertex_Weights[i], 0);
 	}
 }
 
-void readSphereBV (SphereBV * obj, unsigned int ARG)
+void
+readSphereBV(SphereBV * obj, unsigned int ARG)
 {
+	COVERAGE
 	readVector3 (&obj->Center, 0);
 	obj->Radius = readfloat (READER);
 }
 
-void readOblivionColFilter (OblivionColFilter * obj, unsigned int ARG)
+void
+readOblivionColFilter(OblivionColFilter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Layer = readbyte (READER);
 	obj->Col_Filter = readbyte (READER);
 	obj->Unknown_Short = readushort (READER);
 }
 
-void readOblivionSubShape (OblivionSubShape * obj, unsigned int ARG)
+void
+readOblivionSubShape(OblivionSubShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Layer = readbyte (READER);
 	obj->Col_Filter = readbyte (READER);
 	obj->Unknown_Short = readushort (READER);
@@ -5339,59 +5272,48 @@ void readOblivionSubShape (OblivionSubShape * obj, unsigned int ARG)
 	obj->Material = readuint (READER);
 }
 
-void readMotorDescriptor (MotorDescriptor * obj, unsigned int ARG)
+void
+readMotorDescriptor(MotorDescriptor * obj, unsigned int ARG)
 {
-	obj->Unknown_Float_1 = readfloat (READER);
-	obj->Unknown_Float_2 = readfloat (READER);
-	obj->Unknown_Float_3 = readfloat (READER);
-	obj->Unknown_Float_4 = readfloat (READER);
-	obj->Unknown_Float_5 = readfloat (READER);
-	obj->Unknown_Float_6 = readfloat (READER);
+	COVERAGE
+	READ (float, &(obj->Unknown_Float_1), 6, SIZEOFDWORD, "readMotorDescriptor")
 	obj->Unknown_Byte_1 = readbyte (READER);
 }
 
-void readRagdollDescriptor (RagdollDescriptor * obj, unsigned int ARG)
+void
+readRagdollDescriptor(RagdollDescriptor * obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Pivot_A, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Plane_A, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Twist_A, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Pivot_B, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Plane_B, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Twist_B, 0);
 	}
 	if (VersionCheck (0x14020007, 0)) {
 		readVector4 (&obj->Motor_A, 0);
-	}
-	if (VersionCheck (0x14020007, 0)) {
 		readVector4 (&obj->Motor_B, 0);
 	}
-	obj->Cone_Max_Angle = readfloat (READER);
+	READ (float, &(obj->Cone_Max_Angle), 6, SIZEOFDWORD, "readRagdollDescriptor")
+	/*obj->Cone_Max_Angle = readfloat (READER);
 	obj->Plane_Min_Angle = readfloat (READER);
 	obj->Plane_Max_Angle = readfloat (READER);
 	obj->Twist_Min_Angle = readfloat (READER);
 	obj->Twist_Max_Angle = readfloat (READER);
-	obj->Max_Friction = readfloat (READER);
+	obj->Max_Friction = readfloat (READER);*/
 	if (VersionCheck (0x14020007, 0)) {
 		obj->Enable_Motor = readbyte (READER);
-	}
-	if (VersionCheck (0x14020007, 0) && (obj->Enable_Motor)) {
-		readMotorDescriptor (&obj->Motor, 0);
+		if (obj->Enable_Motor)
+			readMotorDescriptor (&obj->Motor, 0);
 	}
 }
 
-void readLimitedHingeDescriptor (LimitedHingeDescriptor * obj, unsigned int ARG)
+void
+readLimitedHingeDescriptor(LimitedHingeDescriptor * obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Pivot_A, 0);
 		readVector4 (&obj->Axle_A, 0);
@@ -5411,130 +5333,116 @@ void readLimitedHingeDescriptor (LimitedHingeDescriptor * obj, unsigned int ARG)
 		readVector4 (&obj->Perp2_Axle_In_B2, 0);
 		readVector4 (&obj->Pivot_B, 0);
 	}
-	obj->Min_Angle = readfloat (READER);
+	READ (float, &(obj->Min_Angle), 3, SIZEOFDWORD, "readLimitedHingeDescriptor")
+	/*obj->Min_Angle = readfloat (READER);
 	obj->Max_Angle = readfloat (READER);
-	obj->Max_Friction = readfloat (READER);
+	obj->Max_Friction = readfloat (READER);*/
 	if (VersionCheck (0x14020007, 0)) {
 		obj->Enable_Motor = readbyte (READER);
-	}
-	if (VersionCheck (0x14020007, 0) && (obj->Enable_Motor)) {
-		readMotorDescriptor (&obj->Motor, 0);
+		if (obj->Enable_Motor)
+			readMotorDescriptor (&obj->Motor, 0);
 	}
 }
 
-void readHingeDescriptor (HingeDescriptor * obj, unsigned int ARG)
+void
+readHingeDescriptor(HingeDescriptor * obj, unsigned int ARG)
 {
+	COVERAGE
 	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Pivot_A, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Perp2_Axle_In_A1, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Perp2_Axle_In_A2, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Pivot_B, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Axle_B, 0);
 	}
-	if (VersionCheck (0x14020007, 0)) {
+	else if (VersionCheck (0x14020007, 0)) {
 		readVector4 (&obj->Axle_A, 0);
-	}
-	if (VersionCheck (0x14020007, 0)) {
 		readVector4 (&obj->Perp2_Axle_In_B1, 0);
-	}
-	if (VersionCheck (0x14020007, 0)) {
 		readVector4 (&obj->Perp2_Axle_In_B2, 0);
 	}
 }
 
-void readOldSkinData (OldSkinData * obj, unsigned int ARG)
+void
+readOldSkinData(OldSkinData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Vertex_Weight = readfloat (READER);
 	obj->Vertex_Index = readushort (READER);
 	readVector3 (&obj->Unknown_Vector, 0);
 }
 
-void readMultiTextureElement (MultiTextureElement * obj, unsigned int ARG)
+void
+readMultiTextureElement(MultiTextureElement * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Has_Image = readbool (READER);
 	if ((obj->Has_Image)) {
 		obj->Image = readRef (READER);
-	}
-	if ((obj->Has_Image)) {
 		obj->Clamp_ = readuint (READER);
-	}
-	if ((obj->Has_Image)) {
 		obj->Filter_ = readuint (READER);
-	}
-	if ((obj->Has_Image)) {
 		obj->UV_Set_ = readuint (READER);
-	}
-	if (VersionCheck (0x03030000, 0x0A020000) && (obj->Has_Image)) {
-		obj->PS2_L = readshort (READER);
-	}
-	if (VersionCheck (0x03030000, 0x0A020000) && (obj->Has_Image)) {
-		obj->PS2_K = readshort (READER);
-	}
-	if (VersionCheck (0x03030000, 0) && (obj->Has_Image)) {
-		obj->Unknown_Short_3 = readshort (READER);
+		if (VersionCheck (0x03030000, 0x0A020000)) {
+			obj->PS2_L = readshort (READER);
+			obj->PS2_K = readshort (READER);
+		}
+		if (VersionCheck (0x03030000, 0))
+			obj->Unknown_Short_3 = readshort (READER);
 	}
 }
 
-void readBoxBV (BoxBV * obj, unsigned int ARG)
+void
+readBoxBV(BoxBV * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	readVector3 (&obj->Center, 0);
-	// init 1d array
-	obj->Axis = GETMEM ((3) * sizeof (Vector3));
-	// read 1d array
-	for (i = 0; i < (3); i++)
-		readVector3 (&obj->Axis[i], 0);
-	// init 1d array
-	obj->Extent = GETMEM ((3) * sizeof (float));
-	// read 1d array
-	for (i = 0; i < (3); i++)
-		obj->Extent[i] = readfloat (READER);
+	READ (float, &(obj->Axis[0].x), 3*3, SIZEOFDWORD, "readBoxBV");
+	READ (float, &(obj->Extent[0]), 3, SIZEOFDWORD, "readBoxBV")
 }
 
-void readCapsuleBV (CapsuleBV * obj, unsigned int ARG)
+void
+readCapsuleBV(CapsuleBV * obj, unsigned int ARG)
 {
+	COVERAGE
 	readVector3 (&obj->Center, 0);
 	readVector3 (&obj->Origin, 0);
 	obj->Unknown_Float_1 = readfloat (READER);
 	obj->Unknown_Float_2 = readfloat (READER);
 }
 
-void readHalfSpaceBV (HalfSpaceBV * obj, unsigned int ARG)
+void
+readHalfSpaceBV(HalfSpaceBV * obj, unsigned int ARG)
 {
+	COVERAGE
 	readVector3 (&obj->Normal, 0);
 	readVector3 (&obj->Center, 0);
 }
 
-void readBoundingVolume (BoundingVolume * obj, unsigned int ARG)
+void
+readBoundingVolume(BoundingVolume * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Collision_Type = readuint (READER);
 	if ((obj->Collision_Type == 0)) {
 		readSphereBV (&obj->Sphere, 0);
 	}
-	if ((obj->Collision_Type == 1)) {
+	else if ((obj->Collision_Type == 1)) {
 		readBoxBV (&obj->Box, 0);
 	}
-	if ((obj->Collision_Type == 2)) {
+	else if ((obj->Collision_Type == 2)) {
 		readCapsuleBV (&obj->Capsule, 0);
 	}
-	if ((obj->Collision_Type == 4)) {
+	else if ((obj->Collision_Type == 4)) {
 		readUnionBV ((UnionBV *)obj->Union, 0);
 	}
-	if ((obj->Collision_Type == 5)) {
+	else if ((obj->Collision_Type == 5)) {
 		readHalfSpaceBV (&obj->HalfSpace, 0);
-	}
+	} else NPFF (ENIF, "unknown BoundingVolume: %d\n", obj->Collision_Type);
 }
 
-void readUnionBV (UnionBV * obj, unsigned int ARG)
+void
+readUnionBV(UnionBV * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Num_BV = readuint (READER);
 	// init 1d array
 	obj->Bounding_Volumes =
@@ -5545,196 +5453,127 @@ void readUnionBV (UnionBV * obj, unsigned int ARG)
 		readBoundingVolume (&obj->Bounding_Volumes[i], 0);
 }
 
-void readMorphWeight (MorphWeight * obj, unsigned int ARG)
+void
+readMorphWeight(MorphWeight * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Interpolator = readRef (READER);
 	obj->Weight_ = readfloat (READER);
 }
 
-void readArkTexture (ArkTexture * obj, unsigned int ARG)
+void
+readArkTexture(ArkTexture * obj, unsigned int ARG)
 {
+	COVERAGE
 	readstring (&obj->Texture_Name, 0);
 	obj->Unknown_Int_3 = readint (READER);
 	obj->Unknown_Int_4 = readint (READER);
 	obj->Texturing_Property = readRef (READER);
-	// init 1d array
-	obj->Unknown_Bytes = GETMEM ((9) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (9); i++)
-		obj->Unknown_Bytes[i] = readbyte (READER);
+	READ (byte, &(obj->Unknown_Bytes[0]), 9, 1, "readArkTexture")
 }
 
-void readInertiaMatrix (InertiaMatrix * obj, unsigned int ARG)
+void
+readInertiaMatrix(InertiaMatrix * obj, unsigned int ARG)
 {
-	obj->m11 = readfloat (READER);
-	obj->m12 = readfloat (READER);
-	obj->m13 = readfloat (READER);
-	obj->m14 = readfloat (READER);
-	obj->m21 = readfloat (READER);
-	obj->m22 = readfloat (READER);
-	obj->m23 = readfloat (READER);
-	obj->m24 = readfloat (READER);
-	obj->m31 = readfloat (READER);
-	obj->m32 = readfloat (READER);
-	obj->m33 = readfloat (READER);
-	obj->m34 = readfloat (READER);
+	COVERAGE
+	READ (float, &(obj->m11), 12, SIZEOFDWORD, "readArkTexture")
 }
 
-void readDecalVectorArray (DecalVectorArray * obj, unsigned int ARG)
+void
+readDecalVectorArray(DecalVectorArray * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->Num_Vectors = readshort (READER);
-	// init 1d array
 	obj->Points = GETMEM ((obj->Num_Vectors) * sizeof (Vector3));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Vectors); i++)
-		readVector3 (&obj->Points[i], 0);
-	// init 1d array
+	if (obj->Num_Vectors > 0)
+		READ (float, &(obj->Points[0].x), obj->Num_Vectors*3, SIZEOFDWORD, "readDecalVectorArray");
 	obj->Normals = GETMEM ((obj->Num_Vectors) * sizeof (Vector3));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Vectors); i++)
-		readVector3 (&obj->Normals[i], 0);
+	if (obj->Num_Vectors > 0)
+		READ (float, &(obj->Normals[0].x), obj->Num_Vectors*3, SIZEOFDWORD, "readDecalVectorArray");
 }
 
 void readBodyPartList (BodyPartList * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Part_Flag = readushort (READER);
 	obj->Body_Part = readushort (READER);
 }
 
-void readNiObject (NiObject * obj, unsigned int ARG)
+void
+readNi3dsAlphaAnimator(Ni3dsAlphaAnimator * obj, unsigned int ARG)
 {
-}
-
-void readNi3dsAlphaAnimator (Ni3dsAlphaAnimator * obj, unsigned int ARG)
-{
-	int i, j;
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_1 = GETMEM ((40) * sizeof (byte));
-	// read 1d array
-	for (i = 0; i < (40); i++)
-		obj->Unknown_1[i] = readbyte (READER);
+	COVERAGE
+	READ (byte, &(obj->Unknown_1[0]), 40, 1, "readNi3dsAlphaAnimator")
 	obj->Parent = readRef (READER);
 	obj->Num_1 = readuint (READER);
 	obj->Num_2 = readuint (READER);
-	// init 2d array
-	obj->Unknown_2 = GETMEM ((obj->Num_1) * sizeof (unsigned int *));
-	for (i = 0; i < (obj->Num_1); i++)
-		obj->Unknown_2[i] =
-		    GETMEM ((obj->Num_2) * sizeof (unsigned int));
-	// read 2d array
-	for (i = 0; i < (obj->Num_1); i++)
-		for (j = 0; j < (obj->Num_2); j++)
-			obj->Unknown_2[i][j] = readuint (READER);
+	NIFuint len = obj->Num_1 * obj->Num_2;
+	PROTECT_LEN (len, 2000000, "readNi3dsAlphaAnimator")
+	obj->Unknown_2 = GETMEM (len * sizeof (NIFuint));
+	READ (uint, obj->Unknown_2, len, SIZEOFDWORD, "readNi3dsAlphaAnimator")
 }
 
-void readNi3dsAnimationNode (Ni3dsAnimationNode * obj, unsigned int ARG)
+void
+readNi3dsAnimationNode(Ni3dsAnimationNode * obj, unsigned int ARG)
 {
-	int i, j;
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readstring (&obj->Name, 0);
 	obj->Has_Data = readuint (READER);
 	if ((obj->Has_Data)) {
-		// init 1d array
-		obj->Unknown_Floats_1 = GETMEM ((21) * sizeof (float));
-		// read 1d array
-		for (i = 0; i < (21); i++)
-			obj->Unknown_Floats_1[i] = readfloat (READER);
-	}
-	if ((obj->Has_Data)) {
+		READ (float, &(obj->Unknown_Floats_1[0]), 21, SIZEOFDWORD, "readNi3dsAnimationNode")
 		obj->Unknown_Short = readushort (READER);
-	}
-	if ((obj->Has_Data)) {
 		obj->Child = readRef (READER);
-	}
-	if ((obj->Has_Data)) {
-		// init 1d array
-		obj->Unknown_Floats_2 = GETMEM ((12) * sizeof (float));
-		// read 1d array
-		for (i = 0; i < (12); i++)
-			obj->Unknown_Floats_2[i] = readfloat (READER);
-	}
-	if ((obj->Has_Data)) {
+		READ (float, &(obj->Unknown_Floats_2[0]), 12, SIZEOFDWORD, "readNi3dsAnimationNode")
 		obj->Count = readuint (READER);
-	}
-	if ((obj->Has_Data)) {
-		// init 2d array
-		obj->Unknown_Array = GETMEM ((obj->Count) * sizeof (byte *));
-		for (i = 0; i < (obj->Count); i++)
-			obj->Unknown_Array[i] = GETMEM ((5) * sizeof (byte));
-		// read 2d array
-		for (i = 0; i < (obj->Count); i++)
-			for (j = 0; j < (5); j++)
-				obj->Unknown_Array[i][j] = readbyte (READER);
+		NIFuint len = obj->Count * 5;
+		PROTECT_LEN (len, 2000000, "readNi3dsAnimationNode")
+		obj->Unknown_Array = GETMEM (len);
+		READ (byte, obj->Unknown_Array, len, 1, "readNi3dsAnimationNode")
 	}
 }
 
-void readNi3dsColorAnimator (Ni3dsColorAnimator * obj, unsigned int ARG)
+void
+readNi3dsColorAnimator(Ni3dsColorAnimator * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_1 = GETMEM ((184) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (184); i++)
-		obj->Unknown_1[i] = readbyte (READER);
+	COVERAGE
+	READ (byte, &(obj->Unknown_1[0]), 184, 1, "readNi3dsColorAnimator")
 }
 
-void readNi3dsMorphShape (Ni3dsMorphShape * obj, unsigned int ARG)
+void
+readNi3dsMorphShape(Ni3dsMorphShape * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_1 = GETMEM ((14) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (14); i++)
-		obj->Unknown_1[i] = readbyte (READER);
+	COVERAGE
+	READ (byte, &(obj->Unknown_1[0]), 14, 1, "readNi3dsMorphShape")
 }
 
-void readNi3dsParticleSystem (Ni3dsParticleSystem * obj, unsigned int ARG)
+void
+readNi3dsParticleSystem(Ni3dsParticleSystem * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_1 = GETMEM ((14) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (14); i++)
-		obj->Unknown_1[i] = readbyte (READER);
+	COVERAGE
+	READ (byte, &(obj->Unknown_1[0]), 14, 1, "readNi3dsParticleSystem")
 }
 
-void readNi3dsPathController (Ni3dsPathController * obj, unsigned int ARG)
+void
+readNi3dsPathController(Ni3dsPathController * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_1 = GETMEM ((20) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (20); i++)
-		obj->Unknown_1[i] = readbyte (READER);
+	COVERAGE
+	READ (byte, &(obj->Unknown_1[0]), 20, 1, "readNi3dsPathController")
 }
 
-void readNiParticleModifier (NiParticleModifier * obj, unsigned int ARG)
+void
+readNiParticleModifier(NiParticleModifier * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Next_Modifier = readRef (READER);
 	if (VersionCheck (0x04000002, 0)) {
 		obj->Controller = readPtr (READER);
 	}
 }
 
-void readNiPSysCollider (NiPSysCollider * obj, unsigned int ARG)
+void
+readNiPSysCollider(NiPSysCollider * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Bounce = readfloat (READER);
 	obj->Spawn_on_Collide = readbool (READER);
 	obj->Die_on_Collide = readbool (READER);
@@ -5744,20 +5583,24 @@ void readNiPSysCollider (NiPSysCollider * obj, unsigned int ARG)
 	obj->Collider_Object = readPtr (READER);
 }
 
-void readbhkRefObject (bhkRefObject * obj, unsigned int ARG)
+inline void
+readbhkRefObject(bhkRefObject * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 }
 
-void readbhkSerializable (bhkSerializable * obj, unsigned int ARG)
+void
+readbhkSerializable(bhkSerializable * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkRefObject));
 	readbhkRefObject (obj->parent, 0);
 }
 
-void readbhkWorldObject (bhkWorldObject * obj, unsigned int ARG)
+void
+readbhkWorldObject(bhkWorldObject * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkSerializable));
 	readbhkSerializable (obj->parent, 0);
 	obj->Shape = readRef (READER);
@@ -5766,134 +5609,125 @@ void readbhkWorldObject (bhkWorldObject * obj, unsigned int ARG)
 	obj->Unknown_Short = readushort (READER);
 }
 
-void readbhkPhantom (bhkPhantom * obj, unsigned int ARG)
+void
+readbhkPhantom(bhkPhantom * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkWorldObject));
 	readbhkWorldObject (obj->parent, 0);
 }
 
-void readbhkShapePhantom (bhkShapePhantom * obj, unsigned int ARG)
+void
+readbhkShapePhantom(bhkShapePhantom * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkPhantom));
 	readbhkPhantom (obj->parent, 0);
 }
 
-void readbhkSimpleShapePhantom (bhkSimpleShapePhantom * obj, unsigned int ARG)
+void
+readbhkSimpleShapePhantom(bhkSimpleShapePhantom * obj, unsigned int ARG)
 {
-	int i, j;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkShapePhantom));
 	readbhkShapePhantom (obj->parent, 0);
-	// init 1d array
-	obj->Unkown_Floats = GETMEM ((7) * sizeof (float));
-	// read 1d array
-	for (i = 0; i < (7); i++)
-		obj->Unkown_Floats[i] = readfloat (READER);
-	// init 2d array
-	obj->Unknown_Floats_2 = GETMEM ((3) * sizeof (float *));
-	for (i = 0; i < (3); i++)
-		obj->Unknown_Floats_2[i] = GETMEM ((5) * sizeof (float));
-	// read 2d array
-	for (i = 0; i < (3); i++)
-		for (j = 0; j < (5); j++)
-			obj->Unknown_Floats_2[i][j] = readfloat (READER);
+	READ (float, &(obj->Unkown_Floats[0]), 7, SIZEOFDWORD, "readbhkSimpleShapePhantom")
+	READ (float, &(obj->Unknown_Floats_2[0]), 3*5, SIZEOFDWORD, "readbhkSimpleShapePhantom")
 	obj->Unknown_Float = readfloat (READER);
 }
 
-void readbhkEntity (bhkEntity * obj, unsigned int ARG)
+void
+readbhkEntity(bhkEntity * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkWorldObject));
 	readbhkWorldObject (obj->parent, 0);
 }
 
-void readbhkRigidBody (bhkRigidBody * obj, unsigned int ARG)
+void
+readbhkRigidBody(bhkRigidBody * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
+	//int i;
 	obj->parent = GETMEM (sizeof (bhkEntity));
 	readbhkEntity (obj->parent, 0);
 	obj->Unknown_Int_1 = readint (READER);
 	obj->Unknown_Int_2 = readint (READER);
-	// init 1d array
-	obj->Unknown_3_Ints = GETMEM ((3) * sizeof (int));
-	// read 1d array
-	for (i = 0; i < (3); i++)
-		obj->Unknown_3_Ints[i] = readint (READER);
+	READ (int, &(obj->Unknown_3_Ints[0]), 3, SIZEOFDWORD, "readbhkRigidBody")
 	obj->Collision_Response_ = readbyte (READER);
 	obj->Unknown_Byte = readbyte (READER);
 	obj->Process_Contact_Callback_Delay_ = readushort (READER);
-	// init 1d array
-	obj->Unknown_2_Shorts = GETMEM ((2) * sizeof (unsigned short));
-	// read 1d array
-	for (i = 0; i < (2); i++)
-		obj->Unknown_2_Shorts[i] = readushort (READER);
+	READ (ushort, &(obj->Unknown_2_Shorts[0]), 2, SIZEOFWORD, "readbhkRigidBody")
 	obj->Layer_Copy = readbyte (READER);
 	obj->Col_Filter_Copy = readbyte (READER);
-	// init 1d array
-	obj->Unknown_7_Shorts = GETMEM ((7) * sizeof (unsigned short));
-	// read 1d array
-	for (i = 0; i < (7); i++)
-		obj->Unknown_7_Shorts[i] = readushort (READER);
+	READ (ushort, &(obj->Unknown_7_Shorts[0]), 7, SIZEOFWORD, "readbhkRigidBody")
 	readVector4 (&obj->Translation, 0);
 	readQuaternionXYZW (&obj->Rotation, 0);
 	readVector4 (&obj->Linear_Velocity, 0);
 	readVector4 (&obj->Angular_Velocity, 0);
 	readInertiaMatrix (&obj->Inertia, 0);
 	readVector4 (&obj->Center, 0);
-	obj->Mass = readfloat (READER);
+	READ (float, &(obj->Mass), 8, SIZEOFDWORD, "readbhkRigidBody")
+	/*obj->Mass = readfloat (READER);
 	obj->Linear_Damping = readfloat (READER);
 	obj->Angular_Damping = readfloat (READER);
 	obj->Friction = readfloat (READER);
 	obj->Restitution = readfloat (READER);
 	obj->Max_Linear_Velocity = readfloat (READER);
 	obj->Max_Angular_Velocity = readfloat (READER);
-	obj->Penetration_Depth = readfloat (READER);
-	obj->Motion_System = readbyte (READER);
+	obj->Penetration_Depth = readfloat (READER);*/
+	READ (byte, &(obj->Motion_System), 4, 1, "readbhkRigidBody")
+	/*obj->Motion_System = readbyte (READER);
 	obj->Deactivator_Type = readbyte (READER);
 	obj->Solver_Deactivation = readbyte (READER);
-	obj->Quality_Type = readbyte (READER);
-	obj->Auto_Remove_Level = readuint (READER);
+	obj->Quality_Type = readbyte (READER);*/
+	READ (uint, &(obj->Auto_Remove_Level), 4, SIZEOFDWORD, "readbhkRigidBody")
+	/*obj->Auto_Remove_Level = readuint (READER);
 	obj->User_Datas_In_Contact_Point_Properties_ = readuint (READER);
 	obj->Force_Collide_Onto_Ppu_ = readuint (READER);
-	obj->Num_Constraints = readuint (READER);
-	// init 1d array
+	obj->Num_Constraints = readuint (READER);*/
+	PROTECT_LEN (obj->Num_Constraints, 2000000, "readbhkRigidBody")
 	obj->Constraints =
-	    GETMEM ((obj->Num_Constraints) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Constraints); i++)
-		obj->Constraints[i] = readRef (READER);
+	    GETMEM ((obj->Num_Constraints) * sizeof (NIFuint));
+	READ (uint, obj->Constraints, obj->Num_Constraints, SIZEOFDWORD, "readbhkRigidBody")
 	obj->Unknown_Int_9 = readuint (READER);
 }
 
-void readbhkRigidBodyT (bhkRigidBodyT * obj, unsigned int ARG)
+void
+readbhkRigidBodyT(bhkRigidBodyT * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkRigidBody));
 	readbhkRigidBody (obj->parent, 0);
 }
 
-void readbhkConstraint (bhkConstraint * obj, unsigned int ARG)
+void
+readbhkConstraint(bhkConstraint * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkSerializable));
 	readbhkSerializable (obj->parent, 0);
 	obj->Num_Entities = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Entities, 2000000, "readbhkConstraint")
 	obj->Entities = GETMEM ((obj->Num_Entities) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Entities); i++)
-		obj->Entities[i] = readPtr (READER);
+	READ (uint, obj->Entities, obj->Num_Entities, SIZEOFDWORD, "readbhkConstraint")
 	obj->Priority = readuint (READER);
 }
 
 void
-readbhkLimitedHingeConstraint (bhkLimitedHingeConstraint * obj,
+readbhkLimitedHingeConstraint(bhkLimitedHingeConstraint * obj,
 			       unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConstraint));
 	readbhkConstraint (obj->parent, 0);
 	readLimitedHingeDescriptor (&obj->Limited_Hinge, 0);
 }
 
-void readbhkMalleableConstraint (bhkMalleableConstraint * obj, unsigned int ARG)
+void
+readbhkMalleableConstraint(bhkMalleableConstraint * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConstraint));
 	readbhkConstraint (obj->parent, 0);
 	obj->Type = readuint (READER);
@@ -5904,10 +5738,10 @@ void readbhkMalleableConstraint (bhkMalleableConstraint * obj, unsigned int ARG)
 	if ((obj->Type == 1)) {
 		readHingeDescriptor (&obj->Hinge, 0);
 	}
-	if ((obj->Type == 7)) {
+	else if ((obj->Type == 7)) {
 		readRagdollDescriptor (&obj->Ragdoll, 0);
 	}
-	if ((obj->Type == 2)) {
+	else if ((obj->Type == 2)) {
 		readLimitedHingeDescriptor (&obj->Limited_Hinge, 0);
 	}
 	if (VersionCheck (0, 0x14000005)) {
@@ -5917,8 +5751,9 @@ void readbhkMalleableConstraint (bhkMalleableConstraint * obj, unsigned int ARG)
 }
 
 void
-readbhkStiffSpringConstraint (bhkStiffSpringConstraint * obj, unsigned int ARG)
+readbhkStiffSpringConstraint(bhkStiffSpringConstraint * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConstraint));
 	readbhkConstraint (obj->parent, 0);
 	readVector4 (&obj->Pivot_A, 0);
@@ -5926,29 +5761,24 @@ readbhkStiffSpringConstraint (bhkStiffSpringConstraint * obj, unsigned int ARG)
 	obj->Length = readfloat (READER);
 }
 
-void readbhkRagdollConstraint (bhkRagdollConstraint * obj, unsigned int ARG)
+void
+readbhkRagdollConstraint(bhkRagdollConstraint * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConstraint));
 	readbhkConstraint (obj->parent, 0);
 	readRagdollDescriptor (&obj->Ragdoll, 0);
 }
 
-void readbhkPrismaticConstraint (bhkPrismaticConstraint * obj, unsigned int ARG)
+void
+readbhkPrismaticConstraint(bhkPrismaticConstraint * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConstraint));
 	readbhkConstraint (obj->parent, 0);
 	if (VersionCheck (0, 0x14000005)) {
 		readVector4 (&obj->Pivot_A, 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
-		// init 1d array
-		obj->Rotation_Matrix_A = GETMEM ((4) * sizeof (Vector4));
-		// read 1d array
-		for (i = 0; i < (4); i++)
-			readVector4 (&obj->Rotation_Matrix_A[i], 0);
-	}
-	if (VersionCheck (0, 0x14000005)) {
+		READ (float, &(obj->Rotation_Matrix_A[0].x), 4*4, SIZEOFDWORD, "readbhkPrismaticConstraint")
 		readVector4 (&obj->Pivot_B, 0);
 		readVector4 (&obj->Sliding_B, 0);
 		readVector4 (&obj->Plane_B, 0);
@@ -5957,7 +5787,11 @@ void readbhkPrismaticConstraint (bhkPrismaticConstraint * obj, unsigned int ARG)
 		readVector4 (&obj->Sliding_A, 0);
 		readVector4 (&obj->Rotation_A, 0);
 		readVector4 (&obj->Plane_A, 0);
+		readVector4 (&obj->Pivot_A, 0);
+		readVector4 (&obj->Sliding_B, 0);
 		readVector4 (&obj->Rotation_B, 0);
+		readVector4 (&obj->Plane_B, 0);
+		readVector4 (&obj->Pivot_B, 0);
 	}
 	obj->Min_Distance = readfloat (READER);
 	obj->Max_Distance = readfloat (READER);
@@ -5967,123 +5801,123 @@ void readbhkPrismaticConstraint (bhkPrismaticConstraint * obj, unsigned int ARG)
 	}
 }
 
-void readbhkHingeConstraint (bhkHingeConstraint * obj, unsigned int ARG)
+void
+readbhkHingeConstraint(bhkHingeConstraint * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConstraint));
 	readbhkConstraint (obj->parent, 0);
 	readHingeDescriptor (&obj->Hinge, 0);
 }
 
-void readbhkShape (bhkShape * obj, unsigned int ARG)
+void
+readbhkShape(bhkShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkSerializable));
 	readbhkSerializable (obj->parent, 0);
 }
 
-void readbhkTransformShape (bhkTransformShape * obj, unsigned int ARG)
+void
+readbhkTransformShape(bhkTransformShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkShape));
 	readbhkShape (obj->parent, 0);
 	obj->Shape = readRef (READER);
 	obj->Material = readuint (READER);
 	obj->Unknown_Float_1 = readfloat (READER);
-	// init 1d array
-	obj->Unknown_8_Bytes = GETMEM ((8) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (8); i++)
-		obj->Unknown_8_Bytes[i] = readbyte (READER);
+	READ (byte, &(obj->Unknown_8_Bytes[0]), 8, 1, "readbhkTransformShape")
 	readMatrix44 (&obj->Transform, 0);
 }
 
-void readbhkSphereRepShape (bhkSphereRepShape * obj, unsigned int ARG)
+void
+readbhkSphereRepShape(bhkSphereRepShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkShape));
 	readbhkShape (obj->parent, 0);
 	obj->Material = readuint (READER);
 	obj->Radius = readfloat (READER);
 }
 
-void readbhkConvexShape (bhkConvexShape * obj, unsigned int ARG)
+void
+readbhkConvexShape(bhkConvexShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkSphereRepShape));
 	readbhkSphereRepShape (obj->parent, 0);
 }
 
-void readbhkSphereShape (bhkSphereShape * obj, unsigned int ARG)
+void
+readbhkSphereShape(bhkSphereShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConvexShape));
 	readbhkConvexShape (obj->parent, 0);
 }
 
-void readbhkCapsuleShape (bhkCapsuleShape * obj, unsigned int ARG)
+void
+readbhkCapsuleShape(bhkCapsuleShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConvexShape));
 	readbhkConvexShape (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_8_Bytes = GETMEM ((8) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (8); i++)
-		obj->Unknown_8_Bytes[i] = readbyte (READER);
+	READ (byte, &(obj->Unknown_8_Bytes[0]), 8, 1, "readbhkCapsuleShape")
 	readVector3 (&obj->First_Point, 0);
 	obj->Radius_1 = readfloat (READER);
 	readVector3 (&obj->Second_Point, 0);
 	obj->Radius_2 = readfloat (READER);
 }
 
-void readbhkBoxShape (bhkBoxShape * obj, unsigned int ARG)
+void
+readbhkBoxShape(bhkBoxShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConvexShape));
 	readbhkConvexShape (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_8_Bytes = GETMEM ((8) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (8); i++)
-		obj->Unknown_8_Bytes[i] = readbyte (READER);
+	READ (byte, &(obj->Unknown_8_Bytes[0]), 8, 1, "readbhkBoxShape")
 	readVector3 (&obj->Dimensions, 0);
 	obj->Minimum_Size = readfloat (READER);
 }
 
-void readbhkConvexVerticesShape (bhkConvexVerticesShape * obj, unsigned int ARG)
+void
+readbhkConvexVerticesShape(bhkConvexVerticesShape * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConvexShape));
 	readbhkConvexShape (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_6_Floats = GETMEM ((6) * sizeof (float));
-	// read 1d array
-	for (i = 0; i < (6); i++)
-		obj->Unknown_6_Floats[i] = readfloat (READER);
+	READ (float, &(obj->Unknown_6_Floats[0]), 6, SIZEOFDWORD, "readbhkConvexVerticesShape")
 	obj->Num_Vertices = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Vertices, 2000000, "readbhkConvexVerticesShape")
 	obj->Vertices = GETMEM ((obj->Num_Vertices) * sizeof (Vector4));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Vertices); i++)
-		readVector4 (&obj->Vertices[i], 0);
+	if (obj->Num_Vertices > 0)
+		READ (float, &(obj->Vertices[0].x), obj->Num_Vertices*4, SIZEOFDWORD, "readbhkConvexVerticesShape")
 	obj->Num_Normals = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Normals, 2000000, "readbhkConvexVerticesShape")
 	obj->Normals = GETMEM ((obj->Num_Normals) * sizeof (Vector4));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Normals); i++)
-		readVector4 (&obj->Normals[i], 0);
+	if (obj->Num_Normals > 0)
+		READ (float, &(obj->Normals[0].x), obj->Num_Normals*4, SIZEOFDWORD, "readbhkConvexVerticesShape")
 }
 
 void
-readbhkConvexTransformShape (bhkConvexTransformShape * obj, unsigned int ARG)
+readbhkConvexTransformShape(bhkConvexTransformShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkTransformShape));
 	readbhkTransformShape (obj->parent, 0);
 }
 
-void readbhkMultiSphereShape (bhkMultiSphereShape * obj, unsigned int ARG)
+void
+readbhkMultiSphereShape(bhkMultiSphereShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkSphereRepShape));
 	readbhkSphereRepShape (obj->parent, 0);
 	obj->Unknown_Float_1 = readfloat (READER);
 	obj->Unknown_Float_2 = readfloat (READER);
 	obj->Num_Spheres = readuint (READER);
+	PROTECT_LEN (obj->Num_Spheres, 2000000, "readbhkMultiSphereShape")
 	// init 1d array
 	obj->Spheres = GETMEM ((obj->Num_Spheres) * sizeof (SphereBV));
 	// read 1d array
@@ -6092,15 +5926,18 @@ void readbhkMultiSphereShape (bhkMultiSphereShape * obj, unsigned int ARG)
 		readSphereBV (&obj->Spheres[i], 0);
 }
 
-void readbhkBvTreeShape (bhkBvTreeShape * obj, unsigned int ARG)
+void
+readbhkBvTreeShape(bhkBvTreeShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkShape));
 	readbhkShape (obj->parent, 0);
 }
 
-void readbhkMoppBvTreeShape (bhkMoppBvTreeShape * obj, unsigned int ARG)
+void
+readbhkMoppBvTreeShape(bhkMoppBvTreeShape * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkBvTreeShape));
 	readbhkBvTreeShape (obj->parent, 0);
 	obj->Shape = readRef (READER);
@@ -6109,107 +5946,79 @@ void readbhkMoppBvTreeShape (bhkMoppBvTreeShape * obj, unsigned int ARG)
 	obj->Unknown_Int_2 = readuint (READER);
 	obj->Unknown_Float = readfloat (READER);
 	obj->MOPP_Data_Size = readuint (READER);
+	PROTECT_LEN (obj->MOPP_Data_Size, 2000000, "readbhkMoppBvTreeShape")
 	readVector3 (&obj->Origin, 0);
 	obj->Scale = readfloat (READER);
 	if (VersionCheck (0, 0x0A000100)) {
-		// init 1d array
 		obj->Old_MOPP_Data =
-		    GETMEM ((obj->MOPP_Data_Size - 1) * sizeof (byte));
-		// read 1d array
-		for (i = 0; i < (obj->MOPP_Data_Size - 1); i++)
-			obj->Old_MOPP_Data[i] = readbyte (READER);
+		    GETMEM ((obj->MOPP_Data_Size - 1));
+		READ (byte, obj->Old_MOPP_Data, obj->MOPP_Data_Size - 1, 1, "readbhkMoppBvTreeShape")
 	}
 	if (VersionCheck (0x0A000102, 0)) {
-		// init 1d array
-		obj->MOPP_Data = GETMEM ((obj->MOPP_Data_Size) * sizeof (byte));
-		// read 1d array
-		for (i = 0; i < (obj->MOPP_Data_Size); i++)
-			obj->MOPP_Data[i] = readbyte (READER);
-	}
-}
-
-void readbhkShapeCollection (bhkShapeCollection * obj, unsigned int ARG)
-{
-	obj->parent = GETMEM (sizeof (bhkShape));
-	readbhkShape (obj->parent, 0);
-}
-
-void readbhkListShape (bhkListShape * obj, unsigned int ARG)
-{
-	int i;
-	obj->parent = GETMEM (sizeof (bhkShapeCollection));
-	readbhkShapeCollection (obj->parent, 0);
-	obj->Num_Sub_Shapes = readuint (READER);
-	// init 1d array
-	obj->Sub_Shapes =
-	    GETMEM ((obj->Num_Sub_Shapes) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Sub_Shapes); i++)
-		obj->Sub_Shapes[i] = readRef (READER);
-	obj->Material = readuint (READER);
-	// init 1d array
-	obj->Unknown_Floats = GETMEM ((6) * sizeof (float));
-	// read 1d array
-	for (i = 0; i < (6); i++)
-		obj->Unknown_Floats[i] = readfloat (READER);
-	obj->Num_Unknown_Ints = readuint (READER);
-	// init 1d array
-	obj->Unknown_Ints =
-	    GETMEM ((obj->Num_Unknown_Ints) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Unknown_Ints); i++)
-		obj->Unknown_Ints[i] = readuint (READER);
-}
-
-void readbhkMeshShape (bhkMeshShape * obj, unsigned int ARG)
-{
-	int i, j;
-	obj->parent = GETMEM (sizeof (bhkShape));
-	readbhkShape (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_1 = GETMEM ((9) * sizeof (float));
-	// read 1d array
-	for (i = 0; i < (9); i++)
-		obj->Unknown_1[i] = readfloat (READER);
-	obj->Num_Unknown_Floats = readint (READER);
-	// init 2d array
-	obj->Unknown_Floats =
-	    GETMEM ((obj->Num_Unknown_Floats) * sizeof (float *));
-	for (i = 0; i < (obj->Num_Unknown_Floats); i++)
-		obj->Unknown_Floats[i] = GETMEM ((3) * sizeof (float));
-	// read 2d array
-	for (i = 0; i < (obj->Num_Unknown_Floats); i++)
-		for (j = 0; j < (3); j++)
-			obj->Unknown_Floats[i][j] = readfloat (READER);
-	// init 1d array
-	obj->Unknown_2 = GETMEM ((3) * sizeof (int));
-	// read 1d array
-	for (i = 0; i < (3); i++)
-		obj->Unknown_2[i] = readint (READER);
-	if (VersionCheck (0, 0x0A000100)) {
-		obj->Num_Strips_Data = readuint (READER);
-	}
-	if (VersionCheck (0, 0x0A000100)) {
-		// init 1d array
-		obj->Strips_Data =
-		    GETMEM ((obj->Num_Strips_Data) * sizeof (unsigned int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Strips_Data); i++)
-			obj->Strips_Data[i] = readRef (READER);
+		obj->MOPP_Data = GETMEM ((obj->MOPP_Data_Size));
+		READ (byte, obj->MOPP_Data, obj->MOPP_Data_Size, 1, "readbhkMoppBvTreeShape")
 	}
 }
 
 void
-readbhkPackedNiTriStripsShape (bhkPackedNiTriStripsShape * obj,
-			       unsigned int ARG)
+readbhkShapeCollection(bhkShapeCollection * obj, unsigned int ARG)
 {
+	COVERAGE
+	obj->parent = GETMEM (sizeof (bhkShape));
+	readbhkShape (obj->parent, 0);
+}
+
+void
+readbhkListShape(bhkListShape * obj, unsigned int ARG)
+{
+	COVERAGE
+	obj->parent = GETMEM (sizeof (bhkShapeCollection));
+	readbhkShapeCollection (obj->parent, 0);
+	obj->Num_Sub_Shapes = readuint (READER);
+	PROTECT_LEN (obj->Num_Sub_Shapes, 2000000, "readbhkListShape")
+	obj->Sub_Shapes =
+	    GETMEM ((obj->Num_Sub_Shapes) * sizeof (unsigned int));
+	READ (uint, obj->Sub_Shapes, obj->Num_Sub_Shapes, SIZEOFDWORD, "readbhkListShape")
+	obj->Material = readuint (READER);
+	READ (float, &(obj->Unknown_Floats[0]), 6, SIZEOFDWORD, "readbhkListShape")
+	obj->Num_Unknown_Ints = readuint (READER);
+	PROTECT_LEN (obj->Num_Unknown_Ints, 2000000, "readbhkListShape")
+	obj->Unknown_Ints =
+	    GETMEM ((obj->Num_Unknown_Ints) * sizeof (unsigned int));
+	READ (uint, obj->Unknown_Ints, obj->Num_Unknown_Ints, SIZEOFDWORD, "readbhkListShape")
+}
+
+void
+readbhkMeshShape(bhkMeshShape * obj, unsigned int ARG)
+{
+	COVERAGE
+	obj->parent = GETMEM (sizeof (bhkShape));
+	readbhkShape (obj->parent, 0);
+	READ (float, &(obj->Unknown_1[0]), 9, SIZEOFDWORD, "readbhkMeshShape")
+	obj->Num_Unknown_Floats = readint (READER);
+	NIFint len = obj->Num_Unknown_Floats * 3;
+	PROTECT_LEN (len, 2000000, "readbhkMeshShape")
+	obj->Unknown_Floats = GETMEM (len * sizeof (NIFfloat));
+	READ (float, obj->Unknown_Floats, len, SIZEOFDWORD, "readbhkMeshShape")
+	READ (int, &(obj->Unknown_2[0]), 3, SIZEOFDWORD, "readbhkMeshShape")
+	if (VersionCheck (0, 0x0A000100)) {
+		obj->Num_Strips_Data = readuint (READER);
+		PROTECT_LEN (obj->Num_Strips_Data, 2000000, "readbhkMeshShape")
+		obj->Strips_Data =
+		    GETMEM ((obj->Num_Strips_Data) * sizeof (unsigned int));
+		READ (uint, obj->Strips_Data, obj->Num_Strips_Data, SIZEOFDWORD, "readbhkMeshShape")
+	}
+}
+
+void
+readbhkPackedNiTriStripsShape(bhkPackedNiTriStripsShape * obj, unsigned int ARG)
+{
+	COVERAGE
 	int i;
 	obj->parent = GETMEM (sizeof (bhkShapeCollection));
 	readbhkShapeCollection (obj->parent, 0);
 	if (VersionCheck (0, 0x14000005)) {
 		obj->Num_Sub_Shapes = readushort (READER);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		// init 1d array
 		obj->Sub_Shapes =
 		    GETMEM ((obj->Num_Sub_Shapes) * sizeof (OblivionSubShape));
@@ -6229,42 +6038,39 @@ readbhkPackedNiTriStripsShape (bhkPackedNiTriStripsShape * obj,
 	obj->Data = readRef (READER);
 }
 
-void readbhkNiTriStripsShape (bhkNiTriStripsShape * obj, unsigned int ARG)
+void
+readbhkNiTriStripsShape(bhkNiTriStripsShape * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkShapeCollection));
 	readbhkShapeCollection (obj->parent, 0);
 	obj->Material = readuint (READER);
 	obj->Unknown_Float_1 = readfloat (READER);
 	obj->Unknown_Int_1 = readuint (READER);
-	// init 1d array
-	obj->Unknown_Ints_1 = GETMEM ((4) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (4); i++)
-		obj->Unknown_Ints_1[i] = readuint (READER);
+	READ (uint, &(obj->Unknown_Ints_1[0]), 4, SIZEOFDWORD, "readbhkNiTriStripsShape")
 	obj->Unknown_Int_2 = readuint (READER);
 	readVector3 (&obj->Scale, 0);
 	obj->Unknown_Int_3 = readuint (READER);
 	obj->Num_Strips_Data = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Strips_Data, 2000000, "readbhkNiTriStripsShape")
 	obj->Strips_Data =
 	    GETMEM ((obj->Num_Strips_Data) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Strips_Data); i++)
-		obj->Strips_Data[i] = readRef (READER);
+	READ (uint, obj->Strips_Data, obj->Num_Strips_Data, SIZEOFDWORD, "readbhkNiTriStripsShape")
 	obj->Num_Data_Layers = readuint (READER);
+	PROTECT_LEN (obj->Num_Data_Layers, 2000000, "readbhkNiTriStripsShape")
 	// init 1d array
 	obj->Data_Layers =
 	    GETMEM ((obj->Num_Data_Layers) * sizeof (OblivionColFilter));
 	// read 1d array
+	int i;
 	for (i = 0; i < (obj->Num_Data_Layers); i++)
 		readOblivionColFilter (&obj->Data_Layers[i], 0);
 }
 
-void readNiExtraData (NiExtraData * obj, unsigned int ARG)
+void
+readNiExtraData(NiExtraData * obj, unsigned int ARG)
 {
-	//obj->parent = GETMEM (sizeof (NiObject));
-	//readNiObject (obj->parent, 0);
+	COVERAGE
 	if (VersionCheck (0x0A000100, 0)) {
 		readstring (&obj->Name, 0);
 	}
@@ -6273,20 +6079,24 @@ void readNiExtraData (NiExtraData * obj, unsigned int ARG)
 	}
 }
 
-void readNiInterpolator (NiInterpolator * obj, unsigned int ARG)
+inline void
+readNiInterpolator(NiInterpolator * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 }
 
-void readNiKeyBasedInterpolator (NiKeyBasedInterpolator * obj, unsigned int ARG)
+void
+readNiKeyBasedInterpolator(NiKeyBasedInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpolator));
 	readNiInterpolator (obj->parent, 0);
 }
 
-void readNiFloatInterpolator (NiFloatInterpolator * obj, unsigned int ARG)
+void
+readNiFloatInterpolator(NiFloatInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiKeyBasedInterpolator));
 	readNiKeyBasedInterpolator (obj->parent, 0);
 	obj->Float_Value = readfloat (READER);
@@ -6294,34 +6104,34 @@ void readNiFloatInterpolator (NiFloatInterpolator * obj, unsigned int ARG)
 }
 
 void
-readNiTransformInterpolator (NiTransformInterpolator * obj, unsigned int ARG)
+readNiTransformInterpolator(NiTransformInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiKeyBasedInterpolator));
 	readNiKeyBasedInterpolator (obj->parent, 0);
 	readVector3 (&obj->Translation, 0);
 	readQuaternion (&obj->Rotation, 0);
 	obj->Scale = readfloat (READER);
 	if (VersionCheck (0x0A01006A, 0x0A01006A)) {
-		// init 1d array
-		obj->Unknown_Bytes = GETMEM ((3) * sizeof (byte));
-		// read 1d array
-		int i;
-		for (i = 0; i < (3); i++)
-			obj->Unknown_Bytes[i] = readbyte (READER);
+		READ (byte, &(obj->Unknown_Bytes[0]), 3, 1, "readNiTransformInterpolator")
 	}
 	obj->Data = readRef (READER);
 }
 
-void readNiPoint3Interpolator (NiPoint3Interpolator * obj, unsigned int ARG)
+void
+readNiPoint3Interpolator(NiPoint3Interpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiKeyBasedInterpolator));
 	readNiKeyBasedInterpolator (obj->parent, 0);
 	readVector3 (&obj->Point_3_Value, 0);
 	obj->Data = readRef (READER);
 }
 
-void readNiPathInterpolator (NiPathInterpolator * obj, unsigned int ARG)
+void
+readNiPathInterpolator(NiPathInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiKeyBasedInterpolator));
 	readNiKeyBasedInterpolator (obj->parent, 0);
 	obj->Unknown_Short = readushort (READER);
@@ -6333,8 +6143,10 @@ void readNiPathInterpolator (NiPathInterpolator * obj, unsigned int ARG)
 	obj->Float_Data = readRef (READER);
 }
 
-void readNiBoolInterpolator (NiBoolInterpolator * obj, unsigned int ARG)
+void
+readNiBoolInterpolator(NiBoolInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiKeyBasedInterpolator));
 	readNiKeyBasedInterpolator (obj->parent, 0);
 	obj->Bool_Value = readbool (READER);
@@ -6342,23 +6154,27 @@ void readNiBoolInterpolator (NiBoolInterpolator * obj, unsigned int ARG)
 }
 
 void
-readNiBoolTimelineInterpolator (NiBoolTimelineInterpolator * obj,
-				unsigned int ARG)
+readNiBoolTimelineInterpolator(NiBoolTimelineInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBoolInterpolator));
 	readNiBoolInterpolator (obj->parent, 0);
 }
 
-void readNiBlendInterpolator (NiBlendInterpolator * obj, unsigned int ARG)
+void
+readNiBlendInterpolator(NiBlendInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpolator));
 	readNiInterpolator (obj->parent, 0);
 	obj->Unknown_Short = readushort (READER);
 	obj->Unknown_Int = readuint (READER);
 }
 
-void readNiBSplineInterpolator (NiBSplineInterpolator * obj, unsigned int ARG)
+void
+readNiBSplineInterpolator(NiBSplineInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpolator));
 	readNiInterpolator (obj->parent, 0);
 	obj->Start_Time = readfloat (READER);
@@ -6367,20 +6183,18 @@ void readNiBSplineInterpolator (NiBSplineInterpolator * obj, unsigned int ARG)
 	obj->Basis_Data = readRef (READER);
 }
 
-void readNiObjectNET (NiObjectNET * obj, unsigned int ARG)
+inline void
+readNiObjectNET(NiObjectNET * obj, unsigned int ARG)
 {
-	//obj->parent = GETMEM (sizeof (NiObject));
-	//readNiObject (obj->parent, 0);
+	COVERAGE
 	readstring (&obj->Name, 0);
 	if (VersionCheck (0, 0x02030000)) {
 		obj->Has_Old_Extra_Data = readuint (READER);
-	}
-	if (VersionCheck (0, 0x02030000) && (obj->Has_Old_Extra_Data)) {
-		readstring (&obj->Old_Extra_Prop_Name, 0);
-		obj->Old_Extra_Internal_Id = readuint (READER);
-		readstring (&obj->Old_Extra_String, 0);
-	}
-	if (VersionCheck (0, 0x02030000)) {
+		if (obj->Has_Old_Extra_Data) {
+			readstring (&obj->Old_Extra_Prop_Name, 0);
+			obj->Old_Extra_Internal_Id = readuint (READER);
+			readstring (&obj->Old_Extra_String, 0);
+		}
 		obj->Unknown_Byte = readbyte (READER);
 	}
 	if (VersionCheck (0x03000000, 0x04020200)) {
@@ -6388,32 +6202,29 @@ void readNiObjectNET (NiObjectNET * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0x0A000100, 0)) {
 		obj->Num_Extra_Data_List = readuint (READER);
+		PROTECT_LEN (obj->Num_Extra_Data_List, 2000000, "readNiObjectNET")
 		if (obj->Num_Extra_Data_List > 0) {
-			// init 1d array
 			obj->Extra_Data_List =
 		    	GETMEM ((obj->Num_Extra_Data_List) * sizeof (unsigned int));
-			// read 1d array
-			int i;
-			for (i = 0; i < (obj->Num_Extra_Data_List); i++)
-				obj->Extra_Data_List[i] = readRef (READER);
+			READ (uint, obj->Extra_Data_List, obj->Num_Extra_Data_List, SIZEOFDWORD, "readNiObjectNET")
 		}
 	}
 	if (VersionCheck (0x03000000, 0)) {
 		obj->Controller = readRef (READER);
 	}
-	//dbg ("   [NiObjectNET]");
-	//TellFilePos (READER);
 }
 
-void readNiCollisionObject (NiCollisionObject * obj, unsigned int ARG)
+void
+readNiCollisionObject(NiCollisionObject * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Target = readPtr (READER);
 }
 
-void readNiCollisionData (NiCollisionData * obj, unsigned int ARG)
+void
+readNiCollisionData(NiCollisionData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiCollisionObject));
 	readNiCollisionObject (obj->parent, 0);
 	obj->Propagation_Mode = readuint (READER);
@@ -6426,50 +6237,60 @@ void readNiCollisionData (NiCollisionData * obj, unsigned int ARG)
 	}
 }
 
-void readbhkNiCollisionObject (bhkNiCollisionObject * obj, unsigned int ARG)
+void
+readbhkNiCollisionObject(bhkNiCollisionObject * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiCollisionObject));
 	readNiCollisionObject (obj->parent, 0);
 	obj->Flags = readFlags (READER);
 	obj->Body = readRef (READER);
 }
 
-void readbhkCollisionObject (bhkCollisionObject * obj, unsigned int ARG)
+void
+readbhkCollisionObject(bhkCollisionObject * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkNiCollisionObject));
 	readbhkNiCollisionObject (obj->parent, 0);
 }
 
 void
-readbhkBlendCollisionObject (bhkBlendCollisionObject * obj, unsigned int ARG)
+readbhkBlendCollisionObject(bhkBlendCollisionObject * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkCollisionObject));
 	readbhkCollisionObject (obj->parent, 0);
 	obj->Unknown_Float_1 = readfloat (READER);
 	obj->Unknown_Float_2 = readfloat (READER);
 }
 
-void readbhkPCollisionObject (bhkPCollisionObject * obj, unsigned int ARG)
+void
+readbhkPCollisionObject(bhkPCollisionObject * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkNiCollisionObject));
 	readbhkNiCollisionObject (obj->parent, 0);
 }
 
-void readbhkSPCollisionObject (bhkSPCollisionObject * obj, unsigned int ARG)
+void
+readbhkSPCollisionObject(bhkSPCollisionObject * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkPCollisionObject));
 	readbhkPCollisionObject (obj->parent, 0);
 }
 
-void readNiAVObject (NiAVObject * obj, unsigned int ARG)
+inline void
+readNiAVObject(NiAVObject * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiObjectNET));
 	readNiObjectNET (obj->parent, 0);
 	if (VersionCheck (0x03000000, 0)) {
 		obj->Flags = readFlags (READER);
 	}
 	if (VersionCheck (0x14020007, 0)
-	    && ((User_Version == 11) && (User_Version_2 > 26))
 	    && ((User_Version == 11) && (User_Version_2 > 26))) {
 		obj->Unknown_Short_1 = readushort (READER);
 	}
@@ -6480,38 +6301,30 @@ void readNiAVObject (NiAVObject * obj, unsigned int ARG)
 		readVector3 (&obj->Velocity, 0);
 	}
 	obj->Num_Properties = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Properties, 2000000, "readNiAVObject")
 	obj->Properties =
 	    GETMEM ((obj->Num_Properties) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Properties); i++)
-		obj->Properties[i] = readRef (READER);
+	READ (uint, obj->Properties, obj->Num_Properties, SIZEOFDWORD, "readNiAVObject")
 	if (VersionCheck (0, 0x02030000)) {
-		// init 1d array
-		obj->Unknown_1 = GETMEM ((4) * sizeof (unsigned int));
-		// read 1d array
-		for (i = 0; i < (4); i++)
-			obj->Unknown_1[i] = readuint (READER);
+		READ (uint, &(obj->Unknown_1[0]), 4, SIZEOFDWORD, "readNiAVObject")
 	}
 	if (VersionCheck (0, 0x02030000)) {
 		obj->Unknown_2 = readbyte (READER);
 	}
 	if (VersionCheck (0x03000000, 0x04020200)) {
 		obj->Has_Bounding_Box = readbool (READER);
-	}
-	if (VersionCheck (0x03000000, 0x04020200)
-	    && (obj->Has_Bounding_Box != 0)) {
-		readBoundingBox (&obj->Bounding_Box, 0);
+		if (obj->Has_Bounding_Box != 0)
+			readBoundingBox (&obj->Bounding_Box, 0);
 	}
 	if (VersionCheck (0x0A000100, 0)) {
 		obj->Collision_Object = readRef (READER);
 	}
 }
 
-void readNiDynamicEffect (NiDynamicEffect * obj, unsigned int ARG)
+void
+readNiDynamicEffect(NiDynamicEffect * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiAVObject));
 	readNiAVObject (obj->parent, 0);
 	if (VersionCheck (0x0A01006A, 0)) {
@@ -6519,31 +6332,29 @@ void readNiDynamicEffect (NiDynamicEffect * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0, 0x04000002)) {
 		obj->Num_Affected_Node_List_Pointers = readuint (READER);
+		PROTECT_LEN (obj->Num_Affected_Node_List_Pointers, 2000000, "readNiDynamicEffect")
 	}
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Num_Affected_Nodes = readuint (READER);
+		PROTECT_LEN (obj->Num_Affected_Nodes, 2000000, "readNiDynamicEffect")
 	}
 	if (VersionCheck (0, 0x04000002)) {
-		// init 1d array
 		obj->Affected_Node_List_Pointers =
 		    GETMEM ((obj->Num_Affected_Node_List_Pointers) *
 			    sizeof (unsigned int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Affected_Node_List_Pointers); i++)
-			obj->Affected_Node_List_Pointers[i] = readuint (READER);
+		READ (uint, obj->Affected_Node_List_Pointers, obj->Num_Affected_Node_List_Pointers, SIZEOFDWORD, "readNiDynamicEffect")
 	}
 	if (VersionCheck (0x0A010000, 0)) {
-		// init 1d array
 		obj->Affected_Nodes =
 		    GETMEM ((obj->Num_Affected_Nodes) * sizeof (unsigned int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Affected_Nodes); i++)
-			obj->Affected_Nodes[i] = readRef (READER);
+		READ (uint, obj->Affected_Nodes, obj->Num_Affected_Nodes, SIZEOFDWORD, "readNiDynamicEffect")
 	}
 }
 
-void readNiLight (NiLight * obj, unsigned int ARG)
+void
+readNiLight(NiLight * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiDynamicEffect));
 	readNiDynamicEffect (obj->parent, 0);
 	obj->Dimmer = readfloat (READER);
@@ -6552,44 +6363,46 @@ void readNiLight (NiLight * obj, unsigned int ARG)
 	readColor3 (&obj->Specular_Color, 0);
 }
 
-void readNiProperty (NiProperty * obj, unsigned int ARG)
+void
+readNiProperty(NiProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiObjectNET));
 	readNiObjectNET (obj->parent, 0);
 }
 
-void readNiTransparentProperty (NiTransparentProperty * obj, unsigned int ARG)
+void
+readNiTransparentProperty(NiTransparentProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
-	// init 1d array
-	obj->Unknown = GETMEM ((6) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (6); i++)
-		obj->Unknown[i] = readbyte (READER);
+	READ (byte, &(obj->Unknown[0]), 6, 1, "readNiTransparentProperty")
 }
 
-void readNiPSysModifier (NiPSysModifier * obj, unsigned int ARG)
+void
+readNiPSysModifier(NiPSysModifier * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readstring (&obj->Name, 0);
 	obj->Order = readuint (READER);
 	obj->Target = readPtr (READER);
 	obj->Active = readbool (READER);
 }
 
-void readNiPSysEmitter (NiPSysEmitter * obj, unsigned int ARG)
+void
+readNiPSysEmitter(NiPSysEmitter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
-	obj->Speed = readfloat (READER);
+	READ (float, &(obj->Speed), 6, SIZEOFDWORD, "readNiPSysEmitter")
+	/*obj->Speed = readfloat (READER);
 	obj->Speed_Variation = readfloat (READER);
 	obj->Declination = readfloat (READER);
 	obj->Declination_Variation = readfloat (READER);
 	obj->Planar_Angle = readfloat (READER);
-	obj->Planar_Angle_Variation = readfloat (READER);
+	obj->Planar_Angle_Variation = readfloat (READER);*/
 	readColor4 (&obj->Initial_Color, 0);
 	obj->Initial_Radius = readfloat (READER);
 	if (VersionCheck (0x0A040001, 0)) {
@@ -6599,8 +6412,10 @@ void readNiPSysEmitter (NiPSysEmitter * obj, unsigned int ARG)
 	obj->Life_Span_Variation = readfloat (READER);
 }
 
-void readNiPSysVolumeEmitter (NiPSysVolumeEmitter * obj, unsigned int ARG)
+void
+readNiPSysVolumeEmitter(NiPSysVolumeEmitter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysEmitter));
 	readNiPSysEmitter (obj->parent, 0);
 	if (VersionCheck (0x0A010000, 0)) {
@@ -6608,10 +6423,10 @@ void readNiPSysVolumeEmitter (NiPSysVolumeEmitter * obj, unsigned int ARG)
 	}
 }
 
-void readNiTimeController (NiTimeController * obj, unsigned int ARG)
+void
+readNiTimeController(NiTimeController * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Next_Controller = readRef (READER);
 	obj->Flags = readFlags (READER);
 	obj->Frequency = readfloat (READER);
@@ -6626,32 +6441,30 @@ void readNiTimeController (NiTimeController * obj, unsigned int ARG)
 	}
 }
 
-void readNiInterpController (NiInterpController * obj, unsigned int ARG)
+void
+readNiInterpController(NiInterpController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 }
 
 void
-readNiMultiTargetTransformController (NiMultiTargetTransformController * obj,
-				      unsigned int ARG)
+readNiMultiTargetTransformController(NiMultiTargetTransformController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpController));
 	readNiInterpController (obj->parent, 0);
 	obj->Num_Extra_Targets = readushort (READER);
-	// init 1d array
 	obj->Extra_Targets =
 	    GETMEM ((obj->Num_Extra_Targets) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Extra_Targets); i++)
-		obj->Extra_Targets[i] = readPtr (READER);
+	READ (uint, obj->Extra_Targets, obj->Num_Extra_Targets, SIZEOFDWORD, "readNiMultiTargetTransformController")
 }
 
 void
-readNiGeomMorpherController (NiGeomMorpherController * obj, unsigned int ARG)
+readNiGeomMorpherController(NiGeomMorpherController * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpController));
 	readNiInterpController (obj->parent, 0);
 	if (VersionCheck (0x0A000102, 0)) {
@@ -6664,56 +6477,53 @@ readNiGeomMorpherController (NiGeomMorpherController * obj, unsigned int ARG)
 	obj->Always_Update = readbyte (READER);
 	if (VersionCheck (0x0A01006A, 0)) {
 		obj->Num_Interpolators = readuint (READER);
+		PROTECT_LEN (obj->Num_Interpolators, 2000000, "readNiGeomMorpherController")
 	}
 	if (VersionCheck (0x0A01006A, 0x14000005)) {
-		// init 1d array
 		obj->Interpolators =
 		    GETMEM ((obj->Num_Interpolators) * sizeof (unsigned int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Interpolators); i++)
-			obj->Interpolators[i] = readRef (READER);
+		READ (uint, obj->Interpolators, obj->Num_Interpolators, SIZEOFDWORD, "readNiGeomMorpherController")
 	}
 	if (VersionCheck (0x14010003, 0)) {
 		// init 1d array
 		obj->Interpolator_Weights =
 		    GETMEM ((obj->Num_Interpolators) * sizeof (MorphWeight));
 		// read 1d array
+		int i;
 		for (i = 0; i < (obj->Num_Interpolators); i++)
 			readMorphWeight (&obj->Interpolator_Weights[i], 0);
 	}
 	if (VersionCheck (0x14000004, 0x14000005)
-	    && ((User_Version == 10) || (User_Version == 11))
 	    && ((User_Version == 10) || (User_Version == 11))) {
 		obj->Num_Unknown_Ints = readuint (READER);
-	}
-	if (VersionCheck (0x14000004, 0x14000005)
-	    && ((User_Version == 10) || (User_Version == 11))
-	    && ((User_Version == 10) || (User_Version == 11))) {
-		// init 1d array
+		PROTECT_LEN (obj->Num_Unknown_Ints, 2000000, "readNiGeomMorpherController")
 		obj->Unknown_Ints =
 		    GETMEM ((obj->Num_Unknown_Ints) * sizeof (unsigned int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Unknown_Ints); i++)
-			obj->Unknown_Ints[i] = readuint (READER);
+		READ (uint, obj->Unknown_Ints, obj->Num_Unknown_Ints, SIZEOFDWORD, "readNiGeomMorpherController")
 	}
 }
 
-void readNiMorphController (NiMorphController * obj, unsigned int ARG)
+void
+readNiMorphController(NiMorphController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpController));
 	readNiInterpController (obj->parent, 0);
 }
 
-void readNiMorpherController (NiMorpherController * obj, unsigned int ARG)
+void
+readNiMorpherController(NiMorpherController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpController));
 	readNiInterpController (obj->parent, 0);
 	obj->Data = readRef (READER);
 }
 
 void
-readNiSingleInterpController (NiSingleInterpController * obj, unsigned int ARG)
+readNiSingleInterpController(NiSingleInterpController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpController));
 	readNiInterpController (obj->parent, 0);
 	if (VersionCheck (0x0A020000, 0)) {
@@ -6721,8 +6531,10 @@ readNiSingleInterpController (NiSingleInterpController * obj, unsigned int ARG)
 	}
 }
 
-void readNiKeyframeController (NiKeyframeController * obj, unsigned int ARG)
+void
+readNiKeyframeController(NiKeyframeController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSingleInterpController));
 	readNiSingleInterpController (obj->parent, 0);
 	if (VersionCheck (0, 0x0A010000)) {
@@ -6730,21 +6542,27 @@ void readNiKeyframeController (NiKeyframeController * obj, unsigned int ARG)
 	}
 }
 
-void readNiTransformController (NiTransformController * obj, unsigned int ARG)
+void
+readNiTransformController(NiTransformController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiKeyframeController));
 	readNiKeyframeController (obj->parent, 0);
 }
 
-void readNiPSysModifierCtlr (NiPSysModifierCtlr * obj, unsigned int ARG)
+void
+readNiPSysModifierCtlr(NiPSysModifierCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSingleInterpController));
 	readNiSingleInterpController (obj->parent, 0);
 	readstring (&obj->Modifier_Name, 0);
 }
 
-void readNiPSysEmitterCtlr (NiPSysEmitterCtlr * obj, unsigned int ARG)
+void
+readNiPSysEmitterCtlr(NiPSysEmitterCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierCtlr));
 	readNiPSysModifierCtlr (obj->parent, 0);
 	if (VersionCheck (0, 0x0A010000)) {
@@ -6755,15 +6573,18 @@ void readNiPSysEmitterCtlr (NiPSysEmitterCtlr * obj, unsigned int ARG)
 	}
 }
 
-void readNiPSysModifierBoolCtlr (NiPSysModifierBoolCtlr * obj, unsigned int ARG)
+void
+readNiPSysModifierBoolCtlr(NiPSysModifierBoolCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierCtlr));
 	readNiPSysModifierCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysModifierActiveCtlr (NiPSysModifierActiveCtlr * obj, unsigned int ARG)
+readNiPSysModifierActiveCtlr(NiPSysModifierActiveCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierBoolCtlr));
 	readNiPSysModifierBoolCtlr (obj->parent, 0);
 	if (VersionCheck (0, 0x0A010000)) {
@@ -6772,8 +6593,9 @@ readNiPSysModifierActiveCtlr (NiPSysModifierActiveCtlr * obj, unsigned int ARG)
 }
 
 void
-readNiPSysModifierFloatCtlr (NiPSysModifierFloatCtlr * obj, unsigned int ARG)
+readNiPSysModifierFloatCtlr(NiPSysModifierFloatCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierCtlr));
 	readNiPSysModifierCtlr (obj->parent, 0);
 	if (VersionCheck (0, 0x0A010000)) {
@@ -6782,61 +6604,64 @@ readNiPSysModifierFloatCtlr (NiPSysModifierFloatCtlr * obj, unsigned int ARG)
 }
 
 void
-readNiPSysEmitterDeclinationCtlr (NiPSysEmitterDeclinationCtlr * obj,
-				  unsigned int ARG)
+readNiPSysEmitterDeclinationCtlr(NiPSysEmitterDeclinationCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysEmitterDeclinationVarCtlr (NiPSysEmitterDeclinationVarCtlr * obj,
-				     unsigned int ARG)
+readNiPSysEmitterDeclinationVarCtlr(NiPSysEmitterDeclinationVarCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysEmitterInitialRadiusCtlr (NiPSysEmitterInitialRadiusCtlr * obj,
-				    unsigned int ARG)
+readNiPSysEmitterInitialRadiusCtlr(NiPSysEmitterInitialRadiusCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysEmitterLifeSpanCtlr (NiPSysEmitterLifeSpanCtlr * obj,
-			       unsigned int ARG)
+readNiPSysEmitterLifeSpanCtlr(NiPSysEmitterLifeSpanCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
-void readNiPSysEmitterSpeedCtlr (NiPSysEmitterSpeedCtlr * obj, unsigned int ARG)
+void readNiPSysEmitterSpeedCtlr(NiPSysEmitterSpeedCtlr * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
-	readNiPSysModifierFloatCtlr (obj->parent, 0);
-}
-
-void
-readNiPSysGravityStrengthCtlr (NiPSysGravityStrengthCtlr * obj,
-			       unsigned int ARG)
-{
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiFloatInterpController (NiFloatInterpController * obj, unsigned int ARG)
+readNiPSysGravityStrengthCtlr(NiPSysGravityStrengthCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
+	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
+	readNiPSysModifierFloatCtlr (obj->parent, 0);
+}
+
+void
+readNiFloatInterpController(NiFloatInterpController * obj, unsigned int ARG)
+{
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSingleInterpController));
 	readNiSingleInterpController (obj->parent, 0);
 }
 
-void readNiFlipController (NiFlipController * obj, unsigned int ARG)
+void
+readNiFlipController(NiFlipController * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiFloatInterpController));
 	readNiFloatInterpController (obj->parent, 0);
 	obj->Texture_Slot = readuint (READER);
@@ -6847,26 +6672,23 @@ void readNiFlipController (NiFlipController * obj, unsigned int ARG)
 		obj->Delta = readfloat (READER);
 	}
 	obj->Num_Sources = readuint (READER);
+	PROTECT_LEN (obj->Num_Sources, 2000000, "readNiFlipController")
 	if (VersionCheck (0x04000000, 0)) {
-		// init 1d array
 		obj->Sources =
 		    GETMEM ((obj->Num_Sources) * sizeof (unsigned int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Sources); i++)
-			obj->Sources[i] = readRef (READER);
+		READ (uint, obj->Sources, obj->Num_Sources, SIZEOFDWORD, "readNiFlipController")
 	}
 	if (VersionCheck (0, 0x03010000)) {
-		// init 1d array
 		obj->Images =
 		    GETMEM ((obj->Num_Sources) * sizeof (unsigned int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Sources); i++)
-			obj->Images[i] = readRef (READER);
+		READ (uint, obj->Images, obj->Num_Sources, SIZEOFDWORD, "readNiFlipController")
 	}
 }
 
-void readNiAlphaController (NiAlphaController * obj, unsigned int ARG)
+void
+readNiAlphaController(NiAlphaController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiFloatInterpController));
 	readNiFloatInterpController (obj->parent, 0);
 	if (VersionCheck (0, 0x0A010000)) {
@@ -6875,9 +6697,9 @@ void readNiAlphaController (NiAlphaController * obj, unsigned int ARG)
 }
 
 void
-readNiTextureTransformController (NiTextureTransformController * obj,
-				  unsigned int ARG)
+readNiTextureTransformController(NiTextureTransformController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiFloatInterpController));
 	readNiFloatInterpController (obj->parent, 0);
 	obj->Unknown2 = readbyte (READER);
@@ -6889,20 +6711,25 @@ readNiTextureTransformController (NiTextureTransformController * obj,
 }
 
 void
-readNiLightDimmerController (NiLightDimmerController * obj, unsigned int ARG)
+readNiLightDimmerController(NiLightDimmerController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiFloatInterpController));
 	readNiFloatInterpController (obj->parent, 0);
 }
 
-void readNiBoolInterpController (NiBoolInterpController * obj, unsigned int ARG)
+void
+readNiBoolInterpController(NiBoolInterpController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSingleInterpController));
 	readNiSingleInterpController (obj->parent, 0);
 }
 
-void readNiVisController (NiVisController * obj, unsigned int ARG)
+void
+readNiVisController(NiVisController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBoolInterpController));
 	readNiBoolInterpController (obj->parent, 0);
 	if (VersionCheck (0, 0x0A010000)) {
@@ -6911,8 +6738,9 @@ void readNiVisController (NiVisController * obj, unsigned int ARG)
 }
 
 void
-readNiPoint3InterpController (NiPoint3InterpController * obj, unsigned int ARG)
+readNiPoint3InterpController(NiPoint3InterpController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSingleInterpController));
 	readNiSingleInterpController (obj->parent, 0);
 	if (VersionCheck (0x0A010000, 0)) {
@@ -6924,30 +6752,33 @@ readNiPoint3InterpController (NiPoint3InterpController * obj, unsigned int ARG)
 }
 
 void
-readNiMaterialColorController (NiMaterialColorController * obj,
-			       unsigned int ARG)
+readNiMaterialColorController(NiMaterialColorController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPoint3InterpController));
 	readNiPoint3InterpController (obj->parent, 0);
 }
 
-void readNiLightColorController (NiLightColorController * obj, unsigned int ARG)
+void
+readNiLightColorController(NiLightColorController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPoint3InterpController));
 	readNiPoint3InterpController (obj->parent, 0);
 }
 
-void readNiExtraDataController (NiExtraDataController * obj, unsigned int ARG)
+void
+readNiExtraDataController(NiExtraDataController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSingleInterpController));
 	readNiSingleInterpController (obj->parent, 0);
 }
 
 void
-readNiFloatExtraDataController (NiFloatExtraDataController * obj,
-				unsigned int ARG)
+readNiFloatExtraDataController(NiFloatExtraDataController * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraDataController));
 	readNiExtraDataController (obj->parent, 0);
 	if (VersionCheck (0x0A020000, 0)) {
@@ -6955,76 +6786,63 @@ readNiFloatExtraDataController (NiFloatExtraDataController * obj,
 	}
 	if (VersionCheck (0, 0x0A010000)) {
 		obj->Num_Extra_Bytes = readbyte (READER);
-	}
-	if (VersionCheck (0, 0x0A010000)) {
-		// init 1d array
-		obj->Unknown_Bytes = GETMEM ((7) * sizeof (byte));
-		// read 1d array
-		for (i = 0; i < (7); i++)
-			obj->Unknown_Bytes[i] = readbyte (READER);
-	}
-	if (VersionCheck (0, 0x0A010000)) {
-		// init 1d array
+		READ (byte, &(obj->Unknown_Bytes[0]), 7, 1, "readNiFloatExtraDataController")
 		obj->Unknown_Extra_Bytes =
 		    GETMEM ((obj->Num_Extra_Bytes) * sizeof (byte));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Extra_Bytes); i++)
-			obj->Unknown_Extra_Bytes[i] = readbyte (READER);
+		READ (byte, obj->Unknown_Extra_Bytes, obj->Num_Extra_Bytes, 1, "readNiFloatExtraDataController")
 	}
 }
 
-void readNiBoneLODController (NiBoneLODController * obj, unsigned int ARG)
+void
+readNiBoneLODController(NiBoneLODController * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
-	obj->Unknown_Int_1 = readuint (READER);
+	READ (uint, &(obj->Unknown_Int_1), 3, SIZEOFDWORD, "readNiBoneLODController")
+	/*obj->Unknown_Int_1 = readuint (READER);
 	obj->Num_Node_Groups = readuint (READER);
-	obj->Num_Node_Groups_2 = readuint (READER);
+	obj->Num_Node_Groups_2 = readuint (READER);*/
+	PROTECT_LEN (obj->Num_Node_Groups, 2000000, "readNiBoneLODController")
+	PROTECT_LEN (obj->Num_Node_Groups_2, 2000000, "readNiBoneLODController")
 	// init 1d array
 	obj->Node_Groups = GETMEM ((obj->Num_Node_Groups) * sizeof (NodeGroup));
 	// read 1d array
+	int i;
 	for (i = 0; i < (obj->Num_Node_Groups); i++)
 		readNodeGroup (&obj->Node_Groups[i], 0);
 	if (VersionCheck (0x04020200, 0) && (User_Version == 0)) {
 		obj->Num_Shape_Groups = readuint (READER);
-	}
-	if (VersionCheck (0x04020200, 0) && (User_Version == 0)) {
+		PROTECT_LEN (obj->Num_Shape_Groups, 2000000, "readNiBoneLODController")
 		// init 1d array
 		obj->Shape_Groups_1 =
 		    GETMEM ((obj->Num_Shape_Groups) * sizeof (SkinShapeGroup));
 		// read 1d array
 		for (i = 0; i < (obj->Num_Shape_Groups); i++)
 			readSkinShapeGroup (&obj->Shape_Groups_1[i], 0);
-	}
-	if (VersionCheck (0x04020200, 0) && (User_Version == 0)) {
 		obj->Num_Shape_Groups_2 = readuint (READER);
-	}
-	if (VersionCheck (0x04020200, 0) && (User_Version == 0)) {
-		// init 1d array
+		PROTECT_LEN (obj->Num_Shape_Groups_2, 2000000, "readNiBoneLODController")
 		obj->Shape_Groups_2 =
 		    GETMEM ((obj->Num_Shape_Groups_2) * sizeof (unsigned int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Shape_Groups_2); i++)
-			obj->Shape_Groups_2[i] = readRef (READER);
+		READ (uint, obj->Shape_Groups_2, obj->Num_Shape_Groups_2, SIZEOFDWORD, "readNiBoneLODController")
 	}
 	if (VersionCheck (0x14030009, 0x14030009) && (User_Version == 131072)) {
 		obj->Unknown_Int_2 = readint (READER);
-	}
-	if (VersionCheck (0x14030009, 0x14030009) && (User_Version == 131072)) {
 		obj->Unknown_Int_3 = readint (READER);
 	}
 }
 
 void readNiBSBoneLODController (NiBSBoneLODController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBoneLODController));
 	readNiBoneLODController (obj->parent, 0);
 }
 
-void readNiGeometry (NiGeometry * obj, unsigned int ARG)
+void
+readNiGeometry(NiGeometry * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiAVObject));
 	readNiAVObject (obj->parent, 0);
 	obj->Data = readRef (READER);
@@ -7033,26 +6851,25 @@ void readNiGeometry (NiGeometry * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0x14020007, 0)) {
 		obj->Num_Materials = readuint (READER);
+		PROTECT_LEN (obj->Num_Materials, 2000000, "readNiGeometry")
 		// init 1d array
 		obj->Material_Name =
 		    GETMEM ((obj->Num_Materials) * sizeof (string));
 		// read 1d array
+		int i;
 		for (i = 0; i < (obj->Num_Materials); i++)
 			readstring (&obj->Material_Name[i], 0);
-		// init 1d array
 		obj->Material_Extra_Data =
 		    GETMEM ((obj->Num_Materials) * sizeof (int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Materials); i++)
-			obj->Material_Extra_Data[i] = readint (READER);
+		READ (int, obj->Material_Extra_Data, obj->Num_Materials, SIZEOFDWORD, "readNiGeometry")
 		obj->Active_Material = readint (READER);
 	}
 	if (VersionCheck (0x0A000100, 0x14010003)) {
 		obj->Has_Shader = readbool (READER);
-	}
-	if (VersionCheck (0x0A000100, 0x14010003) && (obj->Has_Shader != 0)) {
-		readstring (&obj->Shader_Name, 0);
-		obj->Unknown_Integer = readint (READER);
+		if (obj->Has_Shader != 0) {
+			readstring (&obj->Shader_Name, 0);
+			obj->Unknown_Integer = readint (READER);
+		}
 	}
 	if ((User_Version == 1) && Version == 0x0A020000) {
 		obj->Unknown_Byte = readbyte (READER);
@@ -7065,17 +6882,18 @@ void readNiGeometry (NiGeometry * obj, unsigned int ARG)
 	}
 }
 
-void readNiTriBasedGeom (NiTriBasedGeom * obj, unsigned int ARG)
+void
+readNiTriBasedGeom(NiTriBasedGeom * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiGeometry));
 	readNiGeometry (obj->parent, 0);
 }
 
-void readNiGeometryData (NiGeometryData * obj, unsigned int ARG)
+void
+readNiGeometryData(NiGeometryData * obj, unsigned int ARG)
 {
-	int i, j;
-	//obj->parent = GETMEM (sizeof (NiObject));
-	//readNiObject (obj->parent, 0);
+	COVERAGE
 	if (VersionCheck (0x0A020000, 0))
 		obj->Unknown_Int = readint (READER);
 	obj->Num_Vertices = readushort (READER);
@@ -7084,16 +6902,10 @@ void readNiGeometryData (NiGeometryData * obj, unsigned int ARG)
 		obj->Compress_Flags = readbyte (READER);
 	}
 	obj->Has_Vertices = readbool (READER);
-	if ((obj->Has_Vertices != 0)) {
-		//dbg ("  -- reading %d Vertices\n", obj->Num_Vertices);
-		// init 1d array
+	if (obj->Has_Vertices != 0) {
 		obj->Vertices = GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-		// read 1d array
-		//BDBG = 0;
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readVector3 (&obj->Vertices[i], 0);
-		//BDBG = 1;
-		//TellFilePos (READER);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Vertices[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiGeometryData");
 	}
 	if ( (Version >= 0x0A000100) &&
 	      !((Version >= 0x14020007) && (User_Version == 11)))
@@ -7104,73 +6916,40 @@ void readNiGeometryData (NiGeometryData * obj, unsigned int ARG)
 		obj->BS_Num_UV_Sets = readushort (READER);
 	}
 	obj->Has_Normals = readbool (READER);
-	if ((obj->Has_Normals != 0)) {
-		//dbg ("  -- reading Normals\n");
-		// init 1d array
+	if (obj->Has_Normals != 0) {
 		obj->Normals = GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-		// read 1d array
-		//BDBG = 0;
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readVector3 (&obj->Normals[i], 0);
-		//BDBG = 1;
-		//TellFilePos (READER);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Normals[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiGeometryData");
 	}
-	//dbg ("  -- Has_Normals:%d\n", obj->Has_Normals);
-	//dbg ("  -- Num_UV_Sets:%d\n", obj->Num_UV_Sets);
-	//dbg ("  -- BS_Num_UV_Sets:%d\n", obj->BS_Num_UV_Sets);
 	if (VersionCheck (0x0A010000, 0)
 	    && ((obj->Has_Normals != 0)
 		&& ((obj->Num_UV_Sets & 61440)
 		    || (obj->BS_Num_UV_Sets & 61440)))) {
-		// init 1d array
 		obj->Tangents = GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-		// read 1d array
-		//BDBG = 0;
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readVector3 (&obj->Tangents[i], 0);
-		//BDBG = 1;
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Tangents[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiGeometryData");
 	}
 	if (VersionCheck (0x0A010000, 0)
 	    && ((obj->Has_Normals != 0)
 		&& ((obj->Num_UV_Sets & 61440)
 		    || (obj->BS_Num_UV_Sets & 61440)))) {
-		// init 1d array
 		obj->Binormals =
 		    GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-		// read 1d array
-		//BDBG = 0;
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readVector3 (&obj->Binormals[i], 0);
-		//BDBG = 1;
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Binormals[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiGeometryData");
 	}
-	//BDBG = 1;
 	readVector3 (&obj->Center, 0);
 	obj->Radius = readfloat (READER);
-	//BDBG = 0;
-	//TellFilePos (READER);
 	if (VersionCheck (0x14030009, 0x14030009) && (User_Version == 131072)) {
-		// init 1d array
-		obj->Unknown_13_shorts = GETMEM ((13) * sizeof (short));
-		// read 1d array
-		//BDBG = 0;
-		for (i = 0; i < (13); i++)
-			obj->Unknown_13_shorts[i] = readshort (READER);
-		//BDBG = 1;
+		READ (short, &(obj->Unknown_13_shorts[0]), 13, SIZEOFWORD, "readNiGeometryData")
 	}
-	//BDBG = 1;
 	obj->Has_Vertex_Colors = readbool (READER);
-	//dbg ("  -- Has_Vertex_Colors:%d\n", obj->Has_Vertex_Colors);
 	if ((obj->Has_Vertex_Colors != 0)) {
-		// init 1d array
 		obj->Vertex_Colors =
 		    GETMEM ((obj->Num_Vertices) * sizeof (Color4));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readColor4 (&obj->Vertex_Colors[i], 0);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Vertex_Colors[0].r), obj->Num_Vertices*4, SIZEOFDWORD, "readNiGeometryData");
 	}
-	//BDBG = 0;
-	//TellFilePos (READER);
-	//BDBG = 1;
 	if (VersionCheck (0, 0x04020200)) {
 		obj->Num_UV_Sets = readushort (READER);
 	}
@@ -7178,35 +6957,20 @@ void readNiGeometryData (NiGeometryData * obj, unsigned int ARG)
 		obj->Has_UV = readbool (READER);
 	}
 	if (!((Version >= 0x14020007) && (User_Version == 11))) {
-		// init 2d array
-		obj->UV_Sets =
-		    GETMEM ((obj->Num_UV_Sets & 63) * sizeof (TexCoord *));
-		//BDBG = 0;
-		for (i = 0; i < (obj->Num_UV_Sets & 63); i++)
-			obj->UV_Sets[i] =
-			    GETMEM ((obj->Num_Vertices) * sizeof (TexCoord));
-		// read 2d array
-		for (i = 0; i < (obj->Num_UV_Sets & 63); i++)
-			for (j = 0; j < (obj->Num_Vertices); j++)
-				readTexCoord (&obj->UV_Sets[i][j], 0);
-		//BDBG = 1;
+		NIFuint len = (obj->Num_UV_Sets & 63) * obj->Num_Vertices;
+		PROTECT_LEN (len, 2000000, "readNiGeometryData");
+		obj->UV_Sets = GETMEM (len * sizeof (TexCoord));
+		if (len > 0)
+			READ (float, &(obj->UV_Sets[0].u), len*2, SIZEOFDWORD, "readNiGeometryData");
 	}
 	else {
-		// init 2d array
-		obj->UV_Sets =
-		    GETMEM ((obj->BS_Num_UV_Sets & 1) * sizeof (TexCoord *));
-		//BDBG = 0;
-		for (i = 0; i < (obj->BS_Num_UV_Sets & 1); i++)
-			obj->UV_Sets[i] =
-			    GETMEM ((obj->Num_Vertices) * sizeof (TexCoord));
-		// read 2d array
-		for (i = 0; i < (obj->BS_Num_UV_Sets & 1); i++)
-			for (j = 0; j < (obj->Num_Vertices); j++)
-				readTexCoord (&obj->UV_Sets[i][j], 0);
-		//BDBG = 1;
+		NIFuint len = (obj->BS_Num_UV_Sets & 1) * obj->Num_Vertices;
+		dbg ("len: %d\n", len);
+		PROTECT_LEN (len, 2000000, "readNiGeometryData");
+		obj->UV_Sets = GETMEM (len * sizeof (TexCoord));
+		if (len > 0)
+			READ (float, &(obj->UV_Sets[0].u), len*2, SIZEOFDWORD, "readNiGeometryData");
 	}
-	//BDBG = 0;
-	//TellFilePos (READER);
 	if (VersionCheck (0x0A000100, 0)) {
 		obj->Consistency_Flags = readushort (READER);
 	}
@@ -7215,35 +6979,42 @@ void readNiGeometryData (NiGeometryData * obj, unsigned int ARG)
 	}
 }
 
-void readNiTriBasedGeomData (NiTriBasedGeomData * obj, unsigned int ARG)
+void
+readNiTriBasedGeomData(NiTriBasedGeomData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiGeometryData));
 	readNiGeometryData (obj->parent, 0);
-	//BDBG = 1;
 	obj->Num_Triangles = readushort (READER);
-	//BDBG = 0;
 }
 
-void readbhkBlendController (bhkBlendController * obj, unsigned int ARG)
+void
+readbhkBlendController(bhkBlendController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Unknown_Int = readuint (READER);
 }
 
-void readBSBound (BSBound * obj, unsigned int ARG)
+void
+readBSBound(BSBound * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	readVector3 (&obj->Center, 0);
 	readVector3 (&obj->Dimensions, 0);
 }
 
-void readBSFurnitureMarker (BSFurnitureMarker * obj, unsigned int ARG)
+void
+readBSFurnitureMarker(BSFurnitureMarker * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Num_Positions = readuint (READER);
+	PROTECT_LEN (obj->Num_Positions, 2000000, "readBSFurnitureMarker");
 	// init 1d array
 	obj->Positions =
 	    GETMEM ((obj->Num_Positions) * sizeof (FurniturePosition));
@@ -7254,51 +7025,55 @@ void readBSFurnitureMarker (BSFurnitureMarker * obj, unsigned int ARG)
 }
 
 void
-readBSParentVelocityModifier (BSParentVelocityModifier * obj, unsigned int ARG)
+readBSParentVelocityModifier(BSParentVelocityModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Damping = readfloat (READER);
 }
 
-void readBSPSysArrayEmitter (BSPSysArrayEmitter * obj, unsigned int ARG)
+void
+readBSPSysArrayEmitter(BSPSysArrayEmitter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysVolumeEmitter));
 	readNiPSysVolumeEmitter (obj->parent, 0);
 }
 
-void readBSWindModifier (BSWindModifier * obj, unsigned int ARG)
+void
+readBSWindModifier(BSWindModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Strength = readfloat (READER);
 }
 
 void
-readhkPackedNiTriStripsData (hkPackedNiTriStripsData * obj, unsigned int ARG)
+readhkPackedNiTriStripsData(hkPackedNiTriStripsData * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkShapeCollection));
 	readbhkShapeCollection (obj->parent, 0);
 	obj->Num_Triangles = readuint (READER);
+	PROTECT_LEN (obj->Num_Triangles, 2000000, "readhkPackedNiTriStripsData")
 	// init 1d array
 	obj->Triangles = GETMEM ((obj->Num_Triangles) * sizeof (hkTriangle));
 	// read 1d array
+	int i;
 	for (i = 0; i < (obj->Num_Triangles); i++)
 		readhkTriangle (&obj->Triangles[i], 0);
 	obj->Num_Vertices = readuint (READER);
+	PROTECT_LEN (obj->Num_Vertices, 2000000, "readhkPackedNiTriStripsData")
 	if (VersionCheck (0x14020007, 0)) {
 		obj->Unknown_Byte_1 = readbyte (READER);
 	}
-	// init 1d array
 	obj->Vertices = GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Vertices); i++)
-		readVector3 (&obj->Vertices[i], 0);
+	if (obj->Num_Vertices > 0)
+		READ (float, &(obj->Vertices[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readhkPackedNiTriStripsData")
 	if (VersionCheck (0x14020007, 0)) {
 		obj->Num_Sub_Shapes = readushort (READER);
-	}
-	if (VersionCheck (0x14020007, 0)) {
 		// init 1d array
 		obj->Sub_Shapes =
 		    GETMEM ((obj->Num_Sub_Shapes) * sizeof (OblivionSubShape));
@@ -7308,43 +7083,42 @@ readhkPackedNiTriStripsData (hkPackedNiTriStripsData * obj, unsigned int ARG)
 	}
 }
 
-void readNiAlphaProperty (NiAlphaProperty * obj, unsigned int ARG)
+void
+readNiAlphaProperty(NiAlphaProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
 	obj->Threshold = readbyte (READER);
 }
 
-void readNiAmbientLight (NiAmbientLight * obj, unsigned int ARG)
+void
+readNiAmbientLight(NiAmbientLight * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiLight));
 	readNiLight (obj->parent, 0);
 }
 
-void readNiParticlesData (NiParticlesData * obj, unsigned int ARG)
+void
+readNiParticlesData(NiParticlesData * obj, unsigned int ARG)
 {
-	int i, j;
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	if (VersionCheck (0x0A020000, 0)) {
 		readstring (&obj->Name, 0);
 	}
 	obj->Num_Vertices = readushort (READER);
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Keep_Flags = readbyte (READER);
-	}
-	if (VersionCheck (0x0A010000, 0)) {
 		obj->Compress_Flags = readbyte (READER);
 	}
 	obj->Has_Vertices = readbool (READER);
 	if ((!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (obj->Has_Vertices != 0)) {
-		// init 1d array
 		obj->Vertices = GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readVector3 (&obj->Vertices[i], 0);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Vertices[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiParticlesData")
 	}
 	if (VersionCheck (0x0A000100, 0)) {
 		obj->Num_UV_Sets = readbyte (READER);
@@ -7353,42 +7127,34 @@ void readNiParticlesData (NiParticlesData * obj, unsigned int ARG)
 	obj->Has_Normals = readbool (READER);
 	if ((!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (obj->Has_Normals != 0)) {
-		// init 1d array
 		obj->Normals = GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readVector3 (&obj->Normals[i], 0);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Normals[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiParticlesData")
 	}
 	if (VersionCheck (0x0A010000, 0)
 	    && (!((Version >= 0x14020007) && (User_Version == 11)))
 	    && ((obj->Has_Normals != 0) && (obj->TSpace_Flag & 240))) {
-		// init 1d array
 		obj->Tangents = GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readVector3 (&obj->Tangents[i], 0);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Tangents[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiParticlesData")
 	}
 	if (VersionCheck (0x0A010000, 0)
 	    && (!((Version >= 0x14020007) && (User_Version == 11)))
 	    && ((obj->Has_Normals != 0) && (obj->TSpace_Flag & 240))) {
-		// init 1d array
 		obj->Binormals =
 		    GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readVector3 (&obj->Binormals[i], 0);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Binormals[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiParticlesData")
 	}
 	readVector3 (&obj->Center, 0);
 	obj->Radius = readfloat (READER);
 	obj->Has_Vertex_Colors = readbool (READER);
 	if ((!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (obj->Has_Vertex_Colors != 0)) {
-		// init 1d array
 		obj->Vertex_Colors =
 		    GETMEM ((obj->Num_Vertices) * sizeof (Color4));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readColor4 (&obj->Vertex_Colors[i], 0);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Vertex_Colors[0].r), obj->Num_Vertices*4, SIZEOFDWORD, "readNiParticlesData")
 	}
 	if (VersionCheck (0, 0x04020200)) {
 		obj->Num_UV_Sets = readbyte (READER);
@@ -7397,18 +7163,12 @@ void readNiParticlesData (NiParticlesData * obj, unsigned int ARG)
 	if (VersionCheck (0, 0x04000002)) {
 		obj->Has_UV = readbool (READER);
 	}
-	if ((!((Version >= 0x14020007) && (User_Version == 11)))
-	    && (!((Version >= 0x14020007) && (User_Version == 11)))) {
-		// init 2d array
-		obj->UV_Sets =
-		    GETMEM ((obj->Num_UV_Sets & 63) * sizeof (TexCoord *));
-		for (i = 0; i < (obj->Num_UV_Sets & 63); i++)
-			obj->UV_Sets[i] =
-			    GETMEM ((obj->Num_Vertices) * sizeof (TexCoord));
-		// read 2d array
-		for (i = 0; i < (obj->Num_UV_Sets & 63); i++)
-			for (j = 0; j < (obj->Num_Vertices); j++)
-				readTexCoord (&obj->UV_Sets[i][j], 0);
+	if ((!((Version >= 0x14020007) && (User_Version == 11)))) {
+		NIFuint len = (obj->Num_UV_Sets & 63) * obj->Num_Vertices;
+		PROTECT_LEN (len, 2000000, "readNiParticlesData");
+		obj->UV_Sets = GETMEM (len * sizeof (TexCoord));
+		if (len > 0)
+			READ (float, &(obj->UV_Sets[0].u), len*2, SIZEOFDWORD, "readNiParticlesData");
 	}
 	if (VersionCheck (0x0A000100, 0)) {
 		obj->Consistency_Flags = readushort (READER);
@@ -7428,21 +7188,15 @@ void readNiParticlesData (NiParticlesData * obj, unsigned int ARG)
 	if (VersionCheck (0x0A010000, 0)
 	    && (!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (obj->Has_Radii != 0)) {
-		// init 1d array
 		obj->Radii = GETMEM ((obj->Num_Vertices) * sizeof (float));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			obj->Radii[i] = readfloat (READER);
+		READ (float, obj->Radii, obj->Num_Vertices, SIZEOFDWORD, "readNiParticlesData")
 	}
 	obj->Num_Active = readushort (READER);
 	obj->Has_Sizes = readbool (READER);
 	if ((!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (obj->Has_Sizes != 0)) {
-		// init 1d array
 		obj->Sizes = GETMEM ((obj->Num_Vertices) * sizeof (float));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			obj->Sizes[i] = readfloat (READER);
+		READ (float, obj->Sizes, obj->Num_Vertices, SIZEOFDWORD, "readNiParticlesData")
 	}
 	if (VersionCheck (0x0A000100, 0)) {
 		obj->Has_Rotations = readbool (READER);
@@ -7450,24 +7204,19 @@ void readNiParticlesData (NiParticlesData * obj, unsigned int ARG)
 	if (VersionCheck (0x0A000100, 0)
 	    && (!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (obj->Has_Rotations != 0)) {
-		// init 1d array
 		obj->Rotations =
 		    GETMEM ((obj->Num_Vertices) * sizeof (Quaternion));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readQuaternion (&obj->Rotations[i], 0);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Rotations[0].w), obj->Num_Vertices*4, SIZEOFDWORD, "readNiParticlesData")
 	}
 	if (VersionCheck (0x14000004, 0)) {
 		obj->Has_Rotation_Angles = readbool (READER);
 	}
 	if ((!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (obj->Has_Rotation_Angles != 0)) {
-		// init 1d array
 		obj->Rotation_Angles =
 		    GETMEM ((obj->Num_Vertices) * sizeof (float));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			obj->Rotation_Angles[i] = readfloat (READER);
+		READ (float, obj->Rotation_Angles, obj->Num_Vertices, SIZEOFDWORD, "readNiParticlesData")
 	}
 	if (VersionCheck (0x14000004, 0)) {
 		obj->Has_Rotation_Axes = readbool (READER);
@@ -7475,239 +7224,201 @@ void readNiParticlesData (NiParticlesData * obj, unsigned int ARG)
 	if (VersionCheck (0x14000004, 0)
 	    && (!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (obj->Has_Rotation_Axes != 0)) {
-		// init 1d array
 		obj->Rotation_Axes =
 		    GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Vertices); i++)
-			readVector3 (&obj->Rotation_Axes[i], 0);
+		if (obj->Num_Vertices > 0)
+			READ (float, &(obj->Rotation_Axes[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiParticlesData")
 	}
-	if (((Version >= 0x14020007) && (User_Version == 11))
-	    && ((Version >= 0x14020007) && (User_Version == 11))) {
+	if (((Version >= 0x14020007) && (User_Version == 11))) {
 		obj->Has_Unknown_Stuff_1 = readbool (READER);
-	}
-	if (((Version >= 0x14020007) && (User_Version == 11))
-	    && ((Version >= 0x14020007) && (User_Version == 11))) {
 		obj->Num_Unknown_Stuff_1 = readshort (READER);
-	}
-	if (((Version >= 0x14020007) && (User_Version == 11))
-	    && (obj->Has_Unknown_Stuff_1 != 0)) {
-		// init 1d array
-		obj->Unknown_Stuff_1 =
-		    GETMEM ((obj->Num_Unknown_Stuff_1) * sizeof (Vector4));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Unknown_Stuff_1); i++)
-			readVector4 (&obj->Unknown_Stuff_1[i], 0);
+	    if ((obj->Has_Unknown_Stuff_1 != 0)) {
+			obj->Unknown_Stuff_1 =
+		    	GETMEM ((obj->Num_Unknown_Stuff_1) * sizeof (Vector4));
+			if (obj->Num_Unknown_Stuff_1 > 0)
+				READ (float, &(obj->Unknown_Stuff_1[0].x), obj->Num_Unknown_Stuff_1*4, SIZEOFDWORD, "readNiParticlesData")
+		}
 	}
 }
 
 void
-readNiRotatingParticlesData (NiRotatingParticlesData * obj, unsigned int ARG)
+readNiRotatingParticlesData(NiRotatingParticlesData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticlesData));
 	readNiParticlesData (obj->parent, 0);
 	if (VersionCheck (0, 0x04020200)) {
 		obj->Has_Rotations_2 = readbool (READER);
-	}
-	if (VersionCheck (0, 0x04020200) && (obj->Has_Rotations_2 != 0)) {
-		// init 1d array
-		obj->Rotations_2 =
-		    GETMEM ((obj->parent->Num_Vertices) * sizeof (Quaternion));
-		// read 1d array
-		int i;
-		for (i = 0; i < (obj->parent->Num_Vertices); i++)
-			readQuaternion (&obj->Rotations_2[i], 0);
+		if ((obj->Has_Rotations_2 != 0)) {
+			obj->Rotations_2 =
+		    	GETMEM ((obj->parent->Num_Vertices) * sizeof (Quaternion));
+			if (obj->parent->Num_Vertices > 0)
+				READ (float, &(obj->Rotations_2[0].w), obj->parent->Num_Vertices*4, SIZEOFDWORD, "readNiParticlesData")
+		}
 	}
 }
 
 void
-readNiAutoNormalParticlesData (NiAutoNormalParticlesData * obj,
-			       unsigned int ARG)
+readNiAutoNormalParticlesData(NiAutoNormalParticlesData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticlesData));
 	readNiParticlesData (obj->parent, 0);
 }
 
-void readParticleDesc (ParticleDesc * obj, unsigned int ARG)
+void
+readParticleDesc(ParticleDesc * obj, unsigned int ARG)
 {
+	COVERAGE
 	readVector3 (&obj->Translation, 0);
 	if (VersionCheck (0, 0x0A040001)) {
-		// init 1d array
-		obj->Unknown_Floats_1 = GETMEM ((3) * sizeof (float));
-		// read 1d array
-		int i;
-		for (i = 0; i < (3); i++)
-			obj->Unknown_Floats_1[i] = readfloat (READER);
+		READ (float, &(obj->Unknown_Floats_1[0]), 3, SIZEOFDWORD, "readParticleDesc")
 	}
-	obj->Unknown_Float_1 = readfloat (READER);
+	READ (float, &(obj->Unknown_Float_1), 3, SIZEOFDWORD, "readParticleDesc")
+	/*obj->Unknown_Float_1 = readfloat (READER);
 	obj->Unknown_Float_2 = readfloat (READER);
-	obj->Unknown_Float_3 = readfloat (READER);
+	obj->Unknown_Float_3 = readfloat (READER);*/
 	obj->Unknown_Int_1 = readint (READER);
 }
 
-void readNiPSysData (NiPSysData * obj, unsigned int ARG)
+void
+readNiPSysData(NiPSysData * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiRotatingParticlesData));
 	readNiRotatingParticlesData (obj->parent, 0);
-	if ((!((Version >= 0x14020007) && (User_Version == 11)))
-	    && (!((Version >= 0x14020007) && (User_Version == 11)))) {
+	if ((!((Version >= 0x14020007) && (User_Version == 11)))) {
 		// init 1d array
 		obj->Particle_Descriptions =
 		    GETMEM ((obj->parent->parent->Num_Vertices) *
 			    sizeof (ParticleDesc));
 		// read 1d array
+		int i;
 		for (i = 0; i < (obj->parent->parent->Num_Vertices); i++)
 			readParticleDesc (&obj->Particle_Descriptions[i], 0);
 	}
 	if (VersionCheck (0x14000004, 0)
-	    && (!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (!((Version >= 0x14020007) && (User_Version == 11)))) {
 		obj->Has_Unknown_Floats_3 = readbool (READER);
 	}
 	if (VersionCheck (0x14000004, 0)
 	    && (!((Version >= 0x14020007) && (User_Version == 11)))
 	    && (obj->Has_Unknown_Floats_3 != 0)) {
-		// init 1d array
 		obj->Unknown_Floats_3 =
 		    GETMEM ((obj->parent->parent->Num_Vertices) * sizeof (float));
-		// read 1d array
-		for (i = 0; i < (obj->parent->parent->Num_Vertices); i++)
-			obj->Unknown_Floats_3[i] = readfloat (READER);
+		READ (float, obj->Unknown_Floats_3, obj->parent->parent->Num_Vertices, SIZEOFDWORD, "readNiPSysData")
 	}
-	if ((!((Version >= 0x14020007) && (User_Version == 11)))
-	    && (!((Version >= 0x14020007) && (User_Version == 11)))) {
+	if ((!((Version >= 0x14020007) && (User_Version == 11)))) {
 		obj->Unknown_Short_1 = readushort (READER);
-	}
-	if ((!((Version >= 0x14020007) && (User_Version == 11)))
-	    && (!((Version >= 0x14020007) && (User_Version == 11)))) {
 		obj->Unknown_Short_2 = readushort (READER);
 	}
 }
 
-void readNiMeshPSysData (NiMeshPSysData * obj, unsigned int ARG)
+void
+readNiMeshPSysData(NiMeshPSysData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysData));
 	readNiPSysData (obj->parent, 0);
 	if (VersionCheck (0x0A020000, 0)) {
 		obj->Unknown_Int_2 = readuint (READER);
-	}
-	if (VersionCheck (0x0A020000, 0)) {
 		obj->Unknown_Byte_3 = readbyte (READER);
-	}
-	if (VersionCheck (0x0A020000, 0)) {
 		obj->Num_Unknown_Ints_1 = readuint (READER);
-	}
-	if (VersionCheck (0x0A020000, 0)) {
-		// init 1d array
+		PROTECT_LEN (obj->Num_Unknown_Ints_1, 2000000, "readNiMeshPSysData")
 		obj->Unknown_Ints_1 =
 		    GETMEM ((obj->Num_Unknown_Ints_1) * sizeof (unsigned int));
-		// read 1d array
-		int i;
-		for (i = 0; i < (obj->Num_Unknown_Ints_1); i++)
-			obj->Unknown_Ints_1[i] = readuint (READER);
+		READ (uint, obj->Unknown_Ints_1, obj->Num_Unknown_Ints_1, SIZEOFDWORD, "readNiMeshPSysData")
 	}
 	obj->Unknown_Node = readRef (READER);
 }
 
-void readNiBinaryExtraData (NiBinaryExtraData * obj, unsigned int ARG)
+void
+readNiBinaryExtraData(NiBinaryExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	readByteArray (&obj->Binary_Data, 0);
 }
 
-void readNiBinaryVoxelExtraData (NiBinaryVoxelExtraData * obj, unsigned int ARG)
+void
+readNiBinaryVoxelExtraData(NiBinaryVoxelExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Unknown_Int = readuint (READER);
 	obj->Data = readRef (READER);
 }
 
-void readNiBinaryVoxelData (NiBinaryVoxelData * obj, unsigned int ARG)
+void
+readNiBinaryVoxelData(NiBinaryVoxelData * obj, unsigned int ARG)
 {
-	int i, j;
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Unknown_Short_1 = readushort (READER);
 	obj->Unknown_Short_2 = readushort (READER);
 	obj->Unknown_Short_3 = readushort (READER);
-	// init 1d array
-	obj->Unknown_7_Floats = GETMEM ((7) * sizeof (float));
-	// read 1d array
-	for (i = 0; i < (7); i++)
-		obj->Unknown_7_Floats[i] = readfloat (READER);
-	// init 2d array
-	obj->Unknown_Bytes_1 = GETMEM ((7) * sizeof (byte *));
-	for (i = 0; i < (7); i++)
-		obj->Unknown_Bytes_1[i] = GETMEM ((12) * sizeof (byte));
-	// read 2d array
-	for (i = 0; i < (7); i++)
-		for (j = 0; j < (12); j++)
-			obj->Unknown_Bytes_1[i][j] = readbyte (READER);
+	READ (float, &(obj->Unknown_7_Floats[0]), 7, SIZEOFDWORD, "readNiBinaryVoxelData")
+	READ (byte, &(obj->Unknown_Bytes_1[0]), 7*12, 1, "readNiBinaryVoxelData")
 	obj->Num_Unknown_Vectors = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Unknown_Vectors, 2000000, "readNiBinaryVoxelData");
 	obj->Unknown_Vectors =
 	    GETMEM ((obj->Num_Unknown_Vectors) * sizeof (Vector4));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Unknown_Vectors); i++)
-		readVector4 (&obj->Unknown_Vectors[i], 0);
+	if (obj->Num_Unknown_Vectors > 0)
+		READ (float, &(obj->Unknown_Vectors[0].x), obj->Num_Unknown_Vectors*4, SIZEOFDWORD, "readNiBinaryVoxelData")
 	obj->Num_Unknown_Bytes_2 = readuint (READER);
-	// init 1d array
-	obj->Unknown_Bytes_2 =
-	    GETMEM ((obj->Num_Unknown_Bytes_2) * sizeof (byte));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Unknown_Bytes_2); i++)
-		obj->Unknown_Bytes_2[i] = readbyte (READER);
-	// init 1d array
-	obj->Unknown_5_Ints = GETMEM ((5) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (5); i++)
-		obj->Unknown_5_Ints[i] = readuint (READER);
+	PROTECT_LEN (obj->Num_Unknown_Bytes_2, 2000000, "readNiBinaryVoxelData");
+	obj->Unknown_Bytes_2 = GETMEM (obj->Num_Unknown_Bytes_2);
+	READ (byte, obj->Unknown_Bytes_2, obj->Num_Unknown_Bytes_2, 1, "readNiBinaryVoxelData")
+	READ (uint, &(obj->Unknown_5_Ints[0]), 5, SIZEOFDWORD, "readNiBinaryVoxelData")
 }
 
 void
-readNiBlendBoolInterpolator (NiBlendBoolInterpolator * obj, unsigned int ARG)
+readNiBlendBoolInterpolator(NiBlendBoolInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBlendInterpolator));
 	readNiBlendInterpolator (obj->parent, 0);
 	obj->Bool_Value = readbyte (READER);
 }
 
 void
-readNiBlendFloatInterpolator (NiBlendFloatInterpolator * obj, unsigned int ARG)
+readNiBlendFloatInterpolator(NiBlendFloatInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBlendInterpolator));
 	readNiBlendInterpolator (obj->parent, 0);
 	obj->Float_Value = readfloat (READER);
 }
 
 void
-readNiBlendPoint3Interpolator (NiBlendPoint3Interpolator * obj,
-			       unsigned int ARG)
+readNiBlendPoint3Interpolator(NiBlendPoint3Interpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBlendInterpolator));
 	readNiBlendInterpolator (obj->parent, 0);
 	readVector3 (&obj->Point_Value, 0);
 }
 
 void
-readNiBlendTransformInterpolator (NiBlendTransformInterpolator * obj, unsigned int ARG)
+readNiBlendTransformInterpolator(NiBlendTransformInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBlendInterpolator));
 	readNiBlendInterpolator (obj->parent, 0);
 }
 
-void readNiBoolData (NiBoolData * obj, unsigned int ARG)
+void
+readNiBoolData(NiBoolData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readKeyGroup (&obj->Data, 0, T_BYTE);
 }
 
-void readNiBooleanExtraData (NiBooleanExtraData * obj, unsigned int ARG)
+void
+readNiBooleanExtraData(NiBooleanExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Boolean_Data = readbyte (READER);
@@ -7715,23 +7426,22 @@ void readNiBooleanExtraData (NiBooleanExtraData * obj, unsigned int ARG)
 
 void readNiBSplineBasisData (NiBSplineBasisData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Num_Control_Points = readuint (READER);
 }
 
 void
-readNiBSplineFloatInterpolator (NiBSplineFloatInterpolator * obj,
-				unsigned int ARG)
+readNiBSplineFloatInterpolator(NiBSplineFloatInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBSplineInterpolator));
 	readNiBSplineInterpolator (obj->parent, 0);
 }
 
 void
-readNiBSplineCompFloatInterpolator (NiBSplineCompFloatInterpolator * obj,
-				    unsigned int ARG)
+readNiBSplineCompFloatInterpolator(NiBSplineCompFloatInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBSplineFloatInterpolator));
 	readNiBSplineFloatInterpolator (obj->parent, 0);
 	obj->Base = readfloat (READER);
@@ -7741,31 +7451,26 @@ readNiBSplineCompFloatInterpolator (NiBSplineCompFloatInterpolator * obj,
 }
 
 void
-readNiBSplinePoint3Interpolator (NiBSplinePoint3Interpolator * obj,
-				 unsigned int ARG)
+readNiBSplinePoint3Interpolator(NiBSplinePoint3Interpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBSplineInterpolator));
 	readNiBSplineInterpolator (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_Floats = GETMEM ((6) * sizeof (float));
-	// read 1d array
-	int i;
-	for (i = 0; i < (6); i++)
-		obj->Unknown_Floats[i] = readfloat (READER);
+	READ (float, &(obj->Unknown_Floats[0]), 6, SIZEOFDWORD, "readNiBSplinePoint3Interpolator")
 }
 
 void
-readNiBSplineCompPoint3Interpolator (NiBSplineCompPoint3Interpolator * obj,
-				     unsigned int ARG)
+readNiBSplineCompPoint3Interpolator(NiBSplineCompPoint3Interpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBSplinePoint3Interpolator));
 	readNiBSplinePoint3Interpolator (obj->parent, 0);
 }
 
 void
-readNiBSplineTransformInterpolator (NiBSplineTransformInterpolator * obj,
-				    unsigned int ARG)
+readNiBSplineTransformInterpolator(NiBSplineTransformInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBSplineInterpolator));
 	readNiBSplineInterpolator (obj->parent, 0);
 	readVector3 (&obj->Translation, 0);
@@ -7777,9 +7482,9 @@ readNiBSplineTransformInterpolator (NiBSplineTransformInterpolator * obj,
 }
 
 void
-readNiBSplineCompTransformInterpolator (NiBSplineCompTransformInterpolator *
-					obj, unsigned int ARG)
+readNiBSplineCompTransformInterpolator(NiBSplineCompTransformInterpolator *obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiBSplineTransformInterpolator));
 	readNiBSplineTransformInterpolator (obj->parent, 0);
 	obj->Translation_Bias = readfloat (READER);
@@ -7791,55 +7496,54 @@ readNiBSplineCompTransformInterpolator (NiBSplineCompTransformInterpolator *
 }
 
 void
-readBSRotAccumTransfInterpolator (BSRotAccumTransfInterpolator * obj,
-				  unsigned int ARG)
+readBSRotAccumTransfInterpolator(BSRotAccumTransfInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTransformInterpolator));
 	readNiTransformInterpolator (obj->parent, 0);
 }
 
-void readNiBSplineData (NiBSplineData * obj, unsigned int ARG)
+void
+readNiBSplineData(NiBSplineData * obj, unsigned int ARG)
 {
-	int i;
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Num_Float_Control_Points = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Float_Control_Points, 2000000, "readNiBSplineData")
 	obj->Float_Control_Points =
 	    GETMEM ((obj->Num_Float_Control_Points) * sizeof (float));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Float_Control_Points); i++)
-		obj->Float_Control_Points[i] = readfloat (READER);
+	READ (float, obj->Float_Control_Points, obj->Num_Float_Control_Points, SIZEOFDWORD, "readNiBSplineData")
 	obj->Num_Short_Control_Points = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Short_Control_Points, 2000000, "readNiBSplineData")
 	obj->Short_Control_Points =
 	    GETMEM ((obj->Num_Short_Control_Points) * sizeof (short));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Short_Control_Points); i++)
-		obj->Short_Control_Points[i] = readshort (READER);
+	READ (short, obj->Short_Control_Points, obj->Num_Short_Control_Points, SIZEOFWORD, "readNiBSplineData")
 }
 
-void readNiCamera (NiCamera * obj, unsigned int ARG)
+void
+readNiCamera(NiCamera * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiAVObject));
 	readNiAVObject (obj->parent, 0);
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Unknown_Short = readushort (READER);
 	}
-	obj->Frustum_Left = readfloat (READER);
+	READ (float, &(obj->Frustum_Left), 6, SIZEOFDWORD, "readNiCamera")
+	/*obj->Frustum_Left = readfloat (READER);
 	obj->Frustum_Right = readfloat (READER);
 	obj->Frustum_Top = readfloat (READER);
 	obj->Frustum_Bottom = readfloat (READER);
 	obj->Frustum_Near = readfloat (READER);
-	obj->Frustum_Far = readfloat (READER);
+	obj->Frustum_Far = readfloat (READER);*/
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Use_Orthographic_Projection = readbool (READER);
 	}
-	obj->Viewport_Left = readfloat (READER);
+	READ (float, &(obj->Viewport_Left), 5, SIZEOFDWORD, "readNiCamera")
+	/*obj->Viewport_Left = readfloat (READER);
 	obj->Viewport_Right = readfloat (READER);
 	obj->Viewport_Top = readfloat (READER);
 	obj->Viewport_Bottom = readfloat (READER);
-	obj->LOD_Adjust = readfloat (READER);
+	obj->LOD_Adjust = readfloat (READER);*/
 	obj->Unknown_Link = readRef (READER);
 	obj->Unknown_Int = readuint (READER);
 	if (VersionCheck (0x04020100, 0)) {
@@ -7850,40 +7554,41 @@ void readNiCamera (NiCamera * obj, unsigned int ARG)
 	}
 }
 
-void readNiColorData (NiColorData * obj, unsigned int ARG)
+void
+readNiColorData(NiColorData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readKeyGroup (&obj->Data, 0, T_COLOR4);
 }
 
-void readNiColorExtraData (NiColorExtraData * obj, unsigned int ARG)
+void
+readNiColorExtraData(NiColorExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	readColor4 (&obj->Data, 0);
 }
 
-void readNiControllerManager (NiControllerManager * obj, unsigned int ARG)
+void
+readNiControllerManager(NiControllerManager * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Cumulative = readbool (READER);
 	obj->Num_Controller_Sequences = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Controller_Sequences, 2000000, "readNiControllerManager")
 	obj->Controller_Sequences =
 	    GETMEM ((obj->Num_Controller_Sequences) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Controller_Sequences); i++)
-		obj->Controller_Sequences[i] = readRef (READER);
+	READ (uint, obj->Controller_Sequences, obj->Num_Controller_Sequences, SIZEOFDWORD, "readNiControllerManager")
 	obj->Object_Palette = readRef (READER);
 }
 
-void readNiSequence (NiSequence * obj, unsigned int ARG)
+void
+readNiSequence(NiSequence * obj, unsigned int ARG)
 {
-	//obj->parent = GETMEM (sizeof (NiObject));
-	//readNiObject (obj->parent, 0);
+	COVERAGE
 	readstring (&obj->Name, 0);
 	if (VersionCheck (0, 0x0A010000)) {
 		readstring (&obj->Text_Keys_Name, 0);
@@ -7894,6 +7599,7 @@ void readNiSequence (NiSequence * obj, unsigned int ARG)
 		obj->Unknown_Int_5 = readint (READER);
 	}
 	obj->Num_Controlled_Blocks = readuint (READER);
+	PROTECT_LEN (obj->Num_Controlled_Blocks, 2000000, "readNiSequence")
 	if (VersionCheck (0x0A01006A, 0)) {
 		obj->Unknown_Int_1 = readuint (READER);
 	}
@@ -7906,8 +7612,10 @@ void readNiSequence (NiSequence * obj, unsigned int ARG)
 		readControllerLink (&obj->Controlled_Blocks[i], 0);
 }
 
-void readNiControllerSequence (NiControllerSequence * obj, unsigned int ARG)
+void
+readNiControllerSequence(NiControllerSequence * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSequence));
 	readNiSequence (obj->parent, 0);
 	if (VersionCheck (0x0A01006A, 0)) {
@@ -7941,35 +7649,31 @@ void readNiControllerSequence (NiControllerSequence * obj, unsigned int ARG)
 		obj->String_Palette = readRef (READER);
 	}
 	if (VersionCheck (0x14020007, 0)
-	    && ((User_Version == 11) && (User_Version_2 >= 24))
 	    && ((User_Version == 11) && (User_Version_2 >= 24))) {
 		obj->Unknown_Short_1 = readshort (READER);
-	}
-	if (VersionCheck (0x14020007, 0)
-	    && ((User_Version == 11) && (User_Version_2 >= 24)
-		&& (User_Version_2 <= 28)) && ((User_Version == 11)
-					       && (User_Version_2 >= 24)
-					       && (User_Version_2 <= 28))) {
-		obj->Unknown_Short_2 = readshort (READER);
+		if (User_Version_2 <= 28)
+			obj->Unknown_Short_2 = readshort (READER);
 	}
 	if (VersionCheck (0x14030009, 0)) {
 		obj->Unknown_Int_3 = readuint (READER);
 	}
 }
 
-void readNiAVObjectPalette (NiAVObjectPalette * obj, unsigned int ARG)
+inline void
+readNiAVObjectPalette (NiAVObjectPalette * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 }
 
 void
-readNiDefaultAVObjectPalette (NiDefaultAVObjectPalette * obj, unsigned int ARG)
+readNiDefaultAVObjectPalette(NiDefaultAVObjectPalette * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiAVObjectPalette));
 	readNiAVObjectPalette (obj->parent, 0);
 	obj->Unknown_Int = readuint (READER);
 	obj->Num_Objs = readuint (READER);
+	PROTECT_LEN (obj->Num_Objs, 2000000, "readNiDefaultAVObjectPalette")
 	// init 1d array
 	obj->Objs = GETMEM ((obj->Num_Objs) * sizeof (AVObject));
 	// read 1d array
@@ -7978,55 +7682,64 @@ readNiDefaultAVObjectPalette (NiDefaultAVObjectPalette * obj, unsigned int ARG)
 		readAVObject (&obj->Objs[i], 0);
 }
 
-void readNiDirectionalLight (NiDirectionalLight * obj, unsigned int ARG)
+void
+readNiDirectionalLight(NiDirectionalLight * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiLight));
 	readNiLight (obj->parent, 0);
 }
 
-void readNiDitherProperty (NiDitherProperty * obj, unsigned int ARG)
+void
+readNiDitherProperty(NiDitherProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
 }
 
-void readNiRollController (NiRollController * obj, unsigned int ARG)
+void
+readNiRollController(NiRollController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSingleInterpController));
 	readNiSingleInterpController (obj->parent, 0);
 	obj->Data = readRef (READER);
 }
 
-void readNiFloatData (NiFloatData * obj, unsigned int ARG)
+void
+readNiFloatData(NiFloatData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readKeyGroup (&obj->Data, 0, T_FLOAT);
 }
 
-void readNiFloatExtraData (NiFloatExtraData * obj, unsigned int ARG)
+void
+readNiFloatExtraData(NiFloatExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Float_Data = readfloat (READER);
 }
 
-void readNiFloatsExtraData (NiFloatsExtraData * obj, unsigned int ARG)
+void
+readNiFloatsExtraData(NiFloatsExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Num_Floats = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Floats, 2000000, "readNiFloatsExtraData")
 	obj->Data = GETMEM ((obj->Num_Floats) * sizeof (float));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Floats); i++)
-		obj->Data[i] = readfloat (READER);
+	READ (float, obj->Data, obj->Num_Floats, SIZEOFDWORD, "readNiFloatsExtraData")
 }
 
-void readNiFogProperty (NiFogProperty * obj, unsigned int ARG)
+void
+readNiFogProperty(NiFogProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
@@ -8034,8 +7747,10 @@ void readNiFogProperty (NiFogProperty * obj, unsigned int ARG)
 	readColor3 (&obj->Fog_Color, 0);
 }
 
-void readNiGravity (NiGravity * obj, unsigned int ARG)
+void 
+readNiGravity(NiGravity * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleModifier));
 	readNiParticleModifier (obj->parent, 0);
 	if (VersionCheck (0x04000002, 0)) {
@@ -8047,45 +7762,51 @@ void readNiGravity (NiGravity * obj, unsigned int ARG)
 	readVector3 (&obj->Direction, 0);
 }
 
-void readNiIntegerExtraData (NiIntegerExtraData * obj, unsigned int ARG)
+void
+readNiIntegerExtraData(NiIntegerExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Integer_Data = readuint (READER);
 }
 
-void readBSXFlags (BSXFlags * obj, unsigned int ARG)
+void
+readBSXFlags(BSXFlags * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiIntegerExtraData));
 	readNiIntegerExtraData (obj->parent, 0);
 }
 
-void readNiIntegersExtraData (NiIntegersExtraData * obj, unsigned int ARG)
+void
+readNiIntegersExtraData(NiIntegersExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Num_Integers = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Integers, 2000000, "readNiIntegersExtraData")
 	obj->Data = GETMEM ((obj->Num_Integers) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Integers); i++)
-		obj->Data[i] = readuint (READER);
+	READ (uint, obj->Data, obj->Num_Integers, SIZEOFDWORD, "readNiIntegersExtraData")
 }
 
-void readBSKeyframeController (BSKeyframeController * obj, unsigned int ARG)
+void
+readBSKeyframeController(BSKeyframeController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiKeyframeController));
 	readNiKeyframeController (obj->parent, 0);
 	obj->Data_2 = readRef (READER);
 }
 
-void readNiKeyframeData (NiKeyframeData * obj, unsigned int ARG)
+void
+readNiKeyframeData(NiKeyframeData * obj, unsigned int ARG)
 {
+	COVERAGE
 	int i;
-	//obj->parent = GETMEM (sizeof (NiObject));
-	//readNiObject (obj->parent, 0);
 	obj->Num_Rotation_Keys = readuint (READER);
+	PROTECT_LEN (obj->Num_Rotation_Keys, 2000000, "readNiKeyframeData")
 	if ((obj->Num_Rotation_Keys != 0)) {
 		obj->Rotation_Type = readuint (READER);
 	}
@@ -8095,15 +7816,12 @@ void readNiKeyframeData (NiKeyframeData * obj, unsigned int ARG)
 		    GETMEM ((obj->Num_Rotation_Keys) * sizeof (QuatKey));
 		// read 1d array
 		for (i = 0; i < (obj->Num_Rotation_Keys); i++)
-			readQuatKey (&obj->Quaternion_Keys[i],
-				     obj->Rotation_Type);
+			readQuatKey (&obj->Quaternion_Keys[i], obj->Rotation_Type);
 	}
 	if (VersionCheck (0, 0x0A010000) && (obj->Rotation_Type == 4)) {
 		obj->Unknown_Float = readfloat (READER);
 	}
 	if ((obj->Rotation_Type == 4)) {
-		// init 1d array
-		obj->XYZ_Rotations = GETMEM ((3) * sizeof (KeyGroup));
 		// read 1d array
 		for (i = 0; i < (3); i++)
 			readKeyGroup (&obj->XYZ_Rotations[i], 0, T_FLOAT);
@@ -8112,8 +7830,10 @@ void readNiKeyframeData (NiKeyframeData * obj, unsigned int ARG)
 	readKeyGroup (&obj->Scales, 0, T_FLOAT);
 }
 
-void readNiLookAtController (NiLookAtController * obj, unsigned int ARG)
+void
+readNiLookAtController(NiLookAtController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	if (VersionCheck (0x0A010000, 0)) {
@@ -8122,8 +7842,10 @@ void readNiLookAtController (NiLookAtController * obj, unsigned int ARG)
 	obj->Look_At_Node = readRef (READER);
 }
 
-void readNiLookAtInterpolator (NiLookAtInterpolator * obj, unsigned int ARG)
+void
+readNiLookAtInterpolator(NiLookAtInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpolator));
 	readNiInterpolator (obj->parent, 0);
 	obj->Unknown_Short = readushort (READER);
@@ -8131,55 +7853,43 @@ void readNiLookAtInterpolator (NiLookAtInterpolator * obj, unsigned int ARG)
 	readstring (&obj->Target, 0);
 	if (VersionCheck (0, 0x14050000)) {
 		readVector3 (&obj->Translation, 0);
-	}
-	if (VersionCheck (0, 0x14050000)) {
 		readQuaternion (&obj->Rotation, 0);
-	}
-	if (VersionCheck (0, 0x14050000)) {
 		obj->Scale = readfloat (READER);
 	}
-	obj->Unknown_Link_1 = readRef (READER);
+	READ (uint, &(obj->Unknown_Link_1), 3, SIZEOFDWORD, "readNiLookAtInterpolator")
+	/*obj->Unknown_Link_1 = readRef (READER);
 	obj->Unknown_Link_2 = readRef (READER);
-	obj->Unknown_Link_3 = readRef (READER);
+	obj->Unknown_Link_3 = readRef (READER);*/
 }
 
-void readNiMaterialProperty (NiMaterialProperty * obj, unsigned int ARG)
+void
+readNiMaterialProperty(NiMaterialProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	if (VersionCheck (0, 0x0A000102)) {
 		obj->Flags = readFlags (READER);
 	}
-	if ((!
-	     ((Version == 0x14020007) && (User_Version == 11)
-	      && (User_Version_2 > 21))) && (!((Version == 0x14020007)
-					       && (User_Version == 11)
-					       && (User_Version_2 > 21)))) {
+	if ((!((Version == 0x14020007)
+		&& (User_Version == 11) && (User_Version_2 > 21)))) {
 		readColor3 (&obj->Ambient_Color, 0);
-	}
-	if ((!
-	     ((Version == 0x14020007) && (User_Version == 11)
-	      && (User_Version_2 > 21))) && (!((Version == 0x14020007)
-					       && (User_Version == 11)
-					       && (User_Version_2 > 21)))) {
 		readColor3 (&obj->Diffuse_Color, 0);
 	}
 	readColor3 (&obj->Specular_Color, 0);
 	readColor3 (&obj->Emissive_Color, 0);
 	obj->Glossiness = readfloat (READER);
 	obj->Alpha = readfloat (READER);
-	if (((Version == 0x14020007) && (User_Version == 11)
-	     && (User_Version_2 > 21)) && ((Version == 0x14020007)
-					   && (User_Version == 11)
-					   && (User_Version_2 > 21))) {
+	if (((Version == 0x14020007)
+		&& (User_Version == 11) && (User_Version_2 > 21)) ) {
 		obj->Emit_Multi = readfloat (READER);
 	}
 }
 
-void readNiMorphData (NiMorphData * obj, unsigned int ARG)
+void
+readNiMorphData(NiMorphData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Num_Morphs = readuint (READER);
 	obj->Num_Vertices = readuint (READER);
 	obj->Relative_Targets = readbyte (READER);
@@ -8191,74 +7901,76 @@ void readNiMorphData (NiMorphData * obj, unsigned int ARG)
 		readMorph (&obj->Morphs[i], obj->Num_Vertices);
 }
 
-void readNiNode (NiNode * obj, unsigned int ARG)
+inline void
+readNiNode(NiNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiAVObject));
 	readNiAVObject (obj->parent, 0);
 	obj->Num_Children = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Children, 2000000, "readNiNode")
 	obj->Children = GETMEM ((obj->Num_Children) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Children); i++)
-		obj->Children[i] = readRef (READER);
+	READ (uint, obj->Children, obj->Num_Children, SIZEOFDWORD, "readNiNode")
 	obj->Num_Effects = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Effects, 2000000, "readNiNode")
 	obj->Effects = GETMEM ((obj->Num_Effects) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Effects); i++)
-		obj->Effects[i] = readRef (READER);
+	READ (uint, obj->Effects, obj->Num_Effects, SIZEOFDWORD, "readNiNode")
 }
 
-void readNiBone (NiBone * obj, unsigned int ARG)
+void
+readNiBone(NiBone * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 }
 
-void readAvoidNode (AvoidNode * obj, unsigned int ARG)
+void
+readAvoidNode(AvoidNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 }
 
-void readFxWidget (FxWidget * obj, unsigned int ARG)
+void
+readFxWidget(FxWidget * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	obj->Unknown1 = readbyte (READER);
-	// init 1d array
-	obj->Unknown_292_Bytes = GETMEM ((292) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (292); i++)
-		obj->Unknown_292_Bytes[i] = readbyte (READER);
+	READ (byte, &(obj->Unknown_292_Bytes[0]), 292, 1, "readFxWidget")
 }
 
-void readFxButton (FxButton * obj, unsigned int ARG)
+void
+readFxButton(FxButton * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (FxWidget));
 	readFxWidget (obj->parent, 0);
 }
 
-void readFxRadioButton (FxRadioButton * obj, unsigned int ARG)
+void
+readFxRadioButton(FxRadioButton * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (FxWidget));
 	readFxWidget (obj->parent, 0);
-	obj->Unknown_Int_1 = readuint (READER);
+	READ (uint, &(obj->Unknown_Int_1), 4, SIZEOFDWORD, "readFxRadioButton")
+	/*obj->Unknown_Int_1 = readuint (READER);
 	obj->Unknown_Int__2 = readuint (READER);
 	obj->Unknown_Int_3 = readuint (READER);
-	obj->Num_Buttons = readuint (READER);
-	// init 1d array
+	obj->Num_Buttons = readuint (READER);*/
+	PROTECT_LEN (obj->Num_Buttons, 2000000, "readFxRadioButton")
 	obj->Buttons = GETMEM ((obj->Num_Buttons) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Buttons); i++)
-		obj->Buttons[i] = readPtr (READER);
+	READ (uint, obj->Buttons, obj->Num_Buttons, SIZEOFDWORD, "readFxRadioButton")
 }
 
-void readNiBillboardNode (NiBillboardNode * obj, unsigned int ARG)
+void
+readNiBillboardNode(NiBillboardNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	if (VersionCheck (0x0A010000, 0)) {
@@ -8266,20 +7978,26 @@ void readNiBillboardNode (NiBillboardNode * obj, unsigned int ARG)
 	}
 }
 
-void readNiBSAnimationNode (NiBSAnimationNode * obj, unsigned int ARG)
+void
+readNiBSAnimationNode(NiBSAnimationNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 }
 
-void readNiBSParticleNode (NiBSParticleNode * obj, unsigned int ARG)
+void
+readNiBSParticleNode(NiBSParticleNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 }
 
-void readNiSwitchNode (NiSwitchNode * obj, unsigned int ARG)
+void
+readNiSwitchNode(NiSwitchNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	if (VersionCheck (0x0A010000, 0)) {
@@ -8288,8 +8006,10 @@ void readNiSwitchNode (NiSwitchNode * obj, unsigned int ARG)
 	obj->Unknown_Int_1 = readint (READER);
 }
 
-void readNiLODNode (NiLODNode * obj, unsigned int ARG)
+void
+readNiLODNode(NiLODNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSwitchNode));
 	readNiSwitchNode (obj->parent, 0);
 	if (VersionCheck (0x04000002, 0x0A000100)) {
@@ -8297,8 +8017,7 @@ void readNiLODNode (NiLODNode * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0, 0x0A000100)) {
 		obj->Num_LOD_Levels = readuint (READER);
-	}
-	if (VersionCheck (0, 0x0A000100)) {
+		PROTECT_LEN (obj->Num_LOD_Levels, 2000000, "readNiLODNode")
 		// init 1d array
 		obj->LOD_Levels =
 		    GETMEM ((obj->Num_LOD_Levels) * sizeof (LODRange));
@@ -8312,28 +8031,27 @@ void readNiLODNode (NiLODNode * obj, unsigned int ARG)
 	}
 }
 
-void readNiPalette (NiPalette * obj, unsigned int ARG)
+void
+readNiPalette(NiPalette * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Unknown_Byte = readbyte (READER);
 	obj->Num_Entries = readuint (READER);
-	// init 1d array
-	obj->Palette = GETMEM ((256) * sizeof (ByteColor4));
-	// read 1d array
-	int i;
-	for (i = 0; i < (256); i++)
-		readByteColor4 (&obj->Palette[i], 0);
+	PROTECT_LEN (obj->Num_Entries, 2000000, "readNiPalette")
+	READ (byte, &(obj->Palette[0].r), 256*4, 1, "readNiPalette")
 }
 
-void readNiParticleBomb (NiParticleBomb * obj, unsigned int ARG)
+void
+readNiParticleBomb(NiParticleBomb * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleModifier));
 	readNiParticleModifier (obj->parent, 0);
-	obj->Decay_ = readfloat (READER);
+	READ (float, &(obj->Decay_), 4, SIZEOFDWORD, "readNiParticleBomb")
+	/*obj->Decay_ = readfloat (READER);
 	obj->Duration_ = readfloat (READER);
 	obj->DeltaV_ = readfloat (READER);
-	obj->Start_ = readfloat (READER);
+	obj->Start_ = readfloat (READER);*/
 	obj->Decay_Type_ = readuint (READER);
 	if (VersionCheck (0x0401000C, 0)) {
 		obj->Symmetry_Type_ = readuint (READER);
@@ -8343,37 +8061,41 @@ void readNiParticleBomb (NiParticleBomb * obj, unsigned int ARG)
 }
 
 void
-readNiParticleColorModifier (NiParticleColorModifier * obj, unsigned int ARG)
+readNiParticleColorModifier(NiParticleColorModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleModifier));
 	readNiParticleModifier (obj->parent, 0);
 	obj->Color_Data = readRef (READER);
 }
 
-void readNiParticleGrowFade (NiParticleGrowFade * obj, unsigned int ARG)
+void
+readNiParticleGrowFade(NiParticleGrowFade * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleModifier));
 	readNiParticleModifier (obj->parent, 0);
 	obj->Grow = readfloat (READER);
 	obj->Fade = readfloat (READER);
 }
 
-void readNiParticleMeshModifier (NiParticleMeshModifier * obj, unsigned int ARG)
+void
+readNiParticleMeshModifier(NiParticleMeshModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleModifier));
 	readNiParticleModifier (obj->parent, 0);
 	obj->Num_Particle_Meshes = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Particle_Meshes, 2000000, "readNiParticleMeshModifier")
 	obj->Particle_Meshes =
 	    GETMEM ((obj->Num_Particle_Meshes) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Particle_Meshes); i++)
-		obj->Particle_Meshes[i] = readRef (READER);
+	READ (uint, obj->Particle_Meshes, obj->Num_Particle_Meshes, SIZEOFDWORD, "readNiParticleMeshModifier")
 }
 
-void readNiParticleRotation (NiParticleRotation * obj, unsigned int ARG)
+void
+readNiParticleRotation(NiParticleRotation * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleModifier));
 	readNiParticleModifier (obj->parent, 0);
 	obj->Random_Initial_Axis_ = readbyte (READER);
@@ -8381,62 +8103,67 @@ void readNiParticleRotation (NiParticleRotation * obj, unsigned int ARG)
 	obj->Rotation_Speed_ = readfloat (READER);
 }
 
-void readNiParticles (NiParticles * obj, unsigned int ARG)
+void
+readNiParticles(NiParticles * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiGeometry));
 	readNiGeometry (obj->parent, 0);
 }
 
-void readNiAutoNormalParticles (NiAutoNormalParticles * obj, unsigned int ARG)
+void
+readNiAutoNormalParticles(NiAutoNormalParticles * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticles));
 	readNiParticles (obj->parent, 0);
 }
 
-void readNiParticleMeshes (NiParticleMeshes * obj, unsigned int ARG)
+void
+readNiParticleMeshes(NiParticleMeshes * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticles));
 	readNiParticles (obj->parent, 0);
 }
 
-void readNiParticleMeshesData (NiParticleMeshesData * obj, unsigned int ARG)
+void
+readNiParticleMeshesData(NiParticleMeshesData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiRotatingParticlesData));
 	readNiRotatingParticlesData (obj->parent, 0);
 	obj->Unknown_Link_2 = readRef (READER);
 }
 
-void readNiParticleSystem (NiParticleSystem * obj, unsigned int ARG)
+void
+readNiParticleSystem(NiParticleSystem * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticles));
 	readNiParticles (obj->parent, 0);
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->World_Space = readbool (READER);
-	}
-	if (VersionCheck (0x0A010000, 0)) {
 		obj->Num_Modifiers = readuint (READER);
-	}
-	if (VersionCheck (0x0A010000, 0)) {
-		// init 1d array
+		PROTECT_LEN (obj->Num_Modifiers, 2000000, "readNiParticleSystem")
 		obj->Modifiers =
 		    GETMEM ((obj->Num_Modifiers) * sizeof (unsigned int));
-		// read 1d array
-		int i;
-		for (i = 0; i < (obj->Num_Modifiers); i++)
-			obj->Modifiers[i] = readRef (READER);
+		READ (uint, obj->Modifiers, obj->Num_Modifiers, SIZEOFDWORD, "readNiParticleSystem")
 	}
 }
 
-void readNiMeshParticleSystem (NiMeshParticleSystem * obj, unsigned int ARG)
+void
+readNiMeshParticleSystem(NiMeshParticleSystem * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleSystem));
 	readNiParticleSystem (obj->parent, 0);
 }
 
 void
-readNiParticleSystemController (NiParticleSystemController * obj,
-				unsigned int ARG)
+readNiParticleSystemController(NiParticleSystemController * obj, unsigned int ARG)
 {
+	COVERAGE
 	int i;
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
@@ -8446,11 +8173,12 @@ readNiParticleSystemController (NiParticleSystemController * obj,
 	if (VersionCheck (0x0303000D, 0)) {
 		obj->Speed = readfloat (READER);
 	}
-	obj->Speed_Random = readfloat (READER);
+	READ (float, &(obj->Speed_Random), 5, SIZEOFDWORD, 	"readNiParticleSystemController")
+	/*obj->Speed_Random = readfloat (READER);
 	obj->Vertical_Direction = readfloat (READER);
 	obj->Vertical_Angle = readfloat (READER);
 	obj->Horizontal_Direction = readfloat (READER);
-	obj->Horizontal_Angle = readfloat (READER);
+	obj->Horizontal_Angle = readfloat (READER);*/
 	readVector3 (&obj->Unknown_Normal_, 0);
 	readColor4 (&obj->Unknown_Color_, 0);
 	obj->Size = readfloat (READER);
@@ -8474,17 +8202,9 @@ readNiParticleSystemController (NiParticleSystemController * obj,
 	obj->Emitter = readPtr (READER);
 	if (VersionCheck (0x04000002, 0)) {
 		obj->Unknown_Short_2_ = readushort (READER);
-	}
-	if (VersionCheck (0x04000002, 0)) {
 		obj->Unknown_Float_13_ = readfloat (READER);
-	}
-	if (VersionCheck (0x04000002, 0)) {
 		obj->Unknown_Int_1_ = readuint (READER);
-	}
-	if (VersionCheck (0x04000002, 0)) {
 		obj->Unknown_Int_2_ = readuint (READER);
-	}
-	if (VersionCheck (0x04000002, 0)) {
 		obj->Unknown_Short_3_ = readushort (READER);
 	}
 	if (VersionCheck (0, 0x03010000)) {
@@ -8498,11 +8218,7 @@ readNiParticleSystemController (NiParticleSystemController * obj,
 	}
 	if (VersionCheck (0x04000002, 0)) {
 		obj->Num_Particles = readushort (READER);
-	}
-	if (VersionCheck (0x04000002, 0)) {
 		obj->Num_Valid = readushort (READER);
-	}
-	if (VersionCheck (0x04000002, 0)) {
 		// init 1d array
 		obj->Particles =
 		    GETMEM ((obj->Num_Particles) * sizeof (Particle));
@@ -8520,28 +8236,25 @@ readNiParticleSystemController (NiParticleSystemController * obj,
 	}
 	if (VersionCheck (0, 0x03010000)) {
 		obj->Color_Data = readRef (READER);
-	}
-	if (VersionCheck (0, 0x03010000)) {
 		obj->Unknown_Float_1 = readfloat (READER);
-	}
-	if (VersionCheck (0, 0x03010000)) {
-		// init 1d array
 		obj->Unknown_Floats_2 =
 		    GETMEM ((obj->Particle_Unknown_Short) * sizeof (float));
-		// read 1d array
-		for (i = 0; i < (obj->Particle_Unknown_Short); i++)
-			obj->Unknown_Floats_2[i] = readfloat (READER);
+		READ (float, obj->Unknown_Floats_2, obj->Particle_Unknown_Short, SIZEOFDWORD, "readNiParticleSystemController")
 	}
 }
 
-void readNiBSPArrayController (NiBSPArrayController * obj, unsigned int ARG)
+void
+readNiBSPArrayController(NiBSPArrayController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleSystemController));
 	readNiParticleSystemController (obj->parent, 0);
 }
 
-void readNiPathController (NiPathController * obj, unsigned int ARG)
+void
+readNiPathController(NiPathController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	if (VersionCheck (0x0A010000, 0)) {
@@ -8555,19 +8268,21 @@ void readNiPathController (NiPathController * obj, unsigned int ARG)
 	obj->Float_Data = readRef (READER);
 }
 
-void readChannelData (ChannelData * obj, unsigned int ARG)
+void
+readChannelData(ChannelData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Type = readuint (READER);
 	obj->Convention = readuint (READER);
 	obj->Bits_Per_Channel = readbyte (READER);
 	obj->Unknown_Byte_1 = readbyte (READER);
 }
 
-void readATextureRenderData (ATextureRenderData * obj, unsigned int ARG)
+void
+readATextureRenderData(ATextureRenderData * obj, unsigned int ARG)
 {
+	COVERAGE
 	int i;
-	//obj->parent = GETMEM (sizeof (NiObject));
-	//readNiObject (obj->parent, 0);
 	obj->Pixel_Format = readuint (READER);
 	if (VersionCheck (0, 0x0A020000)) {
 		obj->Red_Mask = readuint (READER);
@@ -8575,16 +8290,9 @@ void readATextureRenderData (ATextureRenderData * obj, unsigned int ARG)
 		obj->Blue_Mask = readuint (READER);
 		obj->Alpha_Mask = readuint (READER);
 		obj->Bits_Per_Pixel = readbyte (READER);
-		// init 1d array
-		obj->Unknown_3_Bytes = GETMEM ((3) * sizeof (byte));
-		// read 1d array
-		for (i = 0; i < (3); i++)
-			obj->Unknown_3_Bytes[i] = readbyte (READER);
-		// init 1d array
-		obj->Unknown_8_Bytes = GETMEM ((8) * sizeof (byte));
-		// read 1d array
-		for (i = 0; i < (8); i++)
-			obj->Unknown_8_Bytes[i] = readbyte (READER);
+		// TODO: odd
+		READ (byte, &(obj->Unknown_3_Bytes[0]), 3, 1, "readATextureRenderData")
+		READ (byte, &(obj->Unknown_8_Bytes[0]), 8, 1, "readATextureRenderData")
 	}
 	if (VersionCheck (0x0A010000, 0x0A020000)) {
 		obj->Unknown_Int = readuint (READER);
@@ -8600,82 +8308,63 @@ void readATextureRenderData (ATextureRenderData * obj, unsigned int ARG)
 		obj->Unknown_Byte_1 = readbyte (READER);
 	}
 	if (VersionCheck (0x14000004, 0)) {
-		// init 1d array
-		obj->Channels = GETMEM ((4) * sizeof (ChannelData));
-		// read 1d array
 		for (i = 0; i < (4); i++)
 			readChannelData (&obj->Channels[i], 0);
 	}
-	//BDBG = 1;
 	obj->Palette = readRef (READER);
 	obj->Num_Mipmaps = readuint (READER);
+	PROTECT_LEN (obj->Num_Mipmaps, 2000000, "readATextureRenderData")
 	obj->Bytes_Per_Pixel = readuint (READER);
-	// init 1d array
 	obj->Mipmaps = GETMEM ((obj->Num_Mipmaps) * sizeof (MipMap));
-	//dbg ("MARK\n");
-	// read 1d array
-	for (i = 0; i < (obj->Num_Mipmaps); i++)
-		readMipMap (&obj->Mipmaps[i], 0);
-	//BDBG = 0;
+	READ (uint, &(obj->Mipmaps[0].Width), obj->Num_Mipmaps*3, SIZEOFDWORD, "readATextureRenderData")
 }
 
 void
-readNiPersistentSrcTextureRendererData (NiPersistentSrcTextureRendererData *
-					obj, unsigned int ARG)
+readNiPersistentSrcTextureRendererData(NiPersistentSrcTextureRendererData *obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (ATextureRenderData));
 	readATextureRenderData (obj->parent, 0);
 	obj->Num_Pixels = readuint (READER);
+	PROTECT_LEN (obj->Num_Pixels, 2000000, "readNiPersistentSrcTextureRendererData")
 	obj->Unknown_Int_6 = readuint (READER);
 	obj->Num_Faces = readuint (READER);
+	PROTECT_LEN (obj->Num_Faces, 2000000, "readNiPersistentSrcTextureRendererData")
 	obj->Unknown_Int_7 = readuint (READER);
-	// init 2d array
-	int i, j;
-	obj->Pixel_Data = GETMEM ((obj->Num_Faces) * sizeof (byte *));
-	for (i = 0; i < (obj->Num_Faces); i++)
-		obj->Pixel_Data[i] = GETMEM ((obj->Num_Pixels) * sizeof (byte));
-	// read 2d array
-	for (i = 0; i < (obj->Num_Faces); i++)
-		for (j = 0; j < (obj->Num_Pixels); j++)
-			obj->Pixel_Data[i][j] = readbyte (READER);
+	NIFuint len = obj->Num_Faces * obj->Num_Pixels;
+	PROTECT_LEN (len, 2000000, "readNiPersistentSrcTextureRendererData")
+	obj->Pixel_Data = GETMEM (len);
+	READ (byte, obj->Pixel_Data, len, 1, "readNiPersistentSrcTextureRendererData")
 }
 
-void readNiPixelData (NiPixelData * obj, unsigned int ARG)
+void
+readNiPixelData(NiPixelData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (ATextureRenderData));
 	readATextureRenderData (obj->parent, 0);
 	obj->Num_Pixels = readuint (READER);
+	PROTECT_LEN (obj->Num_Pixels, 5000000, "readNiPixelData")
 	if (VersionCheck (0x14000004, 0)) {
 		obj->Num_Faces = readuint (READER);
-	}
-	if (VersionCheck (0x14000004, 0)) {
-		// init 2d array
-		int i, j;
-		obj->Pixel_Data = GETMEM ((obj->Num_Faces) * sizeof (byte *));
-		for (i = 0; i < (obj->Num_Faces); i++)
-			obj->Pixel_Data[i] =
-			    GETMEM ((obj->Num_Pixels) * sizeof (byte));
-		// read 2d array
-		for (i = 0; i < (obj->Num_Faces); i++)
-			for (j = 0; j < (obj->Num_Pixels); j++)
-				obj->Pixel_Data[i][j] = readbyte (READER);
+		PROTECT_LEN (obj->Num_Faces, 64, "readNiPixelData")
+		NIFuint len = obj->Num_Faces * obj->Num_Pixels;
+		PROTECT_LEN (len, 64*5000000, "readNiPixelData")
+		obj->Pixel_Data = GETMEM (len);
+		READ (byte, obj->Pixel_Data, len, 1, "readNiPixelData")
 	}
 	else if (VersionCheck (0, 0x0A020000)) {
-		// init 2d array
-		int i, j;
-		obj->Pixel_Data = GETMEM ((1) * sizeof (byte *));
-		for (i = 0; i < (1); i++)
-			obj->Pixel_Data[i] =
-			    GETMEM ((obj->Num_Pixels) * sizeof (byte));
-		// read 2d array
-		for (i = 0; i < (1); i++)
-			for (j = 0; j < (obj->Num_Pixels); j++)
-				obj->Pixel_Data[i][j] = readbyte (READER);
+		NIFuint len = obj->Num_Pixels;
+		PROTECT_LEN (len, 5000000, "readNiPixelData")
+		obj->Pixel_Data = GETMEM (len);
+		READ (byte, obj->Pixel_Data, len, 1, "readNiPixelData")
 	}
 }
 
-void readNiPlanarCollider (NiPlanarCollider * obj, unsigned int ARG)
+void
+readNiPlanarCollider(NiPlanarCollider * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleModifier));
 	readNiParticleModifier (obj->parent, 0);
 	if (VersionCheck (0x0A000100, 0)) {
@@ -8686,7 +8375,8 @@ void readNiPlanarCollider (NiPlanarCollider * obj, unsigned int ARG)
 	if (VersionCheck (0x04020200, 0x04020200)) {
 		obj->Unknown_Short_2 = readushort (READER);
 	}
-	obj->Unknown_Float_3 = readfloat (READER);
+	READ (float, &(obj->Unknown_Float_3), 14, SIZEOFDWORD, "readNiPlanarCollider")
+	/*obj->Unknown_Float_3 = readfloat (READER);
 	obj->Unknown_Float_4 = readfloat (READER);
 	obj->Unknown_Float_5 = readfloat (READER);
 	obj->Unknown_Float_6 = readfloat (READER);
@@ -8699,11 +8389,13 @@ void readNiPlanarCollider (NiPlanarCollider * obj, unsigned int ARG)
 	obj->Unknown_Float_13 = readfloat (READER);
 	obj->Unknown_Float_14 = readfloat (READER);
 	obj->Unknown_Float_15 = readfloat (READER);
-	obj->Unknown_Float_16 = readfloat (READER);
+	obj->Unknown_Float_16 = readfloat (READER);*/
 }
 
-void readNiPointLight (NiPointLight * obj, unsigned int ARG)
+void
+readNiPointLight(NiPointLight * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiLight));
 	readNiLight (obj->parent, 0);
 	obj->Constant_Attenuation = readfloat (READER);
@@ -8711,23 +8403,27 @@ void readNiPointLight (NiPointLight * obj, unsigned int ARG)
 	obj->Quadratic_Attenuation = readfloat (READER);
 }
 
-void readNiPosData (NiPosData * obj, unsigned int ARG)
+void
+readNiPosData(NiPosData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readKeyGroup (&obj->Data, 0, T_VECTOR3);
 }
 
-void readNiPSysAgeDeathModifier (NiPSysAgeDeathModifier * obj, unsigned int ARG)
+void
+readNiPSysAgeDeathModifier(NiPSysAgeDeathModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Spawn_on_Death = readbool (READER);
 	obj->Spawn_Modifier = readRef (READER);
 }
 
-void readNiPSysBombModifier (NiPSysBombModifier * obj, unsigned int ARG)
+void
+readNiPSysBombModifier(NiPSysBombModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Bomb_Object = readPtr (READER);
@@ -8739,16 +8435,18 @@ void readNiPSysBombModifier (NiPSysBombModifier * obj, unsigned int ARG)
 }
 
 void
-readNiPSysBoundUpdateModifier (NiPSysBoundUpdateModifier * obj,
-			       unsigned int ARG)
+readNiPSysBoundUpdateModifier(NiPSysBoundUpdateModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Update_Skip = readushort (READER);
 }
 
-void readNiPSysBoxEmitter (NiPSysBoxEmitter * obj, unsigned int ARG)
+void
+readNiPSysBoxEmitter(NiPSysBoxEmitter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysVolumeEmitter));
 	readNiPSysVolumeEmitter (obj->parent, 0);
 	obj->Width = readfloat (READER);
@@ -8756,30 +8454,38 @@ void readNiPSysBoxEmitter (NiPSysBoxEmitter * obj, unsigned int ARG)
 	obj->Depth = readfloat (READER);
 }
 
-void readNiPSysColliderManager (NiPSysColliderManager * obj, unsigned int ARG)
+void
+readNiPSysColliderManager(NiPSysColliderManager * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Collider = readRef (READER);
 }
 
-void readNiPSysColorModifier (NiPSysColorModifier * obj, unsigned int ARG)
+void
+readNiPSysColorModifier(NiPSysColorModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Data = readRef (READER);
 }
 
-void readNiPSysCylinderEmitter (NiPSysCylinderEmitter * obj, unsigned int ARG)
+void
+readNiPSysCylinderEmitter(NiPSysCylinderEmitter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysVolumeEmitter));
 	readNiPSysVolumeEmitter (obj->parent, 0);
 	obj->Radius = readfloat (READER);
 	obj->Height = readfloat (READER);
 }
 
-void readNiPSysDragModifier (NiPSysDragModifier * obj, unsigned int ARG)
+void
+readNiPSysDragModifier(NiPSysDragModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Parent = readPtr (READER);
@@ -8789,12 +8495,13 @@ void readNiPSysDragModifier (NiPSysDragModifier * obj, unsigned int ARG)
 	obj->Range_Falloff = readfloat (READER);
 }
 
-void readNiPSysEmitterCtlrData (NiPSysEmitterCtlrData * obj, unsigned int ARG)
+void
+readNiPSysEmitterCtlrData(NiPSysEmitterCtlrData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readKeyGroup (&obj->Float_Keys_, 0, T_FLOAT);
 	obj->Num_Visibility_Keys_ = readuint (READER);
+	PROTECT_LEN (obj->Num_Visibility_Keys_, 2000000, "readNiPSysEmitterCtlrData")
 	// init 1d array
 	obj->Visibility_Keys_ =
 	    GETMEM ((obj->Num_Visibility_Keys_) * sizeof (Key));
@@ -8804,8 +8511,10 @@ void readNiPSysEmitterCtlrData (NiPSysEmitterCtlrData * obj, unsigned int ARG)
 		readKey (&obj->Visibility_Keys_[i], 1, T_BYTE);
 }
 
-void readNiPSysGravityModifier (NiPSysGravityModifier * obj, unsigned int ARG)
+void
+readNiPSysGravityModifier(NiPSysGravityModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Gravity_Object = readPtr (READER);
@@ -8820,8 +8529,10 @@ void readNiPSysGravityModifier (NiPSysGravityModifier * obj, unsigned int ARG)
 	}
 }
 
-void readNiPSysGrowFadeModifier (NiPSysGrowFadeModifier * obj, unsigned int ARG)
+void
+readNiPSysGrowFadeModifier(NiPSysGrowFadeModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Grow_Time = readfloat (READER);
@@ -8833,39 +8544,38 @@ void readNiPSysGrowFadeModifier (NiPSysGrowFadeModifier * obj, unsigned int ARG)
 	}
 }
 
-void readNiPSysMeshEmitter (NiPSysMeshEmitter * obj, unsigned int ARG)
+void
+readNiPSysMeshEmitter(NiPSysMeshEmitter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysEmitter));
 	readNiPSysEmitter (obj->parent, 0);
 	obj->Num_Emitter_Meshes = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Emitter_Meshes, 2000000, "readNiPSysMeshEmitter")
 	obj->Emitter_Meshes =
 	    GETMEM ((obj->Num_Emitter_Meshes) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Emitter_Meshes); i++)
-		obj->Emitter_Meshes[i] = readRef (READER);
+	READ (uint, obj->Emitter_Meshes, obj->Num_Emitter_Meshes, SIZEOFDWORD, "readNiPSysMeshEmitter")
 	obj->Initial_Velocity_Type = readuint (READER);
 	obj->Emission_Type = readuint (READER);
 	readVector3 (&obj->Emission_Axis, 0);
 }
 
 void
-readNiPSysMeshUpdateModifier (NiPSysMeshUpdateModifier * obj, unsigned int ARG)
+readNiPSysMeshUpdateModifier(NiPSysMeshUpdateModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Num_Meshes = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Meshes, 2000000, "readNiPSysMeshUpdateModifier")
 	obj->Meshes = GETMEM ((obj->Num_Meshes) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Meshes); i++)
-		obj->Meshes[i] = readRef (READER);
+	READ (uint, obj->Meshes, obj->Num_Meshes, SIZEOFDWORD, "readNiPSysMeshUpdateModifier")
 }
 
-void readNiPSysPlanarCollider (NiPSysPlanarCollider * obj, unsigned int ARG)
+void
+readNiPSysPlanarCollider(NiPSysPlanarCollider * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysCollider));
 	readNiPSysCollider (obj->parent, 0);
 	obj->Width = readfloat (READER);
@@ -8875,27 +8585,34 @@ void readNiPSysPlanarCollider (NiPSysPlanarCollider * obj, unsigned int ARG)
 }
 
 void
-readNiPSysSphericalCollider (NiPSysSphericalCollider * obj, unsigned int ARG)
+readNiPSysSphericalCollider(NiPSysSphericalCollider * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysCollider));
 	readNiPSysCollider (obj->parent, 0);
 	obj->Radius = readfloat (READER);
 }
 
-void readNiPSysPositionModifier (NiPSysPositionModifier * obj, unsigned int ARG)
+void
+readNiPSysPositionModifier(NiPSysPositionModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 }
 
-void readNiPSysResetOnLoopCtlr (NiPSysResetOnLoopCtlr * obj, unsigned int ARG)
+void
+readNiPSysResetOnLoopCtlr(NiPSysResetOnLoopCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 }
 
-void readNiPSysRotationModifier (NiPSysRotationModifier * obj, unsigned int ARG)
+void
+readNiPSysRotationModifier(NiPSysRotationModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Initial_Rotation_Speed = readfloat (READER);
@@ -8909,8 +8626,10 @@ void readNiPSysRotationModifier (NiPSysRotationModifier * obj, unsigned int ARG)
 	readVector3 (&obj->Initial_Axis, 0);
 }
 
-void readNiPSysSpawnModifier (NiPSysSpawnModifier * obj, unsigned int ARG)
+void
+readNiPSysSpawnModifier(NiPSysSpawnModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Num_Spawn_Generations = readushort (READER);
@@ -8926,21 +8645,27 @@ void readNiPSysSpawnModifier (NiPSysSpawnModifier * obj, unsigned int ARG)
 	}
 }
 
-void readNiPSysSphereEmitter (NiPSysSphereEmitter * obj, unsigned int ARG)
+void
+readNiPSysSphereEmitter(NiPSysSphereEmitter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysVolumeEmitter));
 	readNiPSysVolumeEmitter (obj->parent, 0);
 	obj->Radius = readfloat (READER);
 }
 
-void readNiPSysUpdateCtlr (NiPSysUpdateCtlr * obj, unsigned int ARG)
+void
+readNiPSysUpdateCtlr(NiPSysUpdateCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 }
 
-void readNiPSysFieldModifier (NiPSysFieldModifier * obj, unsigned int ARG)
+void
+readNiPSysFieldModifier(NiPSysFieldModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Field_Object = readRef (READER);
@@ -8951,26 +8676,27 @@ void readNiPSysFieldModifier (NiPSysFieldModifier * obj, unsigned int ARG)
 }
 
 void
-readNiPSysVortexFieldModifier (NiPSysVortexFieldModifier * obj,
-			       unsigned int ARG)
+readNiPSysVortexFieldModifier(NiPSysVortexFieldModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysFieldModifier));
 	readNiPSysFieldModifier (obj->parent, 0);
 	readVector3 (&obj->Direction, 0);
 }
 
 void
-readNiPSysGravityFieldModifier (NiPSysGravityFieldModifier * obj,
-				unsigned int ARG)
+readNiPSysGravityFieldModifier(NiPSysGravityFieldModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysFieldModifier));
 	readNiPSysFieldModifier (obj->parent, 0);
 	readVector3 (&obj->Direction, 0);
 }
 
 void
-readNiPSysDragFieldModifier (NiPSysDragFieldModifier * obj, unsigned int ARG)
+readNiPSysDragFieldModifier(NiPSysDragFieldModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysFieldModifier));
 	readNiPSysFieldModifier (obj->parent, 0);
 	obj->Use_Direction_ = readbool (READER);
@@ -8978,110 +8704,114 @@ readNiPSysDragFieldModifier (NiPSysDragFieldModifier * obj, unsigned int ARG)
 }
 
 void
-readNiPSysTurbulenceFieldModifier (NiPSysTurbulenceFieldModifier * obj,
-				   unsigned int ARG)
+readNiPSysTurbulenceFieldModifier(NiPSysTurbulenceFieldModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysFieldModifier));
 	readNiPSysFieldModifier (obj->parent, 0);
 	obj->Frequency = readfloat (READER);
 }
 
 void
-readNiPSysFieldMagnitudeCtlr (NiPSysFieldMagnitudeCtlr * obj, unsigned int ARG)
+readNiPSysFieldMagnitudeCtlr(NiPSysFieldMagnitudeCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysFieldAttenuationCtlr (NiPSysFieldAttenuationCtlr * obj,
-				unsigned int ARG)
+readNiPSysFieldAttenuationCtlr(NiPSysFieldAttenuationCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysFieldMaxDistanceCtlr (NiPSysFieldMaxDistanceCtlr * obj,
-				unsigned int ARG)
+readNiPSysFieldMaxDistanceCtlr(NiPSysFieldMaxDistanceCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysAirFieldAirFrictionCtlr (NiPSysAirFieldAirFrictionCtlr * obj,
-				   unsigned int ARG)
+readNiPSysAirFieldAirFrictionCtlr(NiPSysAirFieldAirFrictionCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysAirFieldInheritVelocityCtlr (NiPSysAirFieldInheritVelocityCtlr * obj,
-				       unsigned int ARG)
+readNiPSysAirFieldInheritVelocityCtlr(NiPSysAirFieldInheritVelocityCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysAirFieldSpreadCtlr (NiPSysAirFieldSpreadCtlr * obj, unsigned int ARG)
+readNiPSysAirFieldSpreadCtlr(NiPSysAirFieldSpreadCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysInitialRotSpeedCtlr (NiPSysInitialRotSpeedCtlr * obj,
-			       unsigned int ARG)
+readNiPSysInitialRotSpeedCtlr(NiPSysInitialRotSpeedCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysInitialRotSpeedVarCtlr (NiPSysInitialRotSpeedVarCtlr * obj,
-				  unsigned int ARG)
+readNiPSysInitialRotSpeedVarCtlr(NiPSysInitialRotSpeedVarCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysInitialRotAngleCtlr (NiPSysInitialRotAngleCtlr * obj,
-			       unsigned int ARG)
+readNiPSysInitialRotAngleCtlr(NiPSysInitialRotAngleCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysInitialRotAngleVarCtlr (NiPSysInitialRotAngleVarCtlr * obj,
-				  unsigned int ARG)
+readNiPSysInitialRotAngleVarCtlr(NiPSysInitialRotAngleVarCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysEmitterPlanarAngleCtlr (NiPSysEmitterPlanarAngleCtlr * obj,
-				  unsigned int ARG)
+readNiPSysEmitterPlanarAngleCtlr(NiPSysEmitterPlanarAngleCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
 void
-readNiPSysEmitterPlanarAngleVarCtlr (NiPSysEmitterPlanarAngleVarCtlr * obj,
-				     unsigned int ARG)
+readNiPSysEmitterPlanarAngleVarCtlr(NiPSysEmitterPlanarAngleVarCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierFloatCtlr));
 	readNiPSysModifierFloatCtlr (obj->parent, 0);
 }
 
-void readNiPSysAirFieldModifier (NiPSysAirFieldModifier * obj, unsigned int ARG)
+void
+readNiPSysAirFieldModifier(NiPSysAirFieldModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysFieldModifier));
 	readNiPSysFieldModifier (obj->parent, 0);
 	readVector3 (&obj->Direction, 0);
@@ -9093,8 +8823,10 @@ void readNiPSysAirFieldModifier (NiPSysAirFieldModifier * obj, unsigned int ARG)
 	obj->Unknown_Float_4 = readfloat (READER);
 }
 
-void readNiPSysTrailEmitter (NiPSysTrailEmitter * obj, unsigned int ARG)
+void
+readNiPSysTrailEmitter(NiPSysTrailEmitter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysEmitter));
 	readNiPSysEmitter (obj->parent, 0);
 	obj->Unknown_Int_1 = readint (READER);
@@ -9111,34 +8843,37 @@ void readNiPSysTrailEmitter (NiPSysTrailEmitter * obj, unsigned int ARG)
 }
 
 void
-readNiLightIntensityController (NiLightIntensityController * obj,
-				unsigned int ARG)
+readNiLightIntensityController(NiLightIntensityController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiFloatInterpController));
 	readNiFloatInterpController (obj->parent, 0);
 }
 
 void
-readNiPSysRadialFieldModifier (NiPSysRadialFieldModifier * obj,
-			       unsigned int ARG)
+readNiPSysRadialFieldModifier(NiPSysRadialFieldModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysFieldModifier));
 	readNiPSysFieldModifier (obj->parent, 0);
 	obj->Radial_Type = readint (READER);
 }
 
-void readNiLODData (NiLODData * obj, unsigned int ARG)
+inline void
+readNiLODData(NiLODData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 }
 
-void readNiRangeLODData (NiRangeLODData * obj, unsigned int ARG)
+void
+readNiRangeLODData(NiRangeLODData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiLODData));
 	readNiLODData (obj->parent, 0);
 	readVector3 (&obj->LOD_Center, 0);
 	obj->Num_LOD_Levels = readuint (READER);
+	PROTECT_LEN (obj->Num_LOD_Levels, 2000000, "readNiRangeLODData")
 	// init 1d array
 	obj->LOD_Levels = GETMEM ((obj->Num_LOD_Levels) * sizeof (LODRange));
 	// read 1d array
@@ -9147,8 +8882,10 @@ void readNiRangeLODData (NiRangeLODData * obj, unsigned int ARG)
 		readLODRange (&obj->LOD_Levels[i], 0);
 }
 
-void readNiScreenLODData (NiScreenLODData * obj, unsigned int ARG)
+void
+readNiScreenLODData(NiScreenLODData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiLODData));
 	readNiLODData (obj->parent, 0);
 	readVector3 (&obj->Bound_Center, 0);
@@ -9156,40 +8893,44 @@ void readNiScreenLODData (NiScreenLODData * obj, unsigned int ARG)
 	readVector3 (&obj->World_Center, 0);
 	obj->World_Radius = readfloat (READER);
 	obj->Proportion_Count = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Proportion_Count, 2000000, "readNiScreenLODData")
 	obj->Proportion_Levels =
 	    GETMEM ((obj->Proportion_Count) * sizeof (float));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Proportion_Count); i++)
-		obj->Proportion_Levels[i] = readfloat (READER);
+	READ (float, obj->Proportion_Levels, obj->Proportion_Count, SIZEOFDWORD, "readNiScreenLODData")
 }
 
-void readNiRotatingParticles (NiRotatingParticles * obj, unsigned int ARG)
+void
+readNiRotatingParticles(NiRotatingParticles * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticles));
 	readNiParticles (obj->parent, 0);
 }
 
-void readNiSequenceStreamHelper (NiSequenceStreamHelper * obj, unsigned int ARG)
+void
+readNiSequenceStreamHelper(NiSequenceStreamHelper * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiObjectNET));
 	readNiObjectNET (obj->parent, 0);
 }
 
-void readNiShadeProperty (NiShadeProperty * obj, unsigned int ARG)
+void
+readNiShadeProperty(NiShadeProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
 }
 
-void readNiSkinData (NiSkinData * obj, unsigned int ARG)
+void
+readNiSkinData(NiSkinData * obj, unsigned int ARG)
 {
-	//obj->parent = GETMEM (sizeof (NiObject));
-	//readNiObject (obj->parent, 0);
+	COVERAGE
 	readSkinTransform (&obj->Skin_Transform, 0);
 	obj->Num_Bones = readuint (READER);
+	PROTECT_LEN (obj->Num_Bones, 2000000, "readNiSkinData")
 	if (VersionCheck (0x04000002, 0x0A010000)) {
 		obj->Skin_Partition = readRef (READER);
 	}
@@ -9204,63 +8945,60 @@ void readNiSkinData (NiSkinData * obj, unsigned int ARG)
 		readSkinData (&obj->Bone_List[i], obj->Has_Vertex_Weights);
 }
 
-void readNiSkinInstance (NiSkinInstance * obj, unsigned int ARG)
+void
+readNiSkinInstance(NiSkinInstance * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Data = readRef (READER);
 	if (VersionCheck (0x0A020000, 0)) {
 		obj->Skin_Partition = readRef (READER);
 	}
 	obj->Skeleton_Root = readPtr (READER);
 	obj->Num_Bones = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Bones, 2000000, "readNiSkinInstance")
 	obj->Bones = GETMEM ((obj->Num_Bones) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Bones); i++)
-		obj->Bones[i] = readPtr (READER);
+	READ (uint, obj->Bones, obj->Num_Bones, SIZEOFDWORD, "readNiSkinInstance")
 }
 
 void
-readNiTriShapeSkinController (NiTriShapeSkinController * obj, unsigned int ARG)
+readNiTriShapeSkinController(NiTriShapeSkinController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Num_Bones = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Bones, 2000000, "readNiTriShapeSkinController")
 	obj->Vertex_Counts = GETMEM ((obj->Num_Bones) * sizeof (unsigned int));
-	// read 1d array
-	int i, j;
-	for (i = 0; i < (obj->Num_Bones); i++)
-		obj->Vertex_Counts[i] = readuint (READER);
-	// init 1d array
+	READ (uint, obj->Vertex_Counts, obj->Num_Bones, SIZEOFDWORD, "readNiTriShapeSkinController")
 	obj->Bones = GETMEM ((obj->Num_Bones) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Bones); i++)
-		obj->Bones[i] = readPtr (READER);
+	READ (uint, obj->Bones, obj->Num_Bones, SIZEOFDWORD, "readNiTriShapeSkinController")
 	// init 2d array
 	obj->Bone_Data = GETMEM ((obj->Num_Bones) * sizeof (OldSkinData *));
-	for (i = 0; i < (obj->Num_Bones); i++)
+	int i, j;
+	for (i = 0; i < (obj->Num_Bones); i++) {
+		PROTECT_LEN (obj->Vertex_Counts[i], 2000000, "readNiTriShapeSkinController")
 		obj->Bone_Data[i] =
 		    GETMEM ((obj->Vertex_Counts[i]) * sizeof (OldSkinData));
-	// read 2d array
-	for (i = 0; i < (obj->Num_Bones); i++)
+		// read 2d array
 		for (j = 0; j < (obj->Vertex_Counts[i]); j++)
 			readOldSkinData (&obj->Bone_Data[i][j], 0);
+	}
 }
 
-void readNiClodSkinInstance (NiClodSkinInstance * obj, unsigned int ARG)
+void
+readNiClodSkinInstance(NiClodSkinInstance * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSkinInstance));
 	readNiSkinInstance (obj->parent, 0);
 }
 
-void readNiSkinPartition (NiSkinPartition * obj, unsigned int ARG)
+void
+readNiSkinPartition(NiSkinPartition * obj, unsigned int ARG)
 {
-	//obj->parent = GETMEM (sizeof (NiObject));
-	//readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Num_Skin_Partition_Blocks = readuint (READER);
+	PROTECT_LEN (obj->Num_Skin_Partition_Blocks, 2000000, "readNiSkinPartition")
 	// init 1d array
 	obj->Skin_Partition_Blocks =
 	    GETMEM ((obj->Num_Skin_Partition_Blocks) * sizeof (SkinPartition));
@@ -9271,14 +9009,18 @@ void readNiSkinPartition (NiSkinPartition * obj, unsigned int ARG)
 	}
 }
 
-void readNiTexture (NiTexture * obj, unsigned int ARG)
+void
+readNiTexture(NiTexture * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiObjectNET));
 	readNiObjectNET (obj->parent, 0);
 }
 
-void readNiSourceTexture (NiSourceTexture * obj, unsigned int ARG)
+void
+readNiSourceTexture(NiSourceTexture * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTexture));
 	readNiTexture (obj->parent, 0);
 	obj->Use_External = readbyte (READER);
@@ -9306,15 +9048,19 @@ void readNiSourceTexture (NiSourceTexture * obj, unsigned int ARG)
 	}
 }
 
-void readNiSpecularProperty (NiSpecularProperty * obj, unsigned int ARG)
+void
+readNiSpecularProperty(NiSpecularProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
 }
 
-void readNiSphericalCollider (NiSphericalCollider * obj, unsigned int ARG)
+void
+readNiSphericalCollider(NiSphericalCollider * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleModifier));
 	readNiParticleModifier (obj->parent, 0);
 	obj->Unknown_Float_1 = readfloat (READER);
@@ -9330,8 +9076,10 @@ void readNiSphericalCollider (NiSphericalCollider * obj, unsigned int ARG)
 	obj->Unknown_Float_5 = readfloat (READER);
 }
 
-void readNiSpotLight (NiSpotLight * obj, unsigned int ARG)
+void
+readNiSpotLight(NiSpotLight * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPointLight));
 	readNiPointLight (obj->parent, 0);
 	obj->Cutoff_Angle = readfloat (READER);
@@ -9341,8 +9089,10 @@ void readNiSpotLight (NiSpotLight * obj, unsigned int ARG)
 	obj->Exponent = readfloat (READER);
 }
 
-void readNiStencilProperty (NiStencilProperty * obj, unsigned int ARG)
+void
+readNiStencilProperty(NiStencilProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	if (VersionCheck (0, 0x0A000102)) {
@@ -9350,13 +9100,14 @@ void readNiStencilProperty (NiStencilProperty * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0, 0x14000005)) {
 		obj->Stencil_Enabled = readbyte (READER);
-		obj->Stencil_Function = readuint (READER);
+		READ (uint, &(obj->Stencil_Function), 7, SIZEOFDWORD, "readNiStencilProperty")
+		/*obj->Stencil_Function = readuint (READER);
 		obj->Stencil_Ref = readuint (READER);
 		obj->Stencil_Mask = readuint (READER);
 		obj->Fail_Action = readuint (READER);
 		obj->Z_Fail_Action = readuint (READER);
 		obj->Pass_Action = readuint (READER);
-		obj->Draw_Mode = readuint (READER);
+		obj->Draw_Mode = readuint (READER);*/
 	}
 	if (VersionCheck (0x14010003, 0)) {
 		obj->Flags = readFlags (READER);
@@ -9365,8 +9116,10 @@ void readNiStencilProperty (NiStencilProperty * obj, unsigned int ARG)
 	}
 }
 
-void readNiStringExtraData (NiStringExtraData * obj, unsigned int ARG)
+void
+readNiStringExtraData(NiStringExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	if (VersionCheck (0, 0x04020200)) {
@@ -9375,18 +9128,21 @@ void readNiStringExtraData (NiStringExtraData * obj, unsigned int ARG)
 	readstring (&obj->String_Data, 0);
 }
 
-void readNiStringPalette (NiStringPalette * obj, unsigned int ARG)
+void
+readNiStringPalette(NiStringPalette * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readStringPalette (&obj->Palette, 0);
 }
 
-void readNiStringsExtraData (NiStringsExtraData * obj, unsigned int ARG)
+void
+readNiStringsExtraData(NiStringsExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Num_Strings = readuint (READER);
+	PROTECT_LEN (obj->Num_Strings, 2000000, "readNiStringsExtraData")
 	// init 1d array
 	obj->Data = GETMEM ((obj->Num_Strings) * sizeof (string));
 	// read 1d array
@@ -9395,14 +9151,17 @@ void readNiStringsExtraData (NiStringsExtraData * obj, unsigned int ARG)
 		readstring (&obj->Data[i], 0);
 }
 
-void readNiTextKeyExtraData (NiTextKeyExtraData * obj, unsigned int ARG)
+void
+readNiTextKeyExtraData(NiTextKeyExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	if (VersionCheck (0, 0x04020200)) {
 		obj->Unknown_Int_1 = readuint (READER);
 	}
 	obj->Num_Text_Keys = readuint (READER);
+	PROTECT_LEN (obj->Num_Text_Keys, 2000000, "readNiTextKeyExtraData")
 	// init 1d array
 	obj->Text_Keys = GETMEM ((obj->Num_Text_Keys) * sizeof (Key));
 	// read 1d array
@@ -9411,8 +9170,10 @@ void readNiTextKeyExtraData (NiTextKeyExtraData * obj, unsigned int ARG)
 		readKey (&obj->Text_Keys[i], 1, T_STRING);
 }
 
-void readNiTextureEffect (NiTextureEffect * obj, unsigned int ARG)
+void
+readNiTextureEffect(NiTextureEffect * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiDynamicEffect));
 	readNiDynamicEffect (obj->parent, 0);
 	readMatrix33 (&obj->Model_Projection_Matrix, 0);
@@ -9442,28 +9203,28 @@ void readNiTextureEffect (NiTextureEffect * obj, unsigned int ARG)
 	}
 }
 
-void readNiTextureModeProperty (NiTextureModeProperty * obj, unsigned int ARG)
+void
+readNiTextureModeProperty(NiTextureModeProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Unknown_Short = readshort (READER);
 	if (VersionCheck (0x03010000, 0x0A020000)) {
 		obj->PS2_L = readshort (READER);
-	}
-	if (VersionCheck (0x03010000, 0x0A020000)) {
 		obj->PS2_K = readshort (READER);
 	}
 }
 
-void readNiImage (NiImage * obj, unsigned int ARG)
+void
+readNiImage(NiImage * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Use_External = readbyte (READER);
-	if ((obj->Use_External != 0)) {
+	if (obj->Use_External) {
 		readFilePath (&obj->File_Name, 0);
 	}
-	if ((obj->Use_External == 0)) {
+	else {// ((obj->Use_External == 0)) {
 		obj->Image_Data = readRef (READER);
 	}
 	obj->Unknown_Int = readuint (READER);
@@ -9472,39 +9233,40 @@ void readNiImage (NiImage * obj, unsigned int ARG)
 	}
 }
 
-void readNiTextureProperty (NiTextureProperty * obj, unsigned int ARG)
+void
+readNiTextureProperty(NiTextureProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
 	obj->Image = readRef (READER);
 	if (VersionCheck (0, 0x03030000)) {
 		obj->Unknown_Int_1 = readuint (READER);
-	}
-	if (VersionCheck (0, 0x03030000)) {
 		obj->Unknown_Int_2 = readuint (READER);
 	}
 }
 
-void readNiMultiTextureProperty (NiMultiTextureProperty * obj, unsigned int ARG)
+void
+readNiMultiTextureProperty(NiMultiTextureProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
 	obj->Unknown_Int = readuint (READER);
-	// init 1d array
-	obj->Texture_Elements = GETMEM ((5) * sizeof (MultiTextureElement));
 	// read 1d array
 	int i;
 	for (i = 0; i < (5); i++)
 		readMultiTextureElement (&obj->Texture_Elements[i], 0);
 }
 
-void readNiTexturingProperty (NiTexturingProperty * obj, unsigned int ARG)
+void
+readNiTexturingProperty(NiTexturingProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
-	//BDBG = 1;
 	if (VersionCheck (0, 0x0A000102) ||
 		VersionCheck (0x14010003, 0)) {
 		obj->Flags = readFlags (READER);
@@ -9534,29 +9296,19 @@ void readNiTexturingProperty (NiTexturingProperty * obj, unsigned int ARG)
 		readTexDesc (&obj->Glow_Texture, 0);
 	}
 	obj->Has_Bump_Map_Texture = readbool (READER);
-	if ((obj->Has_Bump_Map_Texture != 0)) {
+	if (obj->Has_Bump_Map_Texture) {
 		readTexDesc (&obj->Bump_Map_Texture, 0);
-	}
-	if ((obj->Has_Bump_Map_Texture != 0)) {
 		obj->Bump_Map_Luma_Scale = readfloat (READER);
-	}
-	if ((obj->Has_Bump_Map_Texture != 0)) {
 		obj->Bump_Map_Luma_Offset = readfloat (READER);
-	}
-	if ((obj->Has_Bump_Map_Texture != 0)) {
 		readMatrix22 (&obj->Bump_Map_Matrix, 0);
 	}
 	if (VersionCheck (0x14020007, 0)) {
 		obj->Has_Normal_Texture = readbool (READER);
-	}
-	if (VersionCheck (0x14020007, 0) && (obj->Has_Normal_Texture != 0)) {
-		readTexDesc (&obj->Normal_Texture, 0);
-	}
-	if (VersionCheck (0x14020007, 0)) {
+		if (obj->Has_Normal_Texture)
+			readTexDesc (&obj->Normal_Texture, 0);
 		obj->Has_Unknown2_Texture = readbool (READER);
-	}
-	if (VersionCheck (0x14020007, 0) && (obj->Has_Unknown2_Texture != 0)) {
-		readTexDesc (&obj->Unknown2_Texture, 0);
+		if (obj->Has_Unknown2_Texture)
+			readTexDesc (&obj->Unknown2_Texture, 0);
 	}
 	if ((obj->Has_Unknown2_Texture != 0)) {
 		obj->Unknown2_Float = readfloat (READER);
@@ -9588,206 +9340,179 @@ void readNiTexturingProperty (NiTexturingProperty * obj, unsigned int ARG)
 	}
 	if (VersionCheck (0x0A000100, 0)) {
 		obj->Num_Shader_Textures = readuint (READER);
-	}
-	if (VersionCheck (0x0A000100, 0)) {
+		PROTECT_LEN (obj->Num_Shader_Textures, 2000000, "readNiTexturingProperty")
 		// init 1d array
 		obj->Shader_Textures =
-		    GETMEM ((obj->Num_Shader_Textures) *
-			    sizeof (ShaderTexDesc));
+		    GETMEM ((obj->Num_Shader_Textures) * sizeof (ShaderTexDesc));
 		// read 1d array
 		int i;
 		for (i = 0; i < (obj->Num_Shader_Textures); i++)
 			readShaderTexDesc (&obj->Shader_Textures[i], 0);
 	}
-	//BDBG = 0;
 }
 
-void readNiTransformData (NiTransformData * obj, unsigned int ARG)
+void
+readNiTransformData(NiTransformData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiKeyframeData));
 	readNiKeyframeData (obj->parent, 0);
 }
 
-void readNiTriShape (NiTriShape * obj, unsigned int ARG)
+void
+readNiTriShape(NiTriShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriBasedGeom));
 	readNiTriBasedGeom (obj->parent, 0);
 }
 
-void readNiTriShapeData (NiTriShapeData * obj, unsigned int ARG)
+void
+readNiTriShapeData(NiTriShapeData * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriBasedGeomData));
 	readNiTriBasedGeomData (obj->parent, 0);
-	//TellFilePos (READER);
 	obj->Num_Triangle_Points = readuint (READER);
+	PROTECT_LEN (obj->Num_Triangle_Points, 2000000, "readNiTriShapeData")
 	if (VersionCheck (0x0A010000, 0)) {
 		obj->Has_Triangles = readbool (READER);
 	}
-	//BDBG = 1;
 	if (VersionCheck (0, 0x0A000102) ||
 		(obj->Has_Triangles != 0 && VersionCheck(0x0A000103, 0))) {
-		// init 1d array
 		obj->Triangles =
 		    GETMEM ((obj->parent->Num_Triangles) * sizeof (Triangle));
-		// read 1d array
-		for (i = 0; i < (obj->parent->Num_Triangles); i++)
-			readTriangle (&obj->Triangles[i], 0);
+		if (obj->parent->Num_Triangles > 0)
+			READ (ushort, &(obj->Triangles[0].v1), obj->parent->Num_Triangles*3, SIZEOFWORD, "readNiTriShapeData")
 	}
-	//BDBG = 0;
 	if (VersionCheck (0x03010000, 0)) {
-		//BDBG = 1;
 		obj->Num_Match_Groups = readushort (READER);
 		// init 1d array
 		obj->Match_Groups =
 		    GETMEM ((obj->Num_Match_Groups) * sizeof (MatchGroup));
 		// read 1d array
+		int i;
 		for (i = 0; i < (obj->Num_Match_Groups); i++)
 			readMatchGroup (&obj->Match_Groups[i], 0);
 	}
 }
 
-void readNiTriStrips (NiTriStrips * obj, unsigned int ARG)
+void
+readNiTriStrips(NiTriStrips * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriBasedGeom));
 	readNiTriBasedGeom (obj->parent, 0);
 }
 
-void readNiTriStripsData (NiTriStripsData * obj, unsigned int ARG)
+void
+readNiTriStripsData(NiTriStripsData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriBasedGeomData));
 	readNiTriBasedGeomData (obj->parent, 0);
-	//BDBG = 1;
 	obj->Num_Strips = readushort (READER);
-	// init 1d array
 	obj->Strip_Lengths =
 	    GETMEM ((obj->Num_Strips) * sizeof (unsigned short));
-	// read 1d array
-	int i, j;
-	for (i = 0; i < (obj->Num_Strips); i++)
-		obj->Strip_Lengths[i] = readushort (READER);
+	READ (ushort, obj->Strip_Lengths, obj->Num_Strips, SIZEOFWORD, "readNiTriStripsData")
 	if (VersionCheck (0x0A000103, 0)) {
 		obj->Has_Points = readbool (READER);
 	}
-	//BDBG = 0;
 	if (VersionCheck (0, 0x0A000102) || 
 		(VersionCheck (0x0A000103, 0) && obj->Has_Points != 0)) {
 		// init 2d array
 		obj->Points =
 		    GETMEM ((obj->Num_Strips) * sizeof (unsigned short *));
-		for (i = 0; i < (obj->Num_Strips); i++)
+		int i;
+		for (i = 0; i < (obj->Num_Strips); i++) {
 			obj->Points[i] =
-			    GETMEM ((obj->Strip_Lengths[i]) *
-				    sizeof (unsigned short));
-		// read 2d array
-		for (i = 0; i < (obj->Num_Strips); i++)
-			for (j = 0; j < (obj->Strip_Lengths[i]); j++)
-				obj->Points[i][j] = readushort (READER);
+			    GETMEM ((obj->Strip_Lengths[i]) * sizeof (unsigned short));
+			READ(ushort, obj->Points[i], obj->Strip_Lengths[i], SIZEOFWORD, "readNiTriStripsData")
+		}
 	}
 }
 
-void readNiEnvMappedTriShape (NiEnvMappedTriShape * obj, unsigned int ARG)
+void
+readNiEnvMappedTriShape(NiEnvMappedTriShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiObjectNET));
 	readNiObjectNET (obj->parent, 0);
 	obj->Unknown_1 = readushort (READER);
 	readMatrix44 (&obj->Unknown_Matrix, 0);
 	obj->Num_Children = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Children, 2000000, "readNiEnvMappedTriShape")
 	obj->Children = GETMEM ((obj->Num_Children) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Children); i++)
-		obj->Children[i] = readRef (READER);
+	READ (uint, obj->Children, obj->Num_Children, SIZEOFDWORD, "readNiEnvMappedTriShape")
 	obj->Child_2 = readRef (READER);
 	obj->Child_3 = readRef (READER);
 }
 
 void
-readNiEnvMappedTriShapeData (NiEnvMappedTriShapeData * obj, unsigned int ARG)
+readNiEnvMappedTriShapeData(NiEnvMappedTriShapeData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriShapeData));
 	readNiTriShapeData (obj->parent, 0);
 }
 
-void readNiBezierTriangle4 (NiBezierTriangle4 * obj, unsigned int ARG)
+void
+readNiBezierTriangle4(NiBezierTriangle4 * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_1 = GETMEM ((6) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (6); i++)
-		obj->Unknown_1[i] = readuint (READER);
+	COVERAGE
+	READ (uint, obj->Unknown_1, 6, SIZEOFDWORD, "readNiBezierTriangle4")
 	obj->Unknown_2 = readushort (READER);
 	readMatrix33 (&obj->Matrix, 0);
 	readVector3 (&obj->Vector_1, 0);
 	readVector3 (&obj->Vector_2, 0);
-	// init 1d array
-	obj->Unknown_3 = GETMEM ((4) * sizeof (short));
-	// read 1d array
-	for (i = 0; i < (4); i++)
-		obj->Unknown_3[i] = readshort (READER);
+	READ (short, obj->Unknown_3, 4, SIZEOFWORD, "readNiBezierTriangle4")
 	obj->Unknown_4 = readbyte (READER);
 	obj->Unknown_5 = readuint (READER);
-	// init 1d array
-	obj->Unknown_6 = GETMEM ((24) * sizeof (short));
-	// read 1d array
-	for (i = 0; i < (24); i++)
-		obj->Unknown_6[i] = readshort (READER);
+	READ (short, obj->Unknown_6, 24, SIZEOFWORD, "readNiBezierTriangle4")
 }
 
-void readNiBezierMesh (NiBezierMesh * obj, unsigned int ARG)
+void
+readNiBezierMesh(NiBezierMesh * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiAVObject));
 	readNiAVObject (obj->parent, 0);
 	obj->Num_Bezier_Triangles = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Bezier_Triangles, 2000000, "readNiBezierMesh")
 	obj->Bezier_Triangle =
 	    GETMEM ((obj->Num_Bezier_Triangles) * sizeof (unsigned int));
-	// read 1d array
-	int i, j;
-	for (i = 0; i < (obj->Num_Bezier_Triangles); i++)
-		obj->Bezier_Triangle[i] = readRef (READER);
+	READ (uint, obj->Bezier_Triangle, obj->Num_Bezier_Triangles, SIZEOFDWORD, "readNiBezierMesh")
 	obj->Unknown_1 = readuint (READER);
 	obj->Count_1 = readushort (READER);
 	obj->Unknown_2 = readushort (READER);
-	// init 1d array
 	obj->Points_1 = GETMEM ((obj->Count_1) * sizeof (Vector3));
-	// read 1d array
-	for (i = 0; i < (obj->Count_1); i++)
-		readVector3 (&obj->Points_1[i], 0);
+	if (obj->Count_1 > 0)
+		READ (float, &(obj->Points_1[0].x), obj->Count_1*3, SIZEOFDWORD, "readNiBezierMesh")
 	obj->Unknown_3 = readuint (READER);
-	// init 2d array
-	obj->Points_2 = GETMEM ((obj->Count_1) * sizeof (float *));
-	for (i = 0; i < (obj->Count_1); i++)
-		obj->Points_2[i] = GETMEM ((2) * sizeof (float));
-	// read 2d array
-	for (i = 0; i < (obj->Count_1); i++)
-		for (j = 0; j < (2); j++)
-			obj->Points_2[i][j] = readfloat (READER);
+	NIFuint len = obj->Count_1 * 2;
+	PROTECT_LEN (len, 2000000, "readNiBezierMesh")
+	obj->Points_2 = GETMEM (len * sizeof (float));
+	READ (float, obj->Points_2, len, SIZEOFDWORD, "readNiBezierMesh")
 	obj->Unknown_4 = readuint (READER);
 	obj->Count_2 = readushort (READER);
-	// init 2d array
-	obj->Data_2 = GETMEM ((obj->Count_2) * sizeof (unsigned short *));
-	for (i = 0; i < (obj->Count_2); i++)
-		obj->Data_2[i] = GETMEM ((4) * sizeof (unsigned short));
-	// read 2d array
-	for (i = 0; i < (obj->Count_2); i++)
-		for (j = 0; j < (4); j++)
-			obj->Data_2[i][j] = readushort (READER);
+	len = obj->Count_2 * 4;
+	PROTECT_LEN (len, 2000000, "readNiBezierMesh")
+	obj->Points_2 = GETMEM (len * sizeof (unsigned short));
+	READ (ushort, obj->Data_2, len, SIZEOFWORD, "readNiBezierMesh")
 }
 
-void readNiClod (NiClod * obj, unsigned int ARG)
+void
+readNiClod(NiClod * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriBasedGeom));
 	readNiTriBasedGeom (obj->parent, 0);
 }
 
-void readNiClodData (NiClodData * obj, unsigned int ARG)
+void
+readNiClodData(NiClodData * obj, unsigned int ARG)
 {
-	int i, j;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriBasedGeomData));
 	readNiTriBasedGeomData (obj->parent, 0);
 	obj->Unknown_Shorts = readushort (READER);
@@ -9796,94 +9521,79 @@ void readNiClodData (NiClodData * obj, unsigned int ARG)
 	obj->Unknown_Count_3 = readushort (READER);
 	obj->Unknown_Float = readfloat (READER);
 	obj->Unknown_Short = readushort (READER);
-	// init 2d array
-	obj->Unknown_Clod_Shorts_1 =
-	    GETMEM ((obj->Unknown_Count_1) * sizeof (unsigned short *));
-	for (i = 0; i < (obj->Unknown_Count_1); i++)
-		obj->Unknown_Clod_Shorts_1[i] =
-		    GETMEM ((6) * sizeof (unsigned short));
-	// read 2d array
-	for (i = 0; i < (obj->Unknown_Count_1); i++)
-		for (j = 0; j < (6); j++)
-			obj->Unknown_Clod_Shorts_1[i][j] = readushort (READER);
-	// init 1d array
+	NIFuint len = obj->Unknown_Count_1 * 6;
+	PROTECT_LEN (len, 2000000, "readNiClodData")
+	obj->Unknown_Clod_Shorts_1 = GETMEM (len * sizeof (unsigned short));
+	READ (ushort, obj->Unknown_Clod_Shorts_1, len, SIZEOFWORD, "readNiClodData")
 	obj->Unknown_Clod_Shorts_2 =
 	    GETMEM ((obj->Unknown_Count_2) * sizeof (unsigned short));
-	// read 1d array
-	for (i = 0; i < (obj->Unknown_Count_2); i++)
-		obj->Unknown_Clod_Shorts_2[i] = readushort (READER);
-	// init 2d array
-	obj->Unknown_Clod_Shorts_3 =
-	    GETMEM ((obj->Unknown_Count_3) * sizeof (unsigned short *));
-	for (i = 0; i < (obj->Unknown_Count_3); i++)
-		obj->Unknown_Clod_Shorts_3[i] =
-		    GETMEM ((6) * sizeof (unsigned short));
-	// read 2d array
-	for (i = 0; i < (obj->Unknown_Count_3); i++)
-		for (j = 0; j < (6); j++)
-			obj->Unknown_Clod_Shorts_3[i][j] = readushort (READER);
+	READ (ushort, obj->Unknown_Clod_Shorts_2, obj->Unknown_Count_2, SIZEOFWORD, "readNiClodData")
+	len = obj->Unknown_Count_3 * 6;
+	PROTECT_LEN (len, 2000000, "readNiClodData")
+	obj->Unknown_Clod_Shorts_3 = GETMEM (len * sizeof (unsigned short));
+	READ (ushort, obj->Unknown_Clod_Shorts_3, len, SIZEOFWORD, "readNiClodData")
 }
 
-void readNiUVController (NiUVController * obj, unsigned int ARG)
+void
+readNiUVController(NiUVController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Unknown_Short = readushort (READER);
 	obj->Data = readRef (READER);
 }
 
-void readNiUVData (NiUVData * obj, unsigned int ARG)
+void
+readNiUVData(NiUVData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	// init 1d array
-	obj->UV_Groups = GETMEM ((4) * sizeof (KeyGroup));
-	// read 1d array
+	COVERAGE
 	int i;
 	for (i = 0; i < (4); i++)
 		readKeyGroup (&obj->UV_Groups[i], 0, T_FLOAT);
 }
 
-void readNiVectorExtraData (NiVectorExtraData * obj, unsigned int ARG)
+void
+readNiVectorExtraData(NiVectorExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	readVector3 (&obj->Vector_Data, 0);
 	obj->Unknown_Float = readfloat (READER);
 }
 
-void readNiVertexColorProperty (NiVertexColorProperty * obj, unsigned int ARG)
+void
+readNiVertexColorProperty(NiVertexColorProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
 	if (VersionCheck (0, 0x14000005)) {
 		obj->Vertex_Mode = readuint (READER);
-	}
-	if (VersionCheck (0, 0x14000005)) {
 		obj->Lighting_Mode = readuint (READER);
 	}
 }
 
-void readNiVertWeightsExtraData (NiVertWeightsExtraData * obj, unsigned int ARG)
+void
+readNiVertWeightsExtraData(NiVertWeightsExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Num_Bytes = readuint (READER);
 	obj->Num_Vertices = readushort (READER);
-	// init 1d array
 	obj->Weight = GETMEM ((obj->Num_Vertices) * sizeof (float));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Vertices); i++)
-		obj->Weight[i] = readfloat (READER);
+	READ (float, obj->Weight, obj->Num_Vertices, SIZEOFDWORD, "readNiVertWeightsExtraData")
 }
 
-void readNiVisData (NiVisData * obj, unsigned int ARG)
+void
+readNiVisData(NiVisData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Num_Keys = readuint (READER);
+	PROTECT_LEN (obj->Num_Keys, 2000000, "readNiVisData")
 	// init 1d array
 	obj->Keys = GETMEM ((obj->Num_Keys) * sizeof (Key));
 	// read 1d array
@@ -9892,15 +9602,19 @@ void readNiVisData (NiVisData * obj, unsigned int ARG)
 		readKey (&obj->Keys[i], 1, T_BYTE);
 }
 
-void readNiWireframeProperty (NiWireframeProperty * obj, unsigned int ARG)
+void
+readNiWireframeProperty(NiWireframeProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
 }
 
-void readNiZBufferProperty (NiZBufferProperty * obj, unsigned int ARG)
+void
+readNiZBufferProperty(NiZBufferProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
@@ -9909,48 +9623,43 @@ void readNiZBufferProperty (NiZBufferProperty * obj, unsigned int ARG)
 	}
 }
 
-void readRootCollisionNode (RootCollisionNode * obj, unsigned int ARG)
+void
+readRootCollisionNode(RootCollisionNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 }
 
-void readNiRawImageData (NiRawImageData * obj, unsigned int ARG)
+void
+readNiRawImageData(NiRawImageData * obj, unsigned int ARG)
 {
-	int i, j;
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Width = readuint (READER);
+	PROTECT_LEN (obj->Width, 20000, "readNiRawImageData")
 	obj->Height = readuint (READER);
+	PROTECT_LEN (obj->Height, 20000, "readNiRawImageData")
 	obj->Image_Type = readuint (READER);
-	if ((obj->Image_Type == 1)) {
-		// init 2d array
-		obj->RGB_Image_Data =
-		    GETMEM ((obj->Width) * sizeof (ByteColor3 *));
-		for (i = 0; i < (obj->Width); i++)
-			obj->RGB_Image_Data[i] =
-			    GETMEM ((obj->Height) * sizeof (ByteColor3));
-		// read 2d array
-		for (i = 0; i < (obj->Width); i++)
-			for (j = 0; j < (obj->Height); j++)
-				readByteColor3 (&obj->RGB_Image_Data[i][j], 0);
+	if (obj->Image_Type == 1) {
+		NIFuint len = obj->Width * obj->Height;
+		PROTECT_LEN (len, 40000000, "readNiRawImageData")
+		obj->RGB_Image_Data = GETMEM (len * sizeof (ByteColor3));
+		if (len > 0)
+			READ (byte, &(obj->RGB_Image_Data[0].r), len*3, 1, "readNiRawImageData")
 	}
-	if ((obj->Image_Type == 2)) {
-		// init 2d array
-		obj->RGBA_Image_Data =
-		    GETMEM ((obj->Width) * sizeof (ByteColor4 *));
-		for (i = 0; i < (obj->Width); i++)
-			obj->RGBA_Image_Data[i] =
-			    GETMEM ((obj->Height) * sizeof (ByteColor4));
-		// read 2d array
-		for (i = 0; i < (obj->Width); i++)
-			for (j = 0; j < (obj->Height); j++)
-				readByteColor4 (&obj->RGBA_Image_Data[i][j], 0);
-	}
+	else if (obj->Image_Type == 2) {
+		NIFuint len = obj->Width * obj->Height;
+		PROTECT_LEN (len, 40000000, "readNiRawImageData")
+		obj->RGBA_Image_Data = GETMEM (len * sizeof (ByteColor4));
+		if (len > 0)
+			READ (byte, &(obj->RGBA_Image_Data[0].r), len*4, 1, "readNiRawImageData")
+	} else NPFF (ENIF, "readNiRawImageData: unknown Image_Type: %d\n", obj->Image_Type);
 }
 
-void readNiSortAdjustNode (NiSortAdjustNode * obj, unsigned int ARG)
+void
+readNiSortAdjustNode(NiSortAdjustNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	obj->Sorting_Mode = readuint (READER);
@@ -9959,32 +9668,31 @@ void readNiSortAdjustNode (NiSortAdjustNode * obj, unsigned int ARG)
 	}
 }
 
-void readNiSourceCubeMap (NiSourceCubeMap * obj, unsigned int ARG)
+void
+readNiSourceCubeMap(NiSourceCubeMap * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSourceTexture));
 	readNiSourceTexture (obj->parent, 0);
 }
 
-void readNiPhysXProp (NiPhysXProp * obj, unsigned int ARG)
+void
+readNiPhysXProp(NiPhysXProp * obj, unsigned int ARG)
 {
-	int i;
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiObjectNET));
 	readNiObjectNET (obj->parent, 0);
 	obj->Unknown_Float_1 = readfloat (READER);
 	obj->Unknown_Int_1 = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Unknown_Int_1, 2000000, "readNiPhysXProp")
 	obj->Unknown_Refs_1 =
 	    GETMEM ((obj->Unknown_Int_1) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Unknown_Int_1); i++)
-		obj->Unknown_Refs_1[i] = readRef (READER);
+	READ (uint, obj->Unknown_Refs_1, obj->Unknown_Int_1, SIZEOFDWORD, "readNiPhysXProp")
 	obj->Num_Dests = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Dests, 2000000, "readNiPhysXProp")
 	obj->Transform_Dests =
 	    GETMEM ((obj->Num_Dests) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Dests); i++)
-		obj->Transform_Dests[i] = readRef (READER);
+	READ (uint, obj->Transform_Dests, obj->Num_Dests, SIZEOFDWORD, "readNiPhysXProp")
 	obj->Unknown_Byte = readbyte (READER);
 	if (VersionCheck (0x14050000, 0)) {
 		obj->Unknown_Int = readint (READER);
@@ -9992,32 +9700,31 @@ void readNiPhysXProp (NiPhysXProp * obj, unsigned int ARG)
 	obj->Prop_Description = readRef (READER);
 }
 
-void readphysXMaterialRef (physXMaterialRef * obj, unsigned int ARG)
+void
+readphysXMaterialRef(physXMaterialRef * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Number = readbyte (READER);
 	obj->Unknown_Byte_1 = readbyte (READER);
 	obj->Material_Desc = readRef (READER);
 }
 
-void readNiPhysXPropDesc (NiPhysXPropDesc * obj, unsigned int ARG)
+void
+readNiPhysXPropDesc(NiPhysXPropDesc * obj, unsigned int ARG)
 {
+	COVERAGE
 	int i;
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
 	obj->Num_Dests = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Dests, 2000000, "readNiPhysXPropDesc")
 	obj->Actor_Descs = GETMEM ((obj->Num_Dests) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Dests); i++)
-		obj->Actor_Descs[i] = readRef (READER);
+	READ (uint, obj->Actor_Descs, obj->Num_Dests, SIZEOFDWORD, "readNiPhysXPropDesc")
 	obj->Num_Joints = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Joints, 2000000, "readNiPhysXPropDesc")
 	obj->Joint_Descs = GETMEM ((obj->Num_Joints) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Joints); i++)
-		obj->Joint_Descs[i] = readRef (READER);
+	READ (uint, obj->Joint_Descs, obj->Num_Joints, SIZEOFDWORD, "readNiPhysXPropDesc")
 	obj->Unknown_Int_1 = readint (READER);
 	obj->Num_Materials = readuint (READER);
+	PROTECT_LEN (obj->Num_Materials, 2000000, "readNiPhysXPropDesc")
 	// init 1d array
 	obj->Material_Descs =
 	    GETMEM ((obj->Num_Materials) * sizeof (physXMaterialRef));
@@ -10033,10 +9740,10 @@ void readNiPhysXPropDesc (NiPhysXPropDesc * obj, unsigned int ARG)
 	}
 }
 
-void readNiPhysXActorDesc (NiPhysXActorDesc * obj, unsigned int ARG)
+void
+readNiPhysXActorDesc(NiPhysXActorDesc * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Unknown_Int_1 = readint (READER);
 	obj->Unknown_Int_2 = readint (READER);
 	readQuaternion (&obj->Unknown_Quat_1, 0);
@@ -10048,50 +9755,37 @@ void readNiPhysXActorDesc (NiPhysXActorDesc * obj, unsigned int ARG)
 	obj->Unknown_Byte_1 = readbyte (READER);
 	obj->Unknown_Byte_2 = readbyte (READER);
 	obj->Unknown_Int_6 = readint (READER);
+	PROTECT_LEN (obj->Unknown_Int_6, 2000000, "readNiPhysXActorDesc")
 	obj->Shape_Description = readRef (READER);
 	obj->Unknown_Ref_1 = readRef (READER);
 	obj->Unknown_Ref_2 = readRef (READER);
-	// init 1d array
 	obj->Unknown_Refs_3 =
 	    GETMEM ((obj->Unknown_Int_6) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Unknown_Int_6); i++)
-		obj->Unknown_Refs_3[i] = readRef (READER);
+	READ (uint, obj->Unknown_Refs_3, obj->Unknown_Int_6, SIZEOFDWORD, "readNiPhysXPropDesc")
 }
 
-void readNiPhysXBodyDesc (NiPhysXBodyDesc * obj, unsigned int ARG)
+void
+readNiPhysXBodyDesc(NiPhysXBodyDesc * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	if (VersionCheck (0x14030006, 0)) {
-		// init 1d array
-		obj->Unknown_Bytes = GETMEM ((136) * sizeof (byte));
-		// read 1d array
-		int i;
-		for (i = 0; i < (136); i++)
-			obj->Unknown_Bytes[i] = readbyte (READER);
+		READ (byte, &(obj->Unknown_Bytes[0]), 136, 1, "readNiPhysXBodyDesc")
 	}
 }
 
-void readNiPhysXD6JointDesc (NiPhysXD6JointDesc * obj, unsigned int ARG)
+void
+readNiPhysXD6JointDesc(NiPhysXD6JointDesc * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	if (VersionCheck (0x14030006, 0)) {
-		// init 1d array
-		obj->Unknown_Bytes = GETMEM ((388) * sizeof (byte));
-		// read 1d array
-		int i;
-		for (i = 0; i < (388); i++)
-			obj->Unknown_Bytes[i] = readbyte (READER);
+		READ (byte, &(obj->Unknown_Bytes[0]), 388, 1, "readNiPhysXD6JointDesc")
 	}
 }
 
-void readNiPhysXShapeDesc (NiPhysXShapeDesc * obj, unsigned int ARG)
+void
+readNiPhysXShapeDesc(NiPhysXShapeDesc * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Unknown_Int_1 = readint (READER);
 	readQuaternion (&obj->Unknown_Quat_1, 0);
 	readQuaternion (&obj->Unknown_Quat_2, 0);
@@ -10099,123 +9793,88 @@ void readNiPhysXShapeDesc (NiPhysXShapeDesc * obj, unsigned int ARG)
 	obj->Unknown_Short_1 = readshort (READER);
 	obj->Unknown_Int_2 = readint (READER);
 	obj->Unknown_Short_2 = readshort (READER);
-	obj->Unknown_Float_1 = readfloat (READER);
+	READ (float, &(obj->Unknown_Float_1), 3, SIZEOFDWORD, "readNiPhysXShapeDesc")
+	/*obj->Unknown_Float_1 = readfloat (READER);
 	obj->Unknown_Float_2 = readfloat (READER);
-	obj->Unknown_Float_3 = readfloat (READER);
-	obj->Unknown_Int_3 = readint (READER);
+	obj->Unknown_Float_3 = readfloat (READER);*/
+	READ (int, &(obj->Unknown_Int_3), 5, SIZEOFDWORD, "readNiPhysXShapeDesc")
+	/*obj->Unknown_Int_3 = readint (READER);
 	obj->Unknown_Int_4 = readint (READER);
 	obj->Unknown_Int_5 = readint (READER);
 	obj->Unknown_Int_7 = readint (READER);
-	obj->Unknown_Int_8 = readint (READER);
+	obj->Unknown_Int_8 = readint (READER);*/
 	obj->Mesh_Description = readRef (READER);
 }
 
-void readNiPhysXMeshDesc (NiPhysXMeshDesc * obj, unsigned int ARG)
+void
+readNiPhysXMeshDesc(NiPhysXMeshDesc * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Unknown_Short_1 = readshort (READER);
 	obj->Unknown_Float_1 = readfloat (READER);
 	obj->Unknown_Short_2 = readshort (READER);
-	// init 1d array
-	obj->Unknown_Bytes_1 = GETMEM ((3) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (3); i++)
-		obj->Unknown_Bytes_1[i] = readbyte (READER);
+	READ (byte, &(obj->Unknown_Bytes_1[0]), 3, 1, "readNiPhysXMeshDesc")
 	obj->Unknown_Byte_1 = readbyte (READER);
-	// init 1d array
-	obj->Unknown_Bytes_2 = GETMEM ((8) * sizeof (byte));
-	// read 1d array
-	for (i = 0; i < (8); i++)
-		obj->Unknown_Bytes_2[i] = readbyte (READER);
+	READ (byte, &(obj->Unknown_Bytes_1A[0]), 4, 1, "readNiPhysXMeshDesc")
+	READ (byte, &(obj->Unknown_Bytes_2[0]), 8, 1, "readNiPhysXMeshDesc")
 	obj->Unknown_Float_2 = readfloat (READER);
 	obj->Unknown_Int_1 = readint (READER);
 	obj->Unknown_Int_2 = readint (READER);
 	obj->Num_Vertices = readint (READER);
+	PROTECT_LEN (obj->Num_Vertices, 2000000, "readNiPhysXMeshDesc")
 	obj->Unknown_Int_4 = readint (READER);
-	// init 1d array
 	obj->Vertices = GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Vertices); i++)
-		readVector3 (&obj->Vertices[i], 0);
-	// init 1d array
-	obj->Unknown_Bytes_3 = GETMEM ((982) * sizeof (byte));
-	// read 1d array
-	for (i = 0; i < (982); i++)
-		obj->Unknown_Bytes_3[i] = readbyte (READER);
-	// init 1d array
-	obj->Unknown_Shorts_1 = GETMEM ((368) * sizeof (short));
-	// read 1d array
-	for (i = 0; i < (368); i++)
-		obj->Unknown_Shorts_1[i] = readshort (READER);
-	// init 1d array
-	obj->Unknown_Ints_1 = GETMEM ((3328) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (3328); i++)
-		obj->Unknown_Ints_1[i] = readuint (READER);
+	if (obj->Num_Vertices > 0)
+		READ (float, &(obj->Vertices[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiPhysXMeshDesc")
+	READ (byte, &(obj->Unknown_Bytes_3[0]), 982, 1, "readNiPhysXMeshDesc")
+	READ (short, &(obj->Unknown_Shorts_1[0]), 368, SIZEOFWORD, "readNiPhysXMeshDesc")
+	READ (uint, &(obj->Unknown_Ints_1[0]), 3328, SIZEOFDWORD, "readNiPhysXMeshDesc")
 	obj->Unknown_Byte_2 = readbyte (READER);
 }
 
-void readNiPhysXMaterialDesc (NiPhysXMaterialDesc * obj, unsigned int ARG)
+void
+readNiPhysXMaterialDesc(NiPhysXMaterialDesc * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_Int = GETMEM ((12) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (12); i++)
-		obj->Unknown_Int[i] = readuint (READER);
+	COVERAGE
+	READ (uint, &(obj->Unknown_Int[0]), 12, SIZEOFDWORD, "readNiPhysXMaterialDesc")
 	obj->Unknown_Byte_1 = readbyte (READER);
 	obj->Unknown_Byte_2 = readbyte (READER);
 }
 
-void readNiPhysXKinematicSrc (NiPhysXKinematicSrc * obj, unsigned int ARG)
+void
+readNiPhysXKinematicSrc(NiPhysXKinematicSrc * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	if (VersionCheck (0x14030006, 0)) {
-		// init 1d array
-		obj->Unknown_Bytes = GETMEM ((6) * sizeof (byte));
-		// read 1d array
-		int i;
-		for (i = 0; i < (6); i++)
-			obj->Unknown_Bytes[i] = readbyte (READER);
+		READ (byte, &(obj->Unknown_Bytes[0]), 6, 1, "readNiPhysXKinematicSrc")
 	}
 }
 
-void readNiPhysXTransformDest (NiPhysXTransformDest * obj, unsigned int ARG)
+void
+readNiPhysXTransformDest(NiPhysXTransformDest * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Unknown_Byte_1 = readbyte (READER);
 	obj->Unknown_Byte_2 = readbyte (READER);
 	obj->Node = readPtr (READER);
 }
 
 void
-readNiArkAnimationExtraData (NiArkAnimationExtraData * obj, unsigned int ARG)
+readNiArkAnimationExtraData(NiArkAnimationExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_Ints = GETMEM ((4) * sizeof (int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (4); i++)
-		obj->Unknown_Ints[i] = readint (READER);
+	READ (int, &(obj->Unknown_Ints[0]), 4, SIZEOFDWORD, "readNiArkAnimationExtraData")
 	if (VersionCheck (0, 0x0401000C)) {
-		// init 1d array
-		obj->Unknown_Bytes = GETMEM ((37) * sizeof (byte));
-		// read 1d array
-		for (i = 0; i < (37); i++)
-			obj->Unknown_Bytes[i] = readbyte (READER);
+		READ (byte, &(obj->Unknown_Bytes[0]), 37, 1, "readNiArkAnimationExtraData")
 	}
 }
 
-void readNiArkImporterExtraData (NiArkImporterExtraData * obj, unsigned int ARG)
+void
+readNiArkImporterExtraData(NiArkImporterExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Unknown_Int_1 = readint (READER);
@@ -10223,71 +9882,62 @@ void readNiArkImporterExtraData (NiArkImporterExtraData * obj, unsigned int ARG)
 		obj->Unknown_Int_2 = readint (READER);
 	}
 	readstring (&obj->Importer_Name, 0);
-	// init 1d array
-	obj->Unknown_Bytes = GETMEM ((13) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (13); i++)
-		obj->Unknown_Bytes[i] = readbyte (READER);
-	// init 1d array
-	obj->Unknown_Floats = GETMEM ((7) * sizeof (float));
-	// read 1d array
-	for (i = 0; i < (7); i++)
-		obj->Unknown_Floats[i] = readfloat (READER);
+	READ (byte, &(obj->Unknown_Bytes[0]), 13, 1, "readNiArkImporterExtraData")
+	READ (float, &(obj->Unknown_Floats[0]), 7, SIZEOFDWORD, "readNiArkImporterExtraData")
 }
 
-void readNiArkTextureExtraData (NiArkTextureExtraData * obj, unsigned int ARG)
+void
+readNiArkTextureExtraData(NiArkTextureExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_Ints_1 = GETMEM ((2) * sizeof (int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (2); i++)
-		obj->Unknown_Ints_1[i] = readint (READER);
+	READ (int, &(obj->Unknown_Ints_1[0]), 2, SIZEOFDWORD, "readNiArkTextureExtraData")
 	obj->Unknown_Byte = readbyte (READER);
 	if (VersionCheck (0, 0x0401000C)) {
 		obj->Unknown_Int_2 = readint (READER);
 	}
 	obj->Num_Textures = readint (READER);
+	PROTECT_LEN (obj->Num_Textures, 2000000, "readNiArkTextureExtraData")
 	// init 1d array
 	obj->Textures = GETMEM ((obj->Num_Textures) * sizeof (ArkTexture));
 	// read 1d array
+	int i;
 	for (i = 0; i < (obj->Num_Textures); i++)
 		readArkTexture (&obj->Textures[i], 0);
 }
 
 void
-readNiArkViewportInfoExtraData (NiArkViewportInfoExtraData * obj,
-				unsigned int ARG)
+readNiArkViewportInfoExtraData(NiArkViewportInfoExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_Bytes = GETMEM ((13) * sizeof (byte));
-	// read 1d array
-	int i;
-	for (i = 0; i < (13); i++)
-		obj->Unknown_Bytes[i] = readbyte (READER);
+	READ (byte, &(obj->Unknown_Bytes[0]), 13, 1, "readNiArkViewportInfoExtraData")
 }
 
-void readNiArkShaderExtraData (NiArkShaderExtraData * obj, unsigned int ARG)
+void
+readNiArkShaderExtraData(NiArkShaderExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Unknown_Int = readint (READER);
 	readstring (&obj->Unknown_String, 0);
 }
 
-void readNiLines (NiLines * obj, unsigned int ARG)
+void
+readNiLines(NiLines * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriBasedGeom));
 	readNiTriBasedGeom (obj->parent, 0);
 }
 
-void readNiLinesData (NiLinesData * obj, unsigned int ARG)
+void
+readNiLinesData(NiLinesData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiGeometryData));
 	readNiGeometryData (obj->parent, 0);
 	// init 1d array
@@ -10298,31 +9948,29 @@ void readNiLinesData (NiLinesData * obj, unsigned int ARG)
 		obj->Lines[i] = readbool (READER);
 }
 
-void readPolygon (Polygon * obj, unsigned int ARG)
+void
+readPolygon(Polygon * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Num_Vertices = readushort (READER);
 	obj->Vertex_Offset = readushort (READER);
 	obj->Num_Triangles = readushort (READER);
 	obj->Triangle_Offset = readushort (READER);
 }
 
-void readNiScreenElementsData (NiScreenElementsData * obj, unsigned int ARG)
+void
+readNiScreenElementsData(NiScreenElementsData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriShapeData));
 	readNiTriShapeData (obj->parent, 0);
 	obj->Max_Polygons = readushort (READER);
-	// init 1d array
 	obj->Polygons = GETMEM ((obj->Max_Polygons) * sizeof (Polygon));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Max_Polygons); i++)
-		readPolygon (&obj->Polygons[i], 0);
-	// init 1d array
+	if (obj->Max_Polygons > 0)
+		READ (ushort, &(obj->Polygons[0].Num_Vertices), obj->Max_Polygons, SIZEOFWORD, "readNiScreenElementsData")
 	obj->Polygon_Indices =
 	    GETMEM ((obj->Max_Polygons) * sizeof (unsigned short));
-	// read 1d array
-	for (i = 0; i < (obj->Max_Polygons); i++)
-		obj->Polygon_Indices[i] = readushort (READER);
+	READ (ushort, obj->Polygon_Indices, obj->Max_Polygons, SIZEOFWORD, "readNiScreenElementsData")
 	obj->Unknown_UShort_1 = readushort (READER);
 	obj->Num_Polygons = readushort (READER);
 	obj->Used_Vertices = readushort (READER);
@@ -10331,82 +9979,80 @@ void readNiScreenElementsData (NiScreenElementsData * obj, unsigned int ARG)
 	obj->Unknown_UShort_3 = readushort (READER);
 }
 
-void readNiScreenElements (NiScreenElements * obj, unsigned int ARG)
+void
+readNiScreenElements(NiScreenElements * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriShape));
 	readNiTriShape (obj->parent, 0);
 }
 
-void readNiRoomGroup (NiRoomGroup * obj, unsigned int ARG)
+void
+readNiRoomGroup(NiRoomGroup * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	obj->Shell_Link = readPtr (READER);
 	obj->Num_Rooms = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Rooms, 2000000, "readNiRoomGroup")
 	obj->Rooms = GETMEM ((obj->Num_Rooms) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Rooms); i++)
-		obj->Rooms[i] = readPtr (READER);
+	READ (uint, obj->Rooms, obj->Num_Rooms, SIZEOFDWORD, "readNiRoomGroup")
 }
 
-void readNiRoom (NiRoom * obj, unsigned int ARG)
+void
+readNiRoom(NiRoom * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	obj->Num_Walls = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Walls, 2000000, "readNiRoom")
 	obj->Wall_Plane = GETMEM ((obj->Num_Walls) * sizeof (Vector4));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Walls); i++)
-		readVector4 (&obj->Wall_Plane[i], 0);
+	if (obj->Num_Walls > 0)
+		READ (float, &(obj->Wall_Plane[0].x), obj->Num_Walls*4, SIZEOFDWORD, "readNiRoom")
 	obj->Num_In_Portals = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_In_Portals, 2000000, "readNiRoom")
 	obj->In_Portals =
 	    GETMEM ((obj->Num_In_Portals) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_In_Portals); i++)
-		obj->In_Portals[i] = readPtr (READER);
+	READ (uint, obj->In_Portals, obj->Num_In_Portals, SIZEOFDWORD, "readNiRoom")
 	obj->Num_Portals_2 = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Portals_2, 2000000, "readNiRoom")
 	obj->Portals_2 = GETMEM ((obj->Num_Portals_2) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Portals_2); i++)
-		obj->Portals_2[i] = readPtr (READER);
+	READ (uint, obj->Portals_2, obj->Num_Portals_2, SIZEOFDWORD, "readNiRoom")
 	obj->Num_Items = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Items, 2000000, "readNiRoom")
 	obj->Items = GETMEM ((obj->Num_Items) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Items); i++)
-		obj->Items[i] = readPtr (READER);
+	READ (uint, obj->Items, obj->Num_Items, SIZEOFDWORD, "readNiRoom")
 }
 
-void readNiPortal (NiPortal * obj, unsigned int ARG)
+void
+readNiPortal(NiPortal * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiAVObject));
 	readNiAVObject (obj->parent, 0);
 	obj->Unknown_Flags = readFlags (READER);
 	obj->Unknown_Short_1 = readshort (READER);
 	obj->Num_Vertices = readushort (READER);
-	// init 1d array
 	obj->Vertices = GETMEM ((obj->Num_Vertices) * sizeof (Vector3));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Vertices); i++)
-		readVector3 (&obj->Vertices[i], 0);
+	if (obj->Num_Vertices > 0)
+		READ (float, &(obj->Vertices[0].x), obj->Num_Vertices*3, SIZEOFDWORD, "readNiPortal")
 	obj->Target = readPtr (READER);
 }
 
-void readBSFadeNode (BSFadeNode * obj, unsigned int ARG)
+void
+readBSFadeNode(BSFadeNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 }
 
-void readBSShaderProperty (BSShaderProperty * obj, unsigned int ARG)
+void
+readBSShaderProperty(BSShaderProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiProperty));
 	readNiProperty (obj->parent, 0);
 	obj->Flags = readFlags (READER);
@@ -10417,68 +10063,51 @@ void readBSShaderProperty (BSShaderProperty * obj, unsigned int ARG)
 }
 
 void
-readBSShaderLightingProperty (BSShaderLightingProperty * obj, unsigned int ARG)
+readBSShaderLightingProperty(BSShaderLightingProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderProperty));
 	readBSShaderProperty (obj->parent, 0);
 	obj->Unknown_Int_3 = readint (READER);
 }
 
 void
-readBSShaderNoLightingProperty (BSShaderNoLightingProperty * obj,
-				unsigned int ARG)
+readBSShaderNoLightingProperty(BSShaderNoLightingProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderLightingProperty));
 	readBSShaderLightingProperty (obj->parent, 0);
 	readSizedString (&obj->File_Name, 0);
-	if (((User_Version == 11) && (User_Version_2 > 26))
-	    && ((User_Version == 11) && (User_Version_2 > 26))) {
-		obj->Unknown_Float_2 = readfloat (READER);
-	}
-	if (((User_Version == 11) && (User_Version_2 > 26))
-	    && ((User_Version == 11) && (User_Version_2 > 26))) {
+	if (((User_Version == 11) && (User_Version_2 > 26))) {
+		READ (float, &(obj->Unknown_Float_2), 4, SIZEOFDWORD, "readBSShaderNoLightingProperty")
+		/*obj->Unknown_Float_2 = readfloat (READER);
 		obj->Unknown_Float_3 = readfloat (READER);
-	}
-	if (((User_Version == 11) && (User_Version_2 > 26))
-	    && ((User_Version == 11) && (User_Version_2 > 26))) {
 		obj->Unknown_Float_4 = readfloat (READER);
+		obj->Unknown_Float_5 = readfloat (READER);*/
 	}
-	if (((User_Version == 11) && (User_Version_2 > 26))
-	    && ((User_Version == 11) && (User_Version_2 > 26))) {
+}
+
+void
+readBSShaderPPLightingProperty(BSShaderPPLightingProperty * obj, unsigned int ARG)
+{
+	COVERAGE
+	obj->parent = GETMEM (sizeof (BSShaderLightingProperty));
+	readBSShaderLightingProperty (obj->parent, 0);
+	obj->Texture_Set = readRef (READER);
+	if (((User_Version == 11) && (User_Version_2 > 14))) {
+		obj->Unknown_Float_2 = readfloat (READER);
+		obj->Refraction_Period = readint (READER);
+		obj->Unknown_Float_4 = readfloat (READER);
 		obj->Unknown_Float_5 = readfloat (READER);
 	}
 }
 
 void
-readBSShaderPPLightingProperty (BSShaderPPLightingProperty * obj,
-				unsigned int ARG)
+readBSShaderTextureSet(BSShaderTextureSet * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (BSShaderLightingProperty));
-	readBSShaderLightingProperty (obj->parent, 0);
-	obj->Texture_Set = readRef (READER);
-	if (((User_Version == 11) && (User_Version_2 > 14))
-	    && ((User_Version == 11) && (User_Version_2 > 14))) {
-		obj->Unknown_Float_2 = readfloat (READER);
-	}
-	if (((User_Version == 11) && (User_Version_2 > 14))
-	    && ((User_Version == 11) && (User_Version_2 > 14))) {
-		obj->Refraction_Period = readint (READER);
-	}
-	if (((User_Version == 11) && (User_Version_2 > 24))
-	    && ((User_Version == 11) && (User_Version_2 > 24))) {
-		obj->Unknown_Float_4 = readfloat (READER);
-	}
-	if (((User_Version == 11) && (User_Version_2 > 24))
-	    && ((User_Version == 11) && (User_Version_2 > 24))) {
-		obj->Unknown_Float_5 = readfloat (READER);
-	}
-}
-
-void readBSShaderTextureSet (BSShaderTextureSet * obj, unsigned int ARG)
-{
-	//obj->parent = GETMEM (sizeof (NiObject));
-	//readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Num_Textures = readint (READER);
+	PROTECT_LEN (obj->Num_Textures, 2000000, "readBSShaderTextureSet")
 	// init 1d array
 	obj->Textures = GETMEM ((obj->Num_Textures) * sizeof (SizedString));
 	// read 1d array
@@ -10487,14 +10116,18 @@ void readBSShaderTextureSet (BSShaderTextureSet * obj, unsigned int ARG)
 		readSizedString (&obj->Textures[i], 0);
 }
 
-void readWaterShaderProperty (WaterShaderProperty * obj, unsigned int ARG)
+void
+readWaterShaderProperty(WaterShaderProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderProperty));
 	readBSShaderProperty (obj->parent, 0);
 }
 
-void readSkyShaderProperty (SkyShaderProperty * obj, unsigned int ARG)
+void
+readSkyShaderProperty(SkyShaderProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderProperty));
 	readBSShaderProperty (obj->parent, 0);
 	obj->Unknown_Int_4 = readint (READER);
@@ -10502,76 +10135,82 @@ void readSkyShaderProperty (SkyShaderProperty * obj, unsigned int ARG)
 	obj->Unknown_Int_5 = readint (READER);
 }
 
-void readTileShaderProperty (TileShaderProperty * obj, unsigned int ARG)
+void
+readTileShaderProperty(TileShaderProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderLightingProperty));
 	readBSShaderLightingProperty (obj->parent, 0);
 	readSizedString (&obj->File_Name, 0);
 }
 
 void
-readDistantLODShaderProperty (DistantLODShaderProperty * obj, unsigned int ARG)
+readDistantLODShaderProperty(DistantLODShaderProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderProperty));
 	readBSShaderProperty (obj->parent, 0);
 }
 
 void
-readBSDistantTreeShaderProperty (BSDistantTreeShaderProperty * obj,
-				 unsigned int ARG)
+readBSDistantTreeShaderProperty(BSDistantTreeShaderProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderProperty));
 	readBSShaderProperty (obj->parent, 0);
 }
 
 void
-readTallGrassShaderProperty (TallGrassShaderProperty * obj, unsigned int ARG)
+readTallGrassShaderProperty(TallGrassShaderProperty * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderProperty));
 	readBSShaderProperty (obj->parent, 0);
 	readSizedString (&obj->File_Name, 0);
 }
 
 void
-readVolumetricFogShaderProperty (VolumetricFogShaderProperty * obj,
-				 unsigned int ARG)
+readVolumetricFogShaderProperty(VolumetricFogShaderProperty * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (BSShaderProperty));
-	readBSShaderProperty (obj->parent, 0);
-}
-
-void readHairShaderProperty (HairShaderProperty * obj, unsigned int ARG)
-{
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderProperty));
 	readBSShaderProperty (obj->parent, 0);
 }
 
 void
-readLighting30ShaderProperty (Lighting30ShaderProperty * obj, unsigned int ARG)
+readHairShaderProperty(HairShaderProperty * obj, unsigned int ARG)
 {
+	COVERAGE
+	obj->parent = GETMEM (sizeof (BSShaderProperty));
+	readBSShaderProperty (obj->parent, 0);
+}
+
+void
+readLighting30ShaderProperty(Lighting30ShaderProperty * obj, unsigned int ARG)
+{
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSShaderPPLightingProperty));
 	readBSShaderPPLightingProperty (obj->parent, 0);
 }
 
 void
-readBSDismemberSkinInstance (BSDismemberSkinInstance * obj, unsigned int ARG)
+readBSDismemberSkinInstance(BSDismemberSkinInstance * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiSkinInstance));
 	readNiSkinInstance (obj->parent, 0);
 	obj->Num_Partitions = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Partitions, 2000000, "readBSDismemberSkinInstance")
 	obj->Partitions =
 	    GETMEM ((obj->Num_Partitions) * sizeof (BodyPartList));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Partitions); i++)
-		readBodyPartList (&obj->Partitions[i], 0);
+	if (obj->Num_Partitions > 0)
+		READ (ushort, &(obj->Partitions[0].Part_Flag), obj->Num_Partitions*2, SIZEOFWORD, "readBSDismemberSkinInstance")
 }
 
 void
-readBSDecalPlacementVectorExtraData (BSDecalPlacementVectorExtraData * obj,
-				     unsigned int ARG)
+readBSDecalPlacementVectorExtraData(BSDecalPlacementVectorExtraData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Unknown_Float_1 = readfloat (READER);
@@ -10586,41 +10225,46 @@ readBSDecalPlacementVectorExtraData (BSDecalPlacementVectorExtraData * obj,
 }
 
 void
-readBSPSysSimpleColorModifier (BSPSysSimpleColorModifier * obj,
-			       unsigned int ARG)
+readBSPSysSimpleColorModifier(BSPSysSimpleColorModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
-	obj->Fade_In_Percent = readfloat (READER);
+	READ (float, &(obj->Fade_In_Percent), 6, SIZEOFDWORD, "readBSPSysSimpleColorModifier")
+	/*obj->Fade_In_Percent = readfloat (READER);
 	obj->Fade_out_Percent = readfloat (READER);
 	obj->Color_1_End_Percent = readfloat (READER);
 	obj->Color_1_Start_Percent = readfloat (READER);
 	obj->Color_2_End_Percent = readfloat (READER);
-	obj->Color_2_Start_Percent = readfloat (READER);
-	// init 1d array
-	obj->Colors = GETMEM ((3) * sizeof (Color4));
+	obj->Color_2_Start_Percent = readfloat (READER);*/
 	// read 1d array
 	int i;
 	for (i = 0; i < (3); i++)
 		readColor4 (&obj->Colors[i], 0);
 }
 
-void readBSValueNode (BSValueNode * obj, unsigned int ARG)
+void
+readBSValueNode(BSValueNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	obj->Value = readint (READER);
 	obj->Unknown_byte = readbyte (READER);
 }
 
-void readBSStripParticleSystem (BSStripParticleSystem * obj, unsigned int ARG)
+void
+readBSStripParticleSystem(BSStripParticleSystem * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiParticleSystem));
 	readNiParticleSystem (obj->parent, 0);
 }
 
-void readBSStripPSysData (BSStripPSysData * obj, unsigned int ARG)
+void
+readBSStripPSysData(BSStripPSysData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysData));
 	readNiPSysData (obj->parent, 0);
 	obj->Unknown_Short_1 = readshort (READER);
@@ -10630,41 +10274,40 @@ void readBSStripPSysData (BSStripPSysData * obj, unsigned int ARG)
 }
 
 void
-readBSPSysStripUpdateModifier (BSPSysStripUpdateModifier * obj,
-			       unsigned int ARG)
+readBSPSysStripUpdateModifier(BSPSysStripUpdateModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifier));
 	readNiPSysModifier (obj->parent, 0);
 	obj->Update_Delta_Time = readfloat (READER);
 }
 
 void
-readBSMaterialEmittanceMultController (BSMaterialEmittanceMultController * obj,
-				       unsigned int ARG)
+readBSMaterialEmittanceMultController(BSMaterialEmittanceMultController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiFloatInterpController));
 	readNiFloatInterpController (obj->parent, 0);
 }
 
-void readBSMasterParticleSystem (BSMasterParticleSystem * obj, unsigned int ARG)
+void
+readBSMasterParticleSystem(BSMasterParticleSystem * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	obj->Max_Emitter_Objects = readushort (READER);
 	obj->Num_Particle_Systems = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Particle_Systems, 2000000, "readBSMasterParticleSystem")
 	obj->Particle_Systems =
 	    GETMEM ((obj->Num_Particle_Systems) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Particle_Systems); i++)
-		obj->Particle_Systems[i] = readRef (READER);
+	READ (uint, obj->Particle_Systems, obj->Num_Particle_Systems, SIZEOFDWORD, "readBSMasterParticleSystem")
 }
 
 void
-readBSPSysMultiTargetEmitterCtlr (BSPSysMultiTargetEmitterCtlr * obj,
-				  unsigned int ARG)
+readBSPSysMultiTargetEmitterCtlr(BSPSysMultiTargetEmitterCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierCtlr));
 	readNiPSysModifierCtlr (obj->parent, 0);
 	if (VersionCheck (0, 0x0A010000)) {
@@ -10678,31 +10321,27 @@ readBSPSysMultiTargetEmitterCtlr (BSPSysMultiTargetEmitterCtlr * obj,
 }
 
 void
-readBSRefractionStrengthController (BSRefractionStrengthController * obj,
-				    unsigned int ARG)
+readBSRefractionStrengthController(BSRefractionStrengthController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiFloatInterpController));
 	readNiFloatInterpController (obj->parent, 0);
 }
 
-void readBSOrderedNode (BSOrderedNode * obj, unsigned int ARG)
+void
+readBSOrderedNode(BSOrderedNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	readVector4 (&obj->Alpha_Sort_Bound, 0);
 	obj->Is_Static_Bound = readbyte (READER);
 }
 
-void readBSBlastNode (BSBlastNode * obj, unsigned int ARG)
+void
+readBSBlastNode(BSBlastNode * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiNode));
-	readNiNode (obj->parent, 0);
-	obj->Unknown_Byte_1 = readbyte (READER);
-	obj->Unknown_Short_2 = readshort (READER);
-}
-
-void readBSDamageStage (BSDamageStage * obj, unsigned int ARG)
-{
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	obj->Unknown_Byte_1 = readbyte (READER);
@@ -10710,9 +10349,19 @@ void readBSDamageStage (BSDamageStage * obj, unsigned int ARG)
 }
 
 void
-readBSRefractionFirePeriodController (BSRefractionFirePeriodController * obj,
-				      unsigned int ARG)
+readBSDamageStage(BSDamageStage * obj, unsigned int ARG)
 {
+	COVERAGE
+	obj->parent = GETMEM (sizeof (NiNode));
+	readNiNode (obj->parent, 0);
+	obj->Unknown_Byte_1 = readbyte (READER);
+	obj->Unknown_Short_2 = readshort (READER);
+}
+
+void
+readBSRefractionFirePeriodController(BSRefractionFirePeriodController * obj, unsigned int ARG)
+{
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	if (VersionCheck (0x14020007, 0)) {
@@ -10720,45 +10369,35 @@ readBSRefractionFirePeriodController (BSRefractionFirePeriodController * obj,
 	}
 }
 
-void readbhkConvexListShape (bhkConvexListShape * obj, unsigned int ARG)
+void
+readbhkConvexListShape(bhkConvexListShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkShape));
 	readbhkShape (obj->parent, 0);
 	obj->Num_Sub_Shapes = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Sub_Shapes, 2000000, "readbhkConvexListShape")
 	obj->Sub_Shapes =
 	    GETMEM ((obj->Num_Sub_Shapes) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Sub_Shapes); i++)
-		obj->Sub_Shapes[i] = readRef (READER);
+	READ (uint, obj->Sub_Shapes, obj->Num_Sub_Shapes, SIZEOFDWORD, "readbhkConvexListShape")
 	obj->Material = readuint (READER);
-	// init 1d array
-	obj->Unknown_Floats = GETMEM ((6) * sizeof (float));
-	// read 1d array
-	for (i = 0; i < (6); i++)
-		obj->Unknown_Floats[i] = readfloat (READER);
+	READ (float, obj->Unknown_Floats, 6, SIZEOFDWORD, "readbhkConvexListShape")
 	obj->Unknown_Byte_1 = readbyte (READER);
 	obj->Unknown_Float_1 = readfloat (READER);
 }
 
-void readBSTreadTransfSubInfo (BSTreadTransfSubInfo * obj, unsigned int ARG)
+void
+readBSTreadTransfSubInfo(BSTreadTransfSubInfo * obj, unsigned int ARG)
 {
-	obj->Unknown_Int_1 = readint (READER);
-	obj->Unknown_Int_2 = readint (READER);
-	obj->Unknown_Int_3 = readint (READER);
-	obj->Unknown_Int_4 = readint (READER);
-	obj->Unknown_Int_5 = readint (READER);
-	obj->Unknown_Int_6 = readint (READER);
-	obj->Unknown_Int_7 = readint (READER);
-	obj->Unknown_Int_8 = readint (READER);
+	COVERAGE
+	READ (int, &(obj->Unknown_Int_1), 8, SIZEOFDWORD, "readBSTreadTransfSubInfo")
 }
 
-void readBSTreadTransfInfo (BSTreadTransfInfo * obj, unsigned int ARG)
+void
+readBSTreadTransfInfo(BSTreadTransfInfo * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Unknown_Float_1 = readfloat (READER);
-	// init 1d array
-	obj->Data = GETMEM ((2) * sizeof (BSTreadTransfSubInfo));
 	// read 1d array
 	int i;
 	for (i = 0; i < (2); i++)
@@ -10766,12 +10405,13 @@ void readBSTreadTransfInfo (BSTreadTransfInfo * obj, unsigned int ARG)
 }
 
 void
-readBSTreadTransfInterpolator (BSTreadTransfInterpolator * obj,
-			       unsigned int ARG)
+readBSTreadTransfInterpolator(BSTreadTransfInterpolator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpolator));
 	readNiInterpolator (obj->parent, 0);
 	obj->Num_Transfers = readint (READER);
+	PROTECT_LEN (obj->Num_Transfers, 2000000, "readBSTreadTransfInterpolator")
 	// init 1d array
 	obj->Tread_Transfer_Info =
 	    GETMEM ((obj->Num_Transfers) * sizeof (BSTreadTransfInfo));
@@ -10782,68 +10422,82 @@ readBSTreadTransfInterpolator (BSTreadTransfInterpolator * obj,
 	obj->Unknown_Int_1 = readint (READER);
 }
 
-void readBSAnimNotes (BSAnimNotes * obj, unsigned int ARG)
+void
+readBSAnimNotes(BSAnimNotes * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Unknown_Short_1 = readshort (READER);
 }
 
-void readbhkLiquidAction (bhkLiquidAction * obj, unsigned int ARG)
+void
+readbhkLiquidAction(bhkLiquidAction * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkSerializable));
 	readbhkSerializable (obj->parent, 0);
-	obj->Unknown_Int_1 = readint (READER);
+	READ (int, &(obj->Unknown_Int_1), 3, SIZEOFDWORD, "readbhkLiquidAction")
+	/*obj->Unknown_Int_1 = readint (READER);
 	obj->Unknown_Int_2 = readint (READER);
-	obj->Unknown_Int_3 = readint (READER);
-	obj->Unknown_Float_1 = readfloat (READER);
+	obj->Unknown_Int_3 = readint (READER);*/
+	READ (float, &(obj->Unknown_Float_1), 4, SIZEOFDWORD, "readbhkLiquidAction")
+	/*obj->Unknown_Float_1 = readfloat (READER);
 	obj->Unknown_Float_2 = readfloat (READER);
 	obj->Unknown_Float_3 = readfloat (READER);
-	obj->Unknown_Float_4 = readfloat (READER);
+	obj->Unknown_Float_4 = readfloat (READER);*/
 }
 
-void readBSMultiBoundNode (BSMultiBoundNode * obj, unsigned int ARG)
+void
+readBSMultiBoundNode(BSMultiBoundNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	obj->Multi_Bound = readRef (READER);
 }
 
-void readBSMultiBound (BSMultiBound * obj, unsigned int ARG)
+void
+readBSMultiBound(BSMultiBound * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Data = readRef (READER);
 }
 
-void readBSMultiBoundData (BSMultiBoundData * obj, unsigned int ARG)
+inline void
+readBSMultiBoundData(BSMultiBoundData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 }
 
-void readBSMultiBoundSphere (BSMultiBoundSphere * obj, unsigned int ARG)
+void
+readBSMultiBoundSphere(BSMultiBoundSphere * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSMultiBoundData));
 	readBSMultiBoundData (obj->parent, 0);
-	obj->Unknown_Int_1 = readint (READER);
+	READ (int, &(obj->Unknown_Int_1), 3, SIZEOFDWORD, "readBSMultiBoundSphere")
+	/*obj->Unknown_Int_1 = readint (READER);
 	obj->Unknown_Int_2 = readint (READER);
-	obj->Unknown_Int_3 = readint (READER);
+	obj->Unknown_Int_3 = readint (READER);*/
 	obj->Radius = readfloat (READER);
 }
 
-void readBSSegmentedTriangle (BSSegmentedTriangle * obj, unsigned int ARG)
+void
+readBSSegmentedTriangle(BSSegmentedTriangle * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Unknown_Int_1 = readint (READER);
 	obj->Unknown_Int_2 = readint (READER);
 	obj->Unknown_Byte_1 = readbyte (READER);
 }
 
-void readBSSegmentedTriShape (BSSegmentedTriShape * obj, unsigned int ARG)
+void
+readBSSegmentedTriShape(BSSegmentedTriShape * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTriShape));
 	readNiTriShape (obj->parent, 0);
 	obj->Num_Seg_Triangles = readint (READER);
+	PROTECT_LEN (obj->Num_Seg_Triangles, 2000000, "readBSSegmentedTriShape")
 	// init 1d array
 	obj->Seg_Triangles =
 	    GETMEM ((obj->Num_Seg_Triangles) * sizeof (BSSegmentedTriangle));
@@ -10853,76 +10507,58 @@ void readBSSegmentedTriShape (BSSegmentedTriShape * obj, unsigned int ARG)
 		readBSSegmentedTriangle (&obj->Seg_Triangles[i], 0);
 }
 
-void readBSMultiBoundAABB (BSMultiBoundAABB * obj, unsigned int ARG)
+void
+readBSMultiBoundAABB(BSMultiBoundAABB * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (BSMultiBoundData));
 	readBSMultiBoundData (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_Floats_1 = GETMEM ((6) * sizeof (float));
-	// read 1d array
-	int i;
-	for (i = 0; i < (6); i++)
-		obj->Unknown_Floats_1[i] = readfloat (READER);
+	READ (float, &(obj->Unknown_Floats_1[0]), 6, SIZEOFDWORD, "readBSMultiBoundAABB")
 }
 
-void readAdditionalDataInfo (AdditionalDataInfo * obj, unsigned int ARG)
+void
+readAdditionalDataInfo(AdditionalDataInfo * obj, unsigned int ARG)
 {
-	obj->Data_Type = readint (READER);
+	COVERAGE
+	READ (int, &(obj->Data_Type), 6, SIZEOFDWORD, "readAdditionalDataInfo")
+	/*obj->Data_Type = readint (READER);
 	obj->Block_Size = readint (READER);
 	obj->Num_Blocks = readint (READER);
 	obj->Block_Size_2 = readint (READER);
 	obj->Block_Index = readint (READER);
-	obj->Unknown_Int_1 = readint (READER);
+	obj->Unknown_Int_1 = readint (READER);*/
 	obj->Unknown_Byte_1 = readbyte (READER);
 }
 
-void readAdditionalDataBlock (AdditionalDataBlock * obj, unsigned int ARG)
+void
+readAdditionalDataBlock(AdditionalDataBlock * obj, unsigned int ARG)
 {
-	int i, j;
+	COVERAGE
 	obj->Has_Data = readbool (READER);
-	if ((obj->Has_Data)) {
+	if (obj->Has_Data) {
 		obj->Block_Size = readint (READER);
-	}
-	if ((obj->Has_Data)) {
+		PROTECT_LEN (obj->Block_Size, 2000000, "readAdditionalDataBlock")
 		obj->Num_Blocks = readint (READER);
-	}
-	if ((obj->Has_Data)) {
-		// init 1d array
+		PROTECT_LEN (obj->Num_Blocks, 2000000, "readAdditionalDataBlock")
 		obj->Block_Offsets = GETMEM ((obj->Num_Blocks) * sizeof (int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Blocks); i++)
-			obj->Block_Offsets[i] = readint (READER);
-	}
-	if ((obj->Has_Data)) {
+		READ (int, obj->Block_Offsets, obj->Num_Blocks, SIZEOFDWORD, "readAdditionalDataBlock")
 		obj->Num_Data = readint (READER);
-	}
-	if ((obj->Has_Data)) {
-		// init 1d array
+		PROTECT_LEN (obj->Num_Data, 2000000, "readAdditionalDataBlock")
 		obj->Data_Sizes = GETMEM ((obj->Num_Data) * sizeof (int));
-		// read 1d array
-		for (i = 0; i < (obj->Num_Data); i++)
-			obj->Data_Sizes[i] = readint (READER);
-	}
-	if ((obj->Has_Data)) {
-		// init 2d array
-		obj->Data = GETMEM ((obj->Num_Data) * sizeof (byte *));
-		for (i = 0; i < (obj->Num_Data); i++)
-			obj->Data[i] =
-			    GETMEM ((obj->Block_Size) * sizeof (byte));
-		// read 2d array
-		for (i = 0; i < (obj->Num_Data); i++)
-			for (j = 0; j < (obj->Block_Size); j++)
-				obj->Data[i][j] = readbyte (READER);
+		READ (int, obj->Data_Sizes, obj->Num_Data, SIZEOFDWORD, "readAdditionalDataBlock")
+		NIFuint len = obj->Num_Data * obj->Block_Size;
+		obj->Data = GETMEM (len);
+		READ (byte, obj->Data, len, 1, "readAdditionalDataBlock")
 	}
 }
 
 void
-readNiAdditionalGeometryData (NiAdditionalGeometryData * obj, unsigned int ARG)
+readNiAdditionalGeometryData(NiAdditionalGeometryData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Num_Vertices = readushort (READER);
 	obj->Num_Block_Infos = readuint (READER);
+	PROTECT_LEN (obj->Num_Block_Infos, 2000000, "readNiAdditionalGeometryData")
 	// init 1d array
 	obj->Block_Infos =
 	    GETMEM ((obj->Num_Block_Infos) * sizeof (AdditionalDataInfo));
@@ -10931,6 +10567,7 @@ readNiAdditionalGeometryData (NiAdditionalGeometryData * obj, unsigned int ARG)
 	for (i = 0; i < (obj->Num_Block_Infos); i++)
 		readAdditionalDataInfo (&obj->Block_Infos[i], 0);
 	obj->Num_Blocks = readint (READER);
+	PROTECT_LEN (obj->Num_Blocks, 2000000, "readNiAdditionalGeometryData")
 	// init 1d array
 	obj->Blocks = GETMEM ((obj->Num_Blocks) * sizeof (AdditionalDataBlock));
 	// read 1d array
@@ -10938,147 +10575,143 @@ readNiAdditionalGeometryData (NiAdditionalGeometryData * obj, unsigned int ARG)
 		readAdditionalDataBlock (&obj->Blocks[i], 0);
 }
 
-void readBSWArray (BSWArray * obj, unsigned int ARG)
+void
+readBSWArray(BSWArray * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiExtraData));
 	readNiExtraData (obj->parent, 0);
 	obj->Num_Items = readint (READER);
-	// init 1d array
-	obj->Items = GETMEM ((obj->Num_Items) * sizeof (int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Items); i++)
-		obj->Items[i] = readint (READER);
+	PROTECT_LEN (obj->Num_Items, 2000000, "readBSWArray")
+	obj->Items = GETMEM (obj->Num_Items * SIZEOFDWORD);
+	READ (int, obj->Items, obj->Num_Items, SIZEOFDWORD, "readAdditionalDataBlock")
 }
 
-void readbhkAabbPhantom (bhkAabbPhantom * obj, unsigned int ARG)
+void
+readbhkAabbPhantom(bhkAabbPhantom * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkShapePhantom));
 	readbhkShapePhantom (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_Ints_1 = GETMEM ((15) * sizeof (int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (15); i++)
-		obj->Unknown_Ints_1[i] = readint (READER);
+	READ (int, &(obj->Unknown_Ints_1[0]), 15, SIZEOFDWORD, "readbhkAabbPhantom")
 }
 
-void readBSFrustumFOVController (BSFrustumFOVController * obj, unsigned int ARG)
+void
+readBSFrustumFOVController(BSFrustumFOVController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Interpolator = readRef (READER);
 }
 
-void readBSDebrisNode (BSDebrisNode * obj, unsigned int ARG)
+void
+readBSDebrisNode(BSDebrisNode * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiNode));
 	readNiNode (obj->parent, 0);
 	obj->Unknown_byte_1 = readbyte (READER);
 	obj->Unknown_Short_1 = readshort (READER);
 }
 
-void readbhkBreakableConstraint (bhkBreakableConstraint * obj, unsigned int ARG)
+void
+readbhkBreakableConstraint(bhkBreakableConstraint * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkConstraint));
 	readbhkConstraint (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_Ints_1 = GETMEM ((41) * sizeof (int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (41); i++)
-		obj->Unknown_Ints_1[i] = readint (READER);
+	READ (int, &(obj->Unknown_Ints_1[0]), 41, SIZEOFDWORD, "readbhkBreakableConstraint")
 	obj->Unknown_Short_1 = readshort (READER);
 }
 
 void
-readbhkOrientHingedBodyAction (bhkOrientHingedBodyAction * obj,
-			       unsigned int ARG)
+readbhkOrientHingedBodyAction(bhkOrientHingedBodyAction * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (bhkSerializable));
 	readbhkSerializable (obj->parent, 0);
-	// init 1d array
-	obj->Unknown_Ints_1 = GETMEM ((17) * sizeof (int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (17); i++)
-		obj->Unknown_Ints_1[i] = readint (READER);
+	READ (int, &(obj->Unknown_Ints_1[0]), 17, SIZEOFDWORD, "readbhkBreakableConstraint")
 }
 
-void readRegion (Region * obj, unsigned int ARG)
+void
+readRegion(Region * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Start_Index = readuint (READER);
 	obj->Num_Indices = readuint (READER);
 }
 
-void readNiDataStream (NiDataStream * obj, unsigned int ARG)
+void
+readNiDataStream(NiDataStream * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	obj->Usage = readuint (READER);
+	COVERAGE
+	READ (uint, &(obj->Usage), 5, SIZEOFDWORD, "readNiDataStream")
+	/*obj->Usage = readuint (READER);
 	obj->Access = readuint (READER);
 	obj->Num_Bytes = readuint (READER);
 	obj->Cloning_Behavior = readuint (READER);
-	obj->Num_Regions = readuint (READER);
-	// init 1d array
+	obj->Num_Regions = readuint (READER);*/
+	PROTECT_LEN (obj->Num_Bytes, 2000000, "readNiDataStream")
+	PROTECT_LEN (obj->Num_Regions, 2000000, "readNiDataStream")
 	obj->Regions = GETMEM ((obj->Num_Regions) * sizeof (Region));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Regions); i++)
-		readRegion (&obj->Regions[i], 0);
+	if (obj->Num_Regions > 0)
+		READ (uint, &(obj->Regions[0].Start_Index), obj->Num_Regions*2, SIZEOFDWORD, "readNiDataStream")
 	obj->Num_Components = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Components, 2000000, "readNiDataStream")
 	obj->Component_Formats =
 	    GETMEM ((obj->Num_Components) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Components); i++)
-		obj->Component_Formats[i] = readuint (READER);
-	// init 1d array
+	READ (uint, obj->Component_Formats, obj->Num_Components, SIZEOFDWORD, "readNiDataStream")
 	obj->Data = GETMEM ((obj->Num_Bytes) * sizeof (byte));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Bytes); i++)
-		obj->Data[i] = readbyte (READER);
+	READ (byte, obj->Data, obj->Num_Bytes, 1, "readNiDataStream")
 	obj->Streamable = readbool (READER);
 }
 
-void readSemanticData (SemanticData * obj, unsigned int ARG)
+void
+readSemanticData(SemanticData * obj, unsigned int ARG)
 {
+	COVERAGE
 	readstring (&obj->Name, 0);
 	obj->Index = readuint (READER);
 }
 
-void readMeshData (MeshData * obj, unsigned int ARG)
+void
+readMeshData(MeshData * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->Stream = readRef (READER);
 	obj->Is_Per_Instance = readbool (READER);
 	obj->Num_Submeshes = readushort (READER);
-	// init 1d array
 	obj->Submesh_To_Region_Map =
 	    GETMEM ((obj->Num_Submeshes) * sizeof (unsigned short));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Submeshes); i++)
-		obj->Submesh_To_Region_Map[i] = readushort (READER);
+	READ (ushort, obj->Submesh_To_Region_Map, obj->Num_Submeshes, SIZEOFWORD, "readMeshData")
 	obj->Num_Components = readint (READER);
+	PROTECT_LEN (obj->Num_Components, 2000000, "readMeshData")
 	// init 1d array
 	obj->Component_Semantics =
 	    GETMEM ((obj->Num_Components) * sizeof (SemanticData));
 	// read 1d array
+	int i;
 	for (i = 0; i < (obj->Num_Components); i++)
 		readSemanticData (&obj->Component_Semantics[i], 0);
 }
 
-void readMaterialData (MaterialData * obj, unsigned int ARG)
+void
+readMaterialData(MaterialData * obj, unsigned int ARG)
 {
+	COVERAGE
 	readstring (&obj->Material_Name, 0);
 	obj->Material_Extra_Data = readuint (READER);
 }
 
-void readNiRenderObject (NiRenderObject * obj, unsigned int ARG)
+void
+readNiRenderObject(NiRenderObject * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiAVObject));
 	readNiAVObject (obj->parent, 0);
 	obj->Num_Materials = readuint (READER);
+	PROTECT_LEN (obj->Num_Materials, 2000000, "readNiRenderObject")
 	// init 1d array
 	obj->Material_Data =
 	    GETMEM ((obj->Num_Materials) * sizeof (MaterialData));
@@ -11090,29 +10723,26 @@ void readNiRenderObject (NiRenderObject * obj, unsigned int ARG)
 	obj->Material_Needs_Update_Default = readbool (READER);
 }
 
-void readNiMeshModifier (NiMeshModifier * obj, unsigned int ARG)
+void
+readNiMeshModifier(NiMeshModifier * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Num_Submit_Points = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Submit_Points, 2000000, "readNiMeshModifier")
 	obj->Submit_Points =
 	    GETMEM ((obj->Num_Submit_Points) * sizeof (unsigned short));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Submit_Points); i++)
-		obj->Submit_Points[i] = readushort (READER);
+	READ (ushort, obj->Submit_Points, obj->Num_Submit_Points, SIZEOFWORD, "readNiMeshModifier")
 	obj->Num_Complete_Points = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Complete_Points, 2000000, "readNiMeshModifier")
 	obj->Complete_Points =
 	    GETMEM ((obj->Num_Complete_Points) * sizeof (unsigned short));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Complete_Points); i++)
-		obj->Complete_Points[i] = readushort (READER);
+	READ (ushort, obj->Complete_Points, obj->Num_Complete_Points, SIZEOFWORD, "readNiMeshModifier")
 }
 
-void readNiMesh (NiMesh * obj, unsigned int ARG)
+void
+readNiMesh(NiMesh * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiRenderObject));
 	readNiRenderObject (obj->parent, 0);
 	obj->Primitive_Type = readuint (READER);
@@ -11120,6 +10750,7 @@ void readNiMesh (NiMesh * obj, unsigned int ARG)
 	obj->Instancing_Enabled = readbool (READER);
 	readSphereBV (&obj->Bound, 0);
 	obj->Num_Datas = readuint (READER);
+	PROTECT_LEN (obj->Num_Datas, 2000000, "readNiMesh")
 	// init 1d array
 	obj->Datas = GETMEM ((obj->Num_Datas) * sizeof (MeshData));
 	// read 1d array
@@ -11127,48 +10758,51 @@ void readNiMesh (NiMesh * obj, unsigned int ARG)
 	for (i = 0; i < (obj->Num_Datas); i++)
 		readMeshData (&obj->Datas[i], 0);
 	obj->Num_Modifiers = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Modifiers, 2000000, "readNiMesh")
 	obj->Modifiers = GETMEM ((obj->Num_Modifiers) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Modifiers); i++)
-		obj->Modifiers[i] = readRef (READER);
+	READ (uint, obj->Modifiers, obj->Num_Modifiers, SIZEOFDWORD, "readNiMesh")
 }
 
 void
-readNiMorphWeightsController (NiMorphWeightsController * obj, unsigned int ARG)
+readNiMorphWeightsController(NiMorphWeightsController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiInterpController));
 	readNiInterpController (obj->parent, 0);
 	obj->Unknown_2 = readint (READER);
 	obj->Num_Interpolators = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Interpolators, 2000000, "readNiMorphWeightsController")
 	obj->Interpolators =
 	    GETMEM ((obj->Num_Interpolators) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Interpolators); i++)
-		obj->Interpolators[i] = readRef (READER);
+	READ (uint, obj->Interpolators, obj->Num_Interpolators, SIZEOFDWORD, "readNiMorphWeightsController")
 	obj->Num_Targets = readuint (READER);
+	PROTECT_LEN (obj->Num_Targets, 2000000, "readNiMorphWeightsController")
 	// init 1d array
 	obj->Target_Names = GETMEM ((obj->Num_Targets) * sizeof (string));
 	// read 1d array
+	int i;
 	for (i = 0; i < (obj->Num_Targets); i++)
 		readstring (&obj->Target_Names[i], 0);
 }
 
-void readElementReference (ElementReference * obj, unsigned int ARG)
+void
+readElementReference(ElementReference * obj, unsigned int ARG)
 {
+	COVERAGE
 	readSemanticData (&obj->Semantic, 0);
 	obj->Normalize_Flag = readuint (READER);
 }
 
-void readNiMorphMeshModifier (NiMorphMeshModifier * obj, unsigned int ARG)
+void
+readNiMorphMeshModifier(NiMorphMeshModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiMeshModifier));
 	readNiMeshModifier (obj->parent, 0);
 	obj->Flags = readbyte (READER);
 	obj->Num_Targets = readushort (READER);
 	obj->Num_Elements = readuint (READER);
+	PROTECT_LEN (obj->Num_Elements, 2000000, "readNiMorphMeshModifier")
 	// init 1d array
 	obj->Elements =
 	    GETMEM ((obj->Num_Elements) * sizeof (ElementReference));
@@ -11178,24 +10812,24 @@ void readNiMorphMeshModifier (NiMorphMeshModifier * obj, unsigned int ARG)
 		readElementReference (&obj->Elements[i], 0);
 }
 
-void readNiSkinningMeshModifier (NiSkinningMeshModifier * obj, unsigned int ARG)
+void
+readNiSkinningMeshModifier(NiSkinningMeshModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiMeshModifier));
 	readNiMeshModifier (obj->parent, 0);
 	obj->Flags = readushort (READER);
 	obj->Skeleton_Root = readPtr (READER);
 	readSkinTransform (&obj->Skeleton_Transform, 0);
 	obj->Num_Bones = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Bones, 2000000, "readNiSkinningMeshModifier")
 	obj->Bones = GETMEM ((obj->Num_Bones) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Bones); i++)
-		obj->Bones[i] = readPtr (READER);
+	READ (uint, obj->Bones, obj->Num_Bones, SIZEOFDWORD, 	"readNiSkinningMeshModifier")
 	// init 1d array
 	obj->Bone_Transforms =
 	    GETMEM ((obj->Num_Bones) * sizeof (SkinTransform));
 	// read 1d array
+	int i;
 	for (i = 0; i < (obj->Num_Bones); i++)
 		readSkinTransform (&obj->Bone_Transforms[i], 0);
 	if ((obj->Flags & 2)) {
@@ -11209,122 +10843,128 @@ void readNiSkinningMeshModifier (NiSkinningMeshModifier * obj, unsigned int ARG)
 }
 
 void
-readNiInstancingMeshModifier (NiInstancingMeshModifier * obj, unsigned int ARG)
+readNiInstancingMeshModifier(NiInstancingMeshModifier * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiMeshModifier));
 	readNiMeshModifier (obj->parent, 0);
 }
 
 void
-readNiSkinningLODController (NiSkinningLODController * obj, unsigned int ARG)
+readNiSkinningLODController(NiSkinningLODController * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 }
 
-void readNiPSParticleSystem (NiPSParticleSystem * obj, unsigned int ARG)
+void
+readNiPSParticleSystem(NiPSParticleSystem * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiAVObject));
 	readNiAVObject (obj->parent, 0);
 	obj->Unknown_3 = readint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Unknown_3, 2000000, "readNiPSParticleSystem")
 	obj->Unknown_38 = GETMEM ((obj->Unknown_3) * sizeof (int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Unknown_3); i++)
-		obj->Unknown_38[i] = readint (READER);
+	READ (int, obj->Unknown_38, obj->Unknown_3, SIZEOFDWORD, 	"readNiPSParticleSystem")
 	obj->Unknown_4 = readint (READER);
 	obj->Unknown_5 = readint (READER);
-	// init 1d array
 	obj->Unknown_39 = GETMEM ((obj->Unknown_3) * sizeof (int));
-	// read 1d array
-	for (i = 0; i < (obj->Unknown_3); i++)
-		obj->Unknown_39[i] = readint (READER);
-	obj->Unknown_6 = readint (READER);
+	READ (int, obj->Unknown_39, obj->Unknown_3, SIZEOFDWORD, 	"readNiPSParticleSystem")
+	READ (int, &(obj->Unknown_6), 4, SIZEOFDWORD, "readNiPSParticleSystem")
+	/*obj->Unknown_6 = readint (READER);
 	obj->Unknown_7 = readint (READER);
 	obj->Unknown_8 = readint (READER);
-	obj->Unknown_9 = readint (READER);
+	obj->Unknown_9 = readint (READER);*/
 	obj->Unknown_10 = readfloat (READER);
-	obj->Unknown_11 = readint (READER);
-	obj->Unknown_12 = readint (READER);
+	READ (int, &(obj->Unknown_11), 2, SIZEOFDWORD, "readNiPSParticleSystem")
+	/*obj->Unknown_11 = readint (READER);
+	obj->Unknown_12 = readint (READER);*/
 	obj->Simulator = readRef (READER);
 	if ((obj->Unknown_12 > 1)) {
 		obj->Generator = readRef (READER);
 	}
-	obj->Unknown_15 = readint (READER);
+	READ (int, &(obj->Unknown_15), 3, SIZEOFDWORD, "readNiPSParticleSystem")
+	/*obj->Unknown_15 = readint (READER);
 	obj->Unknown_16 = readint (READER);
-	obj->Unknown_17 = readint (READER);
+	obj->Unknown_17 = readint (READER);*/
 	obj->Emitter = readRef (READER);
-	obj->Unknown_19 = readint (READER);
+	READ (int, &(obj->Unknown_19), 3, SIZEOFDWORD, "readNiPSParticleSystem")
+	/*obj->Unknown_19 = readint (READER);
 	obj->Unknown_20 = readint (READER);
-	obj->Unknown_21 = readint (READER);
-	// init 1d array
-	obj->Unknown_22 = GETMEM ((4) * sizeof (byte));
-	// read 1d array
-	for (i = 0; i < (4); i++)
-		obj->Unknown_22[i] = readbyte (READER);
+	obj->Unknown_21 = readint (READER);*/
+	READ (byte, &(obj->Unknown_22[0]), 4, 1, "readNiPSParticleSystem")
 	if (VersionCheck (0x1E000002, 0)) {
-		obj->Unknown_27 = readint (READER);
+		READ (int, &(obj->Unknown_27), 8, SIZEOFDWORD, "readNiPSParticleSystem")
+		/*obj->Unknown_27 = readint (READER);
 		obj->Unknown_28 = readint (READER);
 		obj->Unknown_29 = readint (READER);
 		obj->Unknown_30 = readint (READER);
 		obj->Unknown_31 = readint (READER);
 		obj->Unknown_32 = readint (READER);
 		obj->Unknown_33 = readint (READER);
-		obj->Unknown_34 = readint (READER);
+		obj->Unknown_34 = readint (READER);*/
 		obj->Unknown_35 = readbyte (READER);
 		obj->Unknown_36 = readint (READER);
 		obj->Unknown_37 = readshort (READER);
 	}
 }
 
-void readNiPSMeshParticleSystem (NiPSMeshParticleSystem * obj, unsigned int ARG)
+void
+readNiPSMeshParticleSystem(NiPSMeshParticleSystem * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSParticleSystem));
 	readNiPSParticleSystem (obj->parent, 0);
-	obj->Unknown_23 = readint (READER);
+	READ (int, &(obj->Unknown_23), 3, SIZEOFDWORD, "readNiPSMeshParticleSystem")
+	/*obj->Unknown_23 = readint (READER);
 	obj->Unknown_24 = readint (READER);
-	obj->Unknown_25 = readint (READER);
+	obj->Unknown_25 = readint (READER);*/
 	obj->Unknown_26 = readbyte (READER);
 }
 
-void readNiPSEmitParticlesCtlr (NiPSEmitParticlesCtlr * obj, unsigned int ARG)
+void
+readNiPSEmitParticlesCtlr(NiPSEmitParticlesCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysEmitterCtlr));
 	readNiPSysEmitterCtlr (obj->parent, 0);
 }
 
-void readNiPSForceActiveCtlr (NiPSForceActiveCtlr * obj, unsigned int ARG)
+void
+readNiPSForceActiveCtlr(NiPSForceActiveCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Interpolator = readRef (READER);
 	obj->Unknown_2 = readint (READER);
 }
 
-void readNiPSSimulator (NiPSSimulator * obj, unsigned int ARG)
+void
+readNiPSSimulator(NiPSSimulator * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiMeshModifier));
 	readNiMeshModifier (obj->parent, 0);
 	obj->Num_Simulation_Steps = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Simulation_Steps, 2000000, "readNiPSSimulator")
 	obj->Simulation_Steps =
 	    GETMEM ((obj->Num_Simulation_Steps) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Simulation_Steps); i++)
-		obj->Simulation_Steps[i] = readRef (READER);
+	READ (uint, obj->Simulation_Steps, obj->Num_Simulation_Steps, SIZEOFDWORD, "readNiPSSimulator")
 }
 
-void readNiPSSimulatorStep (NiPSSimulatorStep * obj, unsigned int ARG)
+inline void
+readNiPSSimulatorStep(NiPSSimulatorStep * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 }
 
 void
-readNiPSSimulatorGeneralStep (NiPSSimulatorGeneralStep * obj, unsigned int ARG)
+readNiPSSimulatorGeneralStep(NiPSSimulatorGeneralStep * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSSimulatorStep));
 	readNiPSSimulatorStep (obj->parent, 0);
 	obj->Num_Size_Keys = readbyte (READER);
@@ -11338,21 +10978,18 @@ readNiPSSimulatorGeneralStep (NiPSSimulatorGeneralStep * obj, unsigned int ARG)
 		obj->Size_Loop_Behavior = readuint (READER);
 	}
 	if (VersionCheck (0, 0x14060000)) {
-		obj->Unknown_1 = readfloat (READER);
+		READ (float, &(obj->Unknown_1), 3, SIZEOFDWORD, "readNiPSSimulatorGeneralStep")
+		/*obj->Unknown_1 = readfloat (READER);
 		obj->Unknown_2 = readfloat (READER);
-		obj->Unknown_3 = readfloat (READER);
+		obj->Unknown_3 = readfloat (READER);*/
 	}
 	if (VersionCheck (0x1E000002, 0)) {
 		obj->Num_Color_Keys = readbyte (READER);
-	}
-	if (VersionCheck (0x1E000002, 0)) {
 		// init 1d array
 		obj->Color_Keys = GETMEM ((obj->Num_Color_Keys) * sizeof (Key));
 		// read 1d array
 		for (i = 0; i < (obj->Num_Color_Keys); i++)
 			readKey (&obj->Color_Keys[i], 1, T_BYTECOLOR4);
-	}
-	if (VersionCheck (0x1E000002, 0)) {
 		obj->Color_Loop_Behavior = readuint (READER);
 		obj->Num_Rotation_Keys = readbyte (READER);
 		// init 1d array
@@ -11370,38 +11007,33 @@ readNiPSSimulatorGeneralStep (NiPSSimulatorGeneralStep * obj, unsigned int ARG)
 }
 
 void
-readNiPSSimulatorForcesStep (NiPSSimulatorForcesStep * obj, unsigned int ARG)
+readNiPSSimulatorForcesStep(NiPSSimulatorForcesStep * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSSimulatorStep));
 	readNiPSSimulatorStep (obj->parent, 0);
 	obj->Num_Forces = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Forces, 2000000, "readNiPSSimulatorForcesStep")
 	obj->Forces = GETMEM ((obj->Num_Forces) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Forces); i++)
-		obj->Forces[i] = readRef (READER);
+	READ (uint, obj->Forces, obj->Num_Forces, SIZEOFDWORD, "readNiPSSimulatorForcesStep")
 }
 
 void
-readNiPSSimulatorCollidersStep (NiPSSimulatorCollidersStep * obj,
-				unsigned int ARG)
+readNiPSSimulatorCollidersStep(NiPSSimulatorCollidersStep * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSSimulatorStep));
 	readNiPSSimulatorStep (obj->parent, 0);
 	obj->Num_Colliders = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Colliders, 2000000, "readNiPSSimulatorCollidersStep")
 	obj->Colliders = GETMEM ((obj->Num_Colliders) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Colliders); i++)
-		obj->Colliders[i] = readRef (READER);
+	READ (uint, obj->Colliders, obj->Num_Colliders, SIZEOFDWORD, "readNiPSSimulatorCollidersStep")
 }
 
 void
-readNiPSSimulatorMeshAlignStep (NiPSSimulatorMeshAlignStep * obj,
-				unsigned int ARG)
+readNiPSSimulatorMeshAlignStep (NiPSSimulatorMeshAlignStep * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSSimulatorStep));
 	readNiPSSimulatorStep (obj->parent, 0);
 	obj->Num_Rotation_Keys = readbyte (READER);
@@ -11415,84 +11047,74 @@ readNiPSSimulatorMeshAlignStep (NiPSSimulatorMeshAlignStep * obj,
 	obj->Rotation_Loop_Behavior = readuint (READER);
 }
 
-void readNiPSSimulatorFinalStep (NiPSSimulatorFinalStep * obj, unsigned int ARG)
+void
+readNiPSSimulatorFinalStep(NiPSSimulatorFinalStep * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSSimulatorStep));
 	readNiPSSimulatorStep (obj->parent, 0);
 }
 
 void
-readNiPSFacingQuadGenerator (NiPSFacingQuadGenerator * obj, unsigned int ARG)
+readNiPSFacingQuadGenerator(NiPSFacingQuadGenerator * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	obj->Unknown_1 = readbyte (READER);
-	obj->Unknown_2 = readbyte (READER);
-	obj->Unknown_3 = readbyte (READER);
-	obj->Unknown_4 = readbyte (READER);
-	obj->Unknown_5 = readbyte (READER);
-	obj->Unknown_6 = readbyte (READER);
-	obj->Unknown_7 = readbyte (READER);
-	obj->Unknown_8 = readbyte (READER);
-	obj->Unknown_9 = readbyte (READER);
-	obj->Unknown_10 = readbyte (READER);
-	obj->Unknown_11 = readbyte (READER);
-	obj->Unknown_12 = readbyte (READER);
+	COVERAGE
+	READ (byte, &(obj->Unknown_1), 12, 1, "readNiPSFacingQuadGenerator")
 }
 
-void readNiShadowGenerator (NiShadowGenerator * obj, unsigned int ARG)
+void
+readNiShadowGenerator(NiShadowGenerator * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+ 	COVERAGE
 	readstring (&obj->Name, 0);
 	obj->Unknown_Flags = readushort (READER);
 	obj->Num_Unknown_Links_1 = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Unknown_Links_1, 2000000, "readNiShadowGenerator")
 	obj->Unknown_Links_1 =
 	    GETMEM ((obj->Num_Unknown_Links_1) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Unknown_Links_1); i++)
-		obj->Unknown_Links_1[i] = readRef (READER);
+	READ (uint, obj->Unknown_Links_1, obj->Num_Unknown_Links_1, SIZEOFDWORD, "readNiShadowGenerator")
 	obj->Unkown_Int_2 = readint (READER);
 	obj->Target = readPtr (READER);
 	obj->Unkown_Float_4 = readfloat (READER);
 	obj->Unkown_Byte_5 = readbyte (READER);
-	obj->Unkown_Int_6 = readint (READER);
+	READ (int, &(obj->Unkown_Int_6), 3, SIZEOFDWORD, "readNiShadowGenerator")
+	/*obj->Unkown_Int_6 = readint (READER);
 	obj->Unkown_Int_7 = readint (READER);
-	obj->Unkown_Int_8 = readint (READER);
+	obj->Unkown_Int_8 = readint (READER);*/
 	obj->Unkown_Byte_9 = readbyte (READER);
 }
 
-void readNiPSBoundUpdater (NiPSBoundUpdater * obj, unsigned int ARG)
+void
+readNiPSBoundUpdater(NiPSBoundUpdater * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	obj->Unknown_1 = readbyte (READER);
-	obj->Unknown_2 = readbyte (READER);
+	COVERAGE
+	READ (byte, &(obj->Unknown_1), 2, 1, "readNiPSBoundUpdater")
 }
 
-void readNiPSDragForce (NiPSDragForce * obj, unsigned int ARG)
+void
+readNiPSDragForce(NiPSDragForce * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	obj->Unknown_1 = readint (READER);
-	obj->Unknown_2 = readint (READER);
+	COVERAGE
+	READ (int, &(obj->Unknown_1), 2, SIZEOFDWORD, "readNiPSDragForce")
+	/*obj->Unknown_1 = readint (READER);
+	obj->Unknown_2 = readint (READER);*/
 	obj->Unknown_3 = readbyte (READER);
-	obj->Unknown_4 = readfloat (READER);
+	READ (float, &(obj->Unknown_4), 6, SIZEOFDWORD, "readNiPSDragForce")
+	/*obj->Unknown_4 = readfloat (READER);
 	obj->Unknown_5 = readfloat (READER);
 	obj->Unknown_6 = readfloat (READER);
 	obj->Unknown_7 = readfloat (READER);
 	obj->Unknown_8 = readfloat (READER);
-	obj->Unknown_9 = readfloat (READER);
+	obj->Unknown_9 = readfloat (READER);*/
 	obj->Unknown_10 = readint (READER);
 }
 
-void readNiPSGravityForce (NiPSGravityForce * obj, unsigned int ARG)
+void
+readNiPSGravityForce(NiPSGravityForce * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-	obj->Unknown_1 = readbyte (READER);
+	COVERAGE
+	READ (byte, &(obj->Unknown_1), 17, 1, "readNiPSGravityForce")
+	/*obj->Unknown_1 = readbyte (READER);
 	obj->Unknown_2 = readbyte (READER);
 	obj->Unknown_3 = readbyte (READER);
 	obj->Unknown_4 = readbyte (READER);
@@ -11508,9 +11130,10 @@ void readNiPSGravityForce (NiPSGravityForce * obj, unsigned int ARG)
 	obj->Unknown_14 = readbyte (READER);
 	obj->Unknown_15 = readbyte (READER);
 	obj->Unknown_16 = readbyte (READER);
-	obj->Unknown_17 = readbyte (READER);
+	obj->Unknown_17 = readbyte (READER);*/
 	obj->Unknown_18 = readfloat (READER);
-	obj->Unknown_19 = readbyte (READER);
+	READ (byte, &(obj->Unknown_19), 16, 1, "readNiPSGravityForce")
+	/*obj->Unknown_19 = readbyte (READER);
 	obj->Unknown_20 = readbyte (READER);
 	obj->Unknown_21 = readbyte (READER);
 	obj->Unknown_22 = readbyte (READER);
@@ -11525,30 +11148,34 @@ void readNiPSGravityForce (NiPSGravityForce * obj, unsigned int ARG)
 	obj->Unknown_31 = readbyte (READER);
 	obj->Unknown_32 = readbyte (READER);
 	obj->Unknown_33 = readbyte (READER);
-	obj->Unknown_34 = readbyte (READER);
+	obj->Unknown_34 = readbyte (READER);*/
 	obj->Unknown_35 = readfloat (READER);
 	obj->Unknown_36 = readRef (READER);
 }
 
-void readNiPSBoxEmitter (NiPSBoxEmitter * obj, unsigned int ARG)
+void
+readNiPSBoxEmitter(NiPSBoxEmitter * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readstring (&obj->Name, 0);
-	obj->Unknown_1 = readfloat (READER);
-	obj->Unknown_2 = readfloat (READER);
-	obj->Unknown_3 = readbyte (READER);
+	READ (float, &(obj->Unknown_1), 2, SIZEOFDWORD, "readNiPSBoxEmitter")
+	/*obj->Unknown_1 = readfloat (READER);
+	obj->Unknown_2 = readfloat (READER);*/
+	READ (byte, &(obj->Unknown_3), 4, 1, "readNiPSBoxEmitter")
+	/*obj->Unknown_3 = readbyte (READER);
 	obj->Unknown_4 = readbyte (READER);
 	obj->Unknown_5 = readbyte (READER);
-	obj->Unknown_6 = readbyte (READER);
+	obj->Unknown_6 = readbyte (READER);*/
 	obj->Unknown_7 = readfloat (READER);
-	obj->Unknown_8 = readbyte (READER);
+	READ (byte, &(obj->Unknown_8), 4, 1, "readNiPSBoxEmitter")
+	/*obj->Unknown_8 = readbyte (READER);
 	obj->Unknown_9 = readbyte (READER);
 	obj->Unknown_10 = readbyte (READER);
-	obj->Unknown_11 = readbyte (READER);
+	obj->Unknown_11 = readbyte (READER);*/
 	obj->Unknown_12 = readfloat (READER);
 	obj->Unknown_13 = readint (READER);
-	obj->Unknown_14 = readfloat (READER);
+	READ (float, &(obj->Unknown_14), 9, SIZEOFDWORD, "readNiPSBoxEmitter")
+	/*obj->Unknown_14 = readfloat (READER);
 	obj->Unknown_15 = readfloat (READER);
 	obj->Unknown_16 = readfloat (READER);
 	obj->Unknown_17 = readfloat (READER);
@@ -11556,8 +11183,9 @@ void readNiPSBoxEmitter (NiPSBoxEmitter * obj, unsigned int ARG)
 	obj->Unknown_19 = readfloat (READER);
 	obj->Unknown_20 = readfloat (READER);
 	obj->Unknown_21 = readfloat (READER);
-	obj->Unknown_22 = readfloat (READER);
-	obj->Unknown_23 = readbyte (READER);
+	obj->Unknown_22 = readfloat (READER);*/
+	READ (byte, &(obj->Unknown_23), 26, 1, "readNiPSBoxEmitter")
+	/*obj->Unknown_23 = readbyte (READER);
 	obj->Unknown_24 = readbyte (READER);
 	obj->Unknown_25 = readbyte (READER);
 	obj->Unknown_26 = readbyte (READER);
@@ -11582,230 +11210,236 @@ void readNiPSBoxEmitter (NiPSBoxEmitter * obj, unsigned int ARG)
 	obj->Unknown_45 = readbyte (READER);
 	obj->Unknown_46 = readbyte (READER);
 	obj->Unknown_47 = readbyte (READER);
-	obj->Unknown_48 = readbyte (READER);
+	obj->Unknown_48 = readbyte (READER);*/
 }
 
-void readNiPSMeshEmitter (NiPSMeshEmitter * obj, unsigned int ARG)
+void
+readNiPSMeshEmitter(NiPSMeshEmitter * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readstring (&obj->Name, 0);
-	obj->Unknown_1 = readint (READER);
+	READ (int, &(obj->Unknown_1), 3, SIZEOFDWORD, "readNiPSMeshEmitter")
+	/*obj->Unknown_1 = readint (READER);
 	obj->Unknown_2 = readint (READER);
-	obj->Unknown_3 = readint (READER);
+	obj->Unknown_3 = readint (READER);*/
 	if (VersionCheck (0x1E000002, 0)) {
 		obj->Unknown_27 = readint (READER);
 	}
-	obj->Unknown_4 = readfloat (READER);
+	READ (float, &(obj->Unknown_4), 3, SIZEOFDWORD, "readNiPSMeshEmitter")
+	/*obj->Unknown_4 = readfloat (READER);
 	obj->Unknown_5 = readfloat (READER);
-	obj->Unknown_6 = readfloat (READER);
+	obj->Unknown_6 = readfloat (READER);*/
 	if (VersionCheck (0x1E000002, 0)) {
 		obj->Unknown_28 = readfloat (READER);
 	}
 	obj->Unknown_7 = readint (READER);
-	obj->Unknown_8 = readfloat (READER);
+	READ (float, &(obj->Unknown_8), 5, SIZEOFDWORD, "readNiPSMeshEmitter")
+	/*obj->Unknown_8 = readfloat (READER);
 	obj->Unknown_9 = readfloat (READER);
 	obj->Unknown_10 = readfloat (READER);
 	obj->Unknown_11 = readfloat (READER);
-	obj->Unknown_12 = readfloat (READER);
+	obj->Unknown_12 = readfloat (READER);*/
 	obj->Unknown_13 = readint (READER);
-	obj->Unknown_14 = readfloat (READER);
+	READ (float, &(obj->Unknown_14), 3, SIZEOFDWORD, "readNiPSMeshEmitter")
+	/*obj->Unknown_14 = readfloat (READER);
 	obj->Unknown_15 = readfloat (READER);
-	obj->Unknown_16 = readfloat (READER);
+	obj->Unknown_16 = readfloat (READER);*/
 	if (VersionCheck (0, 0x14060000)) {
-		obj->Unknown_17 = readint (READER);
-	}
-	if (VersionCheck (0, 0x14060000)) {
-		obj->Unknown_18 = readint (READER);
+		READ (int, &(obj->Unknown_17), 2, SIZEOFDWORD, "readNiPSMeshEmitter")
+		/*obj->Unknown_17 = readint (READER);
+		obj->Unknown_18 = readint (READER);*/
 	}
 	obj->Unknown_19 = readshort (READER);
-	obj->Unknown_20 = readint (READER);
-	obj->Unknown_21 = readint (READER);
+	READ (int, &(obj->Unknown_20), 2, SIZEOFDWORD, "readNiPSMeshEmitter")
+	/*obj->Unknown_20 = readint (READER);
+	obj->Unknown_21 = readint (READER);*/
 	if (VersionCheck (0, 0x14060000)) {
 		obj->Unknown_22 = readfloat (READER);
-	}
-	if (VersionCheck (0, 0x14060000)) {
 		obj->Unknown_23 = readint (READER);
 	}
-	obj->Unknown_24 = readint (READER);
+	READ (int, &(obj->Unknown_24), 3, SIZEOFDWORD, "readNiPSMeshEmitter")
+	/*obj->Unknown_24 = readint (READER);
 	obj->Unknown_25 = readint (READER);
-	obj->Unknown_26 = readint (READER);
+	obj->Unknown_26 = readint (READER);*/
 }
 
 void
-readNiPSGravityStrengthCtlr (NiPSGravityStrengthCtlr * obj, unsigned int ARG)
+readNiPSGravityStrengthCtlr(NiPSGravityStrengthCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Unknown_2 = readint (READER);
 	obj->Unknown_3 = readint (READER);
 }
 
-void readNiPSPlanarCollider (NiPSPlanarCollider * obj, unsigned int ARG)
+void
+readNiPSPlanarCollider(NiPSPlanarCollider * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readstring (&obj->Name, 0);
 	obj->Unknown_Int_1 = readint (READER);
 	obj->Unknown_Int_2 = readint (READER);
 	obj->Unknown_Short_3 = readshort (READER);
 	obj->Unknown_Byte_4 = readbyte (READER);
-	// init 1d array
-	obj->Unknown_Floats_5 = GETMEM ((8) * sizeof (float));
-	// read 1d array
-	int i;
-	for (i = 0; i < (8); i++)
-		obj->Unknown_Floats_5[i] = readfloat (READER);
+	READ (float, obj->Unknown_Floats_5, 8, SIZEOFDWORD, "readNiPSPlanarCollider")
 	obj->Unknown_Link_6 = readRef (READER);
 }
 
-void readNiPSEmitterSpeedCtlr (NiPSEmitterSpeedCtlr * obj, unsigned int ARG)
+void
+readNiPSEmitterSpeedCtlr(NiPSEmitterSpeedCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Interpolator = readRef (READER);
 	obj->Unknown_3 = readint (READER);
 }
 
-void readNiPSEmitterRadiusCtlr (NiPSEmitterRadiusCtlr * obj, unsigned int ARG)
+void
+readNiPSEmitterRadiusCtlr(NiPSEmitterRadiusCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Interpolator = readRef (READER);
 	obj->Unknown_2 = readint (READER);
 }
 
-void readNiPSResetOnLoopCtlr (NiPSResetOnLoopCtlr * obj, unsigned int ARG)
+void
+readNiPSResetOnLoopCtlr(NiPSResetOnLoopCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 }
 
-void readNiPSSphereEmitter (NiPSSphereEmitter * obj, unsigned int ARG)
+void
+readNiPSSphereEmitter(NiPSSphereEmitter * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readstring (&obj->Name, 0);
-	obj->Unknown_2 = readint (READER);
+	READ (int, &(obj->Unknown_2), 4, SIZEOFDWORD, "readNiPSSphereEmitter")
+	/*obj->Unknown_2 = readint (READER);
 	obj->Unknown_3 = readint (READER);
 	obj->Unknown_4 = readint (READER);
-	obj->Unknown_5 = readint (READER);
+	obj->Unknown_5 = readint (READER);*/
 	obj->Unknown_6 = readfloat (READER);
 	obj->Unknown_7 = readint (READER);
+	READ (float, &(obj->Unknown_8), 2, SIZEOFDWORD, "readNiPSSphereEmitter")
 	obj->Unknown_8 = readfloat (READER);
 	obj->Unknown_9 = readfloat (READER);
 	obj->Unknown_10 = readint (READER);
 	obj->Unknown_11 = readfloat (READER);
-	obj->Unknown_12 = readint (READER);
+	READ (int, &(obj->Unknown_12), 5, SIZEOFDWORD, "readNiPSSphereEmitter")
+	/*obj->Unknown_12 = readint (READER);
 	obj->Unknown_13 = readint (READER);
 	obj->Unknown_14 = readint (READER);
 	obj->Unknown_15 = readint (READER);
-	obj->Unknown_16 = readint (READER);
+	obj->Unknown_16 = readint (READER);*/
 	obj->Unknown_17 = readfloat (READER);
-	obj->Unknown_18 = readint (READER);
-	obj->Unknown_19 = readint (READER);
+	READ (int, &(obj->Unknown_18), 2, SIZEOFDWORD, "readNiPSSphereEmitter")
+	/*obj->Unknown_18 = readint (READER);
+	obj->Unknown_19 = readint (READER);*/
 	obj->Unknown_20 = readshort (READER);
 	obj->Unknown_21 = readint (READER);
 	obj->Unknown_22 = readfloat (READER);
 }
 
-void readNiPSCylinderEmitter (NiPSCylinderEmitter * obj, unsigned int ARG)
+void
+readNiPSCylinderEmitter(NiPSCylinderEmitter * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSSphereEmitter));
 	readNiPSSphereEmitter (obj->parent, 0);
 	obj->Unknown_23 = readfloat (READER);
 }
 
 void
-readNiPSEmitterDeclinationCtlr (NiPSEmitterDeclinationCtlr * obj,
-				unsigned int ARG)
+readNiPSEmitterDeclinationCtlr(NiPSEmitterDeclinationCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierCtlr));
 	readNiPSysModifierCtlr (obj->parent, 0);
 }
 
 void
-readNiPSEmitterDeclinationVarCtlr (NiPSEmitterDeclinationVarCtlr * obj,
-				   unsigned int ARG)
+readNiPSEmitterDeclinationVarCtlr(NiPSEmitterDeclinationVarCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSEmitterDeclinationCtlr));
 	readNiPSEmitterDeclinationCtlr (obj->parent, 0);
 }
 
 void
-readNiPSEmitterPlanarAngleCtlr (NiPSEmitterPlanarAngleCtlr * obj,
-				unsigned int ARG)
+readNiPSEmitterPlanarAngleCtlr(NiPSEmitterPlanarAngleCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierCtlr));
 	readNiPSysModifierCtlr (obj->parent, 0);
 }
 
 void
-readNiPSEmitterPlanarAngleVarCtlr (NiPSEmitterPlanarAngleVarCtlr * obj,
-				   unsigned int ARG)
+readNiPSEmitterPlanarAngleVarCtlr(NiPSEmitterPlanarAngleVarCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSEmitterPlanarAngleCtlr));
 	readNiPSEmitterPlanarAngleCtlr (obj->parent, 0);
 }
 
 void
-readNiPSEmitterRotAngleCtlr (NiPSEmitterRotAngleCtlr * obj, unsigned int ARG)
+readNiPSEmitterRotAngleCtlr(NiPSEmitterRotAngleCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierCtlr));
 	readNiPSysModifierCtlr (obj->parent, 0);
 }
 
 void
-readNiPSEmitterRotAngleVarCtlr (NiPSEmitterRotAngleVarCtlr * obj,
-				unsigned int ARG)
+readNiPSEmitterRotAngleVarCtlr(NiPSEmitterRotAngleVarCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSEmitterRotAngleCtlr));
 	readNiPSEmitterRotAngleCtlr (obj->parent, 0);
 }
 
 void
-readNiPSEmitterRotSpeedCtlr (NiPSEmitterRotSpeedCtlr * obj, unsigned int ARG)
+readNiPSEmitterRotSpeedCtlr(NiPSEmitterRotSpeedCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierCtlr));
 	readNiPSysModifierCtlr (obj->parent, 0);
 }
 
 void
-readNiPSEmitterRotSpeedVarCtlr (NiPSEmitterRotSpeedVarCtlr * obj,
-				unsigned int ARG)
+readNiPSEmitterRotSpeedVarCtlr(NiPSEmitterRotSpeedVarCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSEmitterRotSpeedCtlr));
 	readNiPSEmitterRotSpeedCtlr (obj->parent, 0);
 }
 
 void
-readNiPSEmitterLifeSpanCtlr (NiPSEmitterLifeSpanCtlr * obj, unsigned int ARG)
+readNiPSEmitterLifeSpanCtlr(NiPSEmitterLifeSpanCtlr * obj, unsigned int ARG)
 {
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiPSysModifierCtlr));
 	readNiPSysModifierCtlr (obj->parent, 0);
 }
 
-void readNiPSBombForce (NiPSBombForce * obj, unsigned int ARG)
+void
+readNiPSBombForce(NiPSBombForce * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	readstring (&obj->Name, 0);
 	obj->Unknown_1 = readbyte (READER);
-	obj->Unknown_2 = readint (READER);
-	obj->Unknown_3 = readint (READER);
-	obj->Unknown_4 = readint (READER);
-	obj->Unknown_5 = readint (READER);
-	obj->Unknown_6 = readint (READER);
-	obj->Unknown_7 = readint (READER);
-	obj->Unknown_8 = readint (READER);
-	obj->Unknown_9 = readint (READER);
-	obj->Unknown_10 = readint (READER);
+	READ (int, &(obj->Unknown_2), 9, SIZEOFDWORD, "readNiPSBombForce")
 }
 
-void readNiPSSphericalCollider (NiPSSphericalCollider * obj, unsigned int ARG)
+void
+readNiPSSphericalCollider(NiPSSphericalCollider * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 	obj->Unknown_1 = readint (READER);
 	obj->Unknown_2 = readint (READER);
 	obj->Unknown_3 = readbyte (READER);
@@ -11815,57 +11449,52 @@ void readNiPSSphericalCollider (NiPSSphericalCollider * obj, unsigned int ARG)
 	obj->Unknown_7 = readint (READER);
 }
 
-void readNiPSSpawner (NiPSSpawner * obj, unsigned int ARG)
+inline void
+readNiPSSpawner(NiPSSpawner * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 }
 
-void readNiSequenceData (NiSequenceData * obj, unsigned int ARG)
+inline void
+readNiSequenceData(NiSequenceData * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
 }
 
-void readNiTransformEvaluator (NiTransformEvaluator * obj, unsigned int ARG)
+inline void
+readNiTransformEvaluator(NiTransformEvaluator * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
+	COVERAGE
+}
+
+inline void
+readNiBSplineCompTransformEvaluator(NiBSplineCompTransformEvaluator * obj, unsigned int ARG)
+{
+	COVERAGE
+}
+
+inline void
+readNiMeshHWInstance(NiMeshHWInstance * obj, unsigned int ARG)
+{
+	COVERAGE
 }
 
 void
-readNiBSplineCompTransformEvaluator (NiBSplineCompTransformEvaluator * obj,
-				     unsigned int ARG)
+readNiFurSpringController(NiFurSpringController * obj, unsigned int ARG)
 {
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-}
-
-void readNiMeshHWInstance (NiMeshHWInstance * obj, unsigned int ARG)
-{
-	obj->parent = GETMEM (sizeof (NiObject));
-	readNiObject (obj->parent, 0);
-}
-
-void readNiFurSpringController (NiFurSpringController * obj, unsigned int ARG)
-{
+	COVERAGE
 	obj->parent = GETMEM (sizeof (NiTimeController));
 	readNiTimeController (obj->parent, 0);
 	obj->Unknown_Float = readfloat (READER);
 	obj->Unknown_Float_2 = readfloat (READER);
 	obj->Num_Bones = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Bones, 2000000, "readNiFurSpringController")
 	obj->Bones = GETMEM ((obj->Num_Bones) * sizeof (unsigned int));
-	// read 1d array
-	int i;
-	for (i = 0; i < (obj->Num_Bones); i++)
-		obj->Bones[i] = readPtr (READER);
+	READ (uint, obj->Bones, obj->Num_Bones, SIZEOFDWORD, "readNiFurSpringController")
 	obj->Num_Bones_2 = readuint (READER);
-	// init 1d array
+	PROTECT_LEN (obj->Num_Bones_2, 2000000, "readNiFurSpringController")
 	obj->Bones_2 = GETMEM ((obj->Num_Bones_2) * sizeof (unsigned int));
-	// read 1d array
-	for (i = 0; i < (obj->Num_Bones_2); i++)
-		obj->Bones_2[i] = readPtr (READER);
+	READ (uint, obj->Bones_2, obj->Num_Bones_2, SIZEOFDWORD, "readNiFurSpringController")
 }
 
 //static int iamthelastline;

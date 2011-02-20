@@ -1,0 +1,30 @@
+104702 6449    readNiExtraData
+106886 7346    readNiTriBasedGeom
+106964 7353    readNiGeometryData - needs a lot of optimization
+106964 7498    readNiTriBasedGeomData
+110012 7302    readNiGeometry
+121147 5333    readParticle
+155824 5356    readSkinData
+174395 5347    readSkinTransform
+178107 6785    readNiProperty
+219904 5677    readNiObject - EMPTY - REMOVED
+250389 7824    readParticleDesc
+269084 4609    readColor3
+270831 8533    readNiNode
+382636 6684    readNiAVObject
+549661 4709    readVector4
+559238 4753    readMatrix33
+565911 5054    readQuatKey
+630982 6575    readNiObjectNET
+695475 4720    readQuaternion
+813205 4575    readstring
+1430678 4564   readSizedString
+1928331 5022   readKey
+2108507 5293   readhkTriangle
+2782330 106    readTEMPLATE
+3025402 4684   readMatchGroup
+17135321 4623  readColor4
+34752334 5147  readTriangle
+38088227 4853  readSkinWeight
+47559974 5071  readTexCoord
+108024996 4699 readVector3

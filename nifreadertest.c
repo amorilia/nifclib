@@ -96,7 +96,7 @@ main(int argc, char **argv)
 	/*if (argc == 2)
 		return !readnif (argv[1]);*/
 	/*gettimeofday (&tstart, NULL);
-	int r = readnif ("/mnt/archive/rain/temp/nifs/morrowind/DoD/mjy_blanknif.NIF");
+	int r = readnif ("");
 	gettimeofday (&tstop, NULL);
 	long ttaken = time_interval (&tstart, &tstop);
 	printf ("time %.2f milliseconds \n", ttaken/1000.0f);
@@ -114,8 +114,20 @@ main(int argc, char **argv)
 	printf ("total niff objects parsed: %d\n", total_niobjects);
 	printf ("total malloc calls: %d\n", total_malloc_calls);
 	printf ("total reallocs: %d\n", total_reallocs);
+	printf ("bytes/second: %lld\n", (total_bytes/ttaken));
     return 0;
 }  // end main
+
+/*static void
+simple_read(char *fname)
+{
+	FILE *fh = fopen (fname, "r");
+	const int bufsize = 1*1024*1024;
+	byte buf[bufsize];
+	int r;
+	while ((r = fread (buf, 1, bufsize, fh)));
+	fclose (fh);
+}*/
 
 static void
 DoReadNif(char *fname)
@@ -127,6 +139,7 @@ DoReadNif(char *fname)
 		if (fname[len-2] == 'i' || fname[len-2] == 'I')
 			if (fname[len-3] == 'n' || fname[len-3] == 'N')
 				if (fname[len-4] == '.') {
+					//simple_read (fname);
 					if (!readnif (fname)) {
 							printf ("files ok %d\n", cnt);
 							exit (1);
@@ -138,5 +151,6 @@ DoReadNif(char *fname)
 						total_reallocs += NIFF_REALLOCS;
 					}
 					cnt++;
+					printf ("%5d\r", cnt); fflush (stdout);
 	}
 }

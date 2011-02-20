@@ -1,0 +1,37 @@
+files: 38506
+bytes: 10891325278
+blocks: 1975417
+ FPS, TIME , malloc calls, reallocs, bytes/sec.
+  35, 18:07,    174316008,   157944
+  37, 16:57,    174316008,   157944
+  38, 16:32,    174316008,   157944
+  40, 16:02,     36025892,    23404
+  43, 14:46,     36025892,    23404
+  44, 14:19,     35680410,    22980
+  45, 14:14,     35581247,    22955,   12753308
+  46, 13:55,     35420016,    22909,   13043503
+  48, 13:13,     35420016,    22909,   13734332
+  49, 12:52,     35414022,    22900,   14107934
+
+just walk a.k.a. $(find . | grep -i "\.nif$")
+4813 files per second
+00:08
+
+blockread (1MB)(with fsize): buf, blocksize, 1
+58 files per second
+10:59
+
+blockread (1MB): buf, 1, blocksize
+66 files per second
+09:38
+
+NifStream (with fsize):
+54 files per second
+11:49
+
+- removing for loops for simple types and same type fields ... done.
+- removing malloc for const size arrays ... done.
+- adding overflow protections ... done.
+- inlining empty readprocs ... done.
+- joining same if operators together ...
+- optimizing if operators into if else ones ...
