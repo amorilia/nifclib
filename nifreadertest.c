@@ -107,14 +107,14 @@ main(int argc, char **argv)
 	pathwalk (dir, DoReadNif);
 	gettimeofday (&tstop, NULL);
 	long ttaken = time_interval (&tstart, &tstop) / (1000*1000);
-	printf ("files done %d (%ld files per second)\n", cnt, cnt / ttaken);
+	printf ("files done %d (%ld files per second)\n", cnt, cnt / (ttaken?ttaken:1));
 	printf ("time taken: %ld %.2ld:%.2ld\n", ttaken, ttaken / 60, ttaken % 60);
 	printf ("total bytes read: %lld\n", total_bytes);
 	printf ("major niff blocks parsed: %d\n", total_blocks);
 	printf ("total niff objects parsed: %d\n", total_niobjects);
 	printf ("total malloc calls: %d\n", total_malloc_calls);
 	printf ("total reallocs: %d\n", total_reallocs);
-	printf ("bytes/second: %lld\n", (total_bytes/ttaken));
+	printf ("bytes/second: %lld\n", (total_bytes/(ttaken?ttaken:1)));
     return 0;
 }  // end main
 
