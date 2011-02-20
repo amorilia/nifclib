@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-s -Wall
+CFLAGS=-s -Wall -O3
 SRC=nifreadertest.c utils.c niff.c nif_reader2.c
 OBJS=nifreadertest.o utils.o niff.o nif_reader2.o
 
