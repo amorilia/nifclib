@@ -65,7 +65,7 @@ main(int argc, char **argv)
 	{
 		t = NifStream_create(fexists, j);
 		Stream *s = (Stream *)t;
-		NIFchar *buf = malloc (12);
+		NIFchar buf[12];
 		buf[11] = '\0';
 		int r = t->read_char_cond(s, buf, 12, '\n');
 		CHECK_THAT (r == 11, " cond char read size");

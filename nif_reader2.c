@@ -4506,7 +4506,7 @@ readHeaderString(READERARGLST)
 		NPF ("readHeaderString: buffer overflow\n", ENIF);
 		return NULL;
 	}
-	char *result = GETMEM (rr);
+	char *result = GETMEM (rr + 1);// chars\n\0
 	if (!result) {
 		NPF ("readHeaderString: malloc failed\n", EM);
 		return NULL;
