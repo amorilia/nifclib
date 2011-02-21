@@ -58,47 +58,33 @@ read_char(register NifStream *s, register NIFchar *buf, register int count)
 	return read (s, buf, count);
 }
 
+// It always returns bytes read.
+// Ptr needs to have space for "cond" as well.
 static inline int
 read_char_cond(register NifStream *s, register NIFchar *ptr, register int size, register NIFchar cond)
 {
-	int result = 0, i;
-	//printf (" cond req size: %d\n", size);
-	for (;;) {
-		if ((s->buf_pos + size <= s->buf_len)
-			// but we don't know that for "cond", so
-			|| (s->buf_len > 0 && s->buf_pos < s->buf_len)
-			) {
-			for (i = 0; i < size; i++)///---
-				if (s->buf[s->buf_pos + i] == cond) {
-					//printf ("found at %d ", s->buf_pos + i);
-					//printf ("size (%d) adj. to %d\n", size, i + 1);
-					size = i + 1;
-					break;
-				}///---
-			memcpy (ptr, &(s->buf[s->buf_pos]), size);
-			s->buf_pos += size;
-			result += size;
-			return result;
+	int i, idx = s->buf_pos, rpos = 0, cnt = 0;
+	for (i = 0; i < size; i++) {
+		if (idx >= s->buf_len) {
+			cnt = idx - s->buf_pos;
+			memcpy (&ptr[rpos], &(s->buf[s->buf_pos]), cnt);
+			s->buf_len = fread (&(s->buf[0]), 1, s->buf_cap, s->f);
+			if (s->buf_len <= 0)
+				return i;// EOF - no "cond" found
+			s->buf_pos = 0;
+			idx = 0;
+			rpos += cnt;
 		}
-		int part = s->buf_len - s->buf_pos;
-		if (part > 0) {
-			for (i = 0; i < part; i++)///---
-				if (s->buf[s->buf_pos + i] == cond) {
-					part = i + 1;
-					break;
-				}///---
-			memcpy (ptr, &(s->buf[s->buf_pos]), part);
-			s->buf_pos += part;
-			result += part;
+		else if (s->buf[idx] == cond) {
+			idx++;// incl. "cond"
+			memcpy (&ptr[rpos], &(s->buf[s->buf_pos]), idx - s->buf_pos);
+			s->buf_pos = idx;
+			return i + 1;
 		}
-		s->buf_len = fread (&(s->buf[0]), 1, s->buf_cap, s->f);
-		//printf ("req: %d, read %d\n", s->buf_cap, s->buf_len);
-		if (s->buf_len <= 0)
-			return result;// EOF, sorry
-		s->buf_pos = 0;
-		ptr += part;
-		size -= part;
+		idx++;
 	}
+	// no "cond" found within "size"
+	return rpos;
 }
 
 static inline int
@@ -139,6 +125,8 @@ NifStream_create (char *fname, int bufsize)
 	if (!fname)
 		return NULL;
 	NifStream *tmp = malloc (sizeof(NifStream));
+	if (!tmp)
+		return NULL;// not enough free memory
 	tmp->f = fopen (fname, "r");
 	if (!(tmp->f)) {
 		free (tmp);
@@ -146,6 +134,7 @@ NifStream_create (char *fname, int bufsize)
 	}
 	tmp->buf = malloc (bufsize);
 	if (!(tmp->buf)) {
+		fclose (tmp->f);
 		free (tmp);
 		return NULL;
 	}
