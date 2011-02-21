@@ -4712,7 +4712,7 @@ inline void
 readQuaternion(Quaternion * obj, unsigned int ARG)
 {
 	COVERAGE
-	READ (float, &(obj->x), 4, SIZEOFDWORD, "readQuaternion")
+	READ (float, &(obj->w), 4, SIZEOFDWORD, "readQuaternion")
 }
 
 inline void
