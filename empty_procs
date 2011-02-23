@@ -2,8 +2,8 @@ empty:
 readNiObject - REMOVED - readNiInterpolator become empty
 readbhkRefObject - inlined
 readNiInterpolator - inlined
-readNiAVObjectPalette
-readBSMultiBoundData
+readNiAVObjectPalette - inlined
+readBSMultiBoundData - inlined
 readNiPSSimulatorStep - inlined
 readNiPSSpawner - inlined
 readNiSequenceData - inlined

@@ -40,10 +40,10 @@ int NIFF_MALLOCS;
 int NIFF_REALLOCS;
 #define byte unsigned char
 
-typedef struct {
+/*typedef struct {
 	void *d;
-	int t;
-} TEMPLATE;
+	NIFint t;
+} TEMPLATE;*/
 
 enum AlphaFormat {		// uint
 	ALPHA_NONE = 0,
@@ -1184,13 +1184,13 @@ typedef struct {
 } string;
 
 typedef struct {
-	NIFuint Data_Size;
+	NIFuint DataSize;
 	NIFbyte *Data;
 } ByteArray;
 
 typedef struct {
-	NIFuint Data_Size_1;
-	NIFuint Data_Size_2;
+	NIFuint DataSize1;
+	NIFuint DataSize2;
 	NIFbyte *Data;
 } ByteMatrix;
 
@@ -1226,22 +1226,19 @@ typedef struct {
 } FilePath;
 
 typedef struct {
-	NIFuint Num_Roots;
-	// [Num_Roots], [(null)]
-	NIFuint *Roots;
+	NIFuint NumRoots;
+	NIFuint *Roots;// [NumRoots]
 } Footer;
 
 typedef struct {
-	float Near_Extent;
-	float Far_Extent;
-	// [3], [(null)]
-	unsigned int Unknown_Ints[3];
+	NIFfloat NearExtent;
+	NIFfloat FarExtent;
+	NIFuint UnknownInts[3];
 } LODRange;
 
 typedef struct {
-	unsigned short Num_Vertices;
-	// [Num_Vertices], [(null)]
-	unsigned short *Vertex_Indices;
+	NIFushort NumVertices;
+	NIFushort *VertexIndices;// [NumVertices]
 } MatchGroup;
 
 typedef struct {
@@ -1316,100 +1313,92 @@ typedef struct {
 } MipMap;
 
 typedef struct {
-	NIFuint Num_Nodes;
-	// [Num_Nodes], [(null)]
-	NIFuint *Nodes;
+	NIFuint NumNodes;
+	NIFuint *Nodes;// [NumNodes]
 } NodeGroup;
 
 typedef struct {
 	NIFbyte Length;
-	// [Length], [(null)]
-	NIFchar *Value;
+	NIFchar *Value;// [Length]
 } ShortString;
 
 typedef struct {
-	unsigned int Shape;
-	unsigned int Skin_Instance;
+	NIFuint Shape;
+	NIFuint SkinInstance;
 } SkinShape;
 
 typedef struct {
-	unsigned int Num_Link_Pairs;
-	// [Num_Link_Pairs], [(null)]
-	SkinShape *Link_Pairs;
+	NIFuint NumLinkPairs;
+	SkinShape *LinkPairs;// [NumLinkPairs]
 } SkinShapeGroup;
 
 typedef struct {
-	unsigned short Index;
-	float Weight;
+	NIFushort Index;
+	NIFfloat Weight;
 } SkinWeight;
 
 typedef struct {
 	SizedString Name;
-	unsigned int AV_Object;
+	NIFuint AVObject;
 } AVObject;
 
 typedef struct {
-	string Target_Name;
-	unsigned int Controller;
-	unsigned int Interpolator;
+	string TargetName;
+	NIFuint Controller;
+	NIFuint Interpolator;
 	// DUPLICATE FIELD NAME Controller - fixed
-	unsigned int Unknown_Link_2;
-	unsigned short Unknown_Short_0;
-	byte Priority;
-	unsigned int String_Palette;
-	string Node_Name;
-	// DUPLICATE FIELD NAME Node_Name - fixed
-	unsigned int Node_Name_Offset;
-	string Property_Type;
-	// DUPLICATE FIELD NAME Property_Type - fixed
-	unsigned int Property_Type_Offset;
-	string Controller_Type;
-	// DUPLICATE FIELD NAME Controller_Type - fixed
-	unsigned int Controller_Type_Offset;
-	string Variable_1;
-	// DUPLICATE FIELD NAME Variable_1 - fixed
-	unsigned int Variable_1_Offset;
-	string Variable_2;
-	// DUPLICATE FIELD NAME Variable_2 - fixed
-	unsigned int Variable_2_Offset;
+	NIFuint UnknownLink2;
+	NIFushort UnknownShort0;
+	NIFbyte Priority;
+	NIFuint StringPalette;
+	string NodeName;
+	// DUPLICATE FIELD NAME NodeName - fixed
+	NIFuint NodeNameOffset;
+	string PropertyType;
+	// DUPLICATE FIELD NAME PropertyType - fixed
+	NIFuint PropertyTypeOffset;
+	string ControllerType;
+	// DUPLICATE FIELD NAME ControllerType - fixed
+	NIFuint ControllerTypeOffset;
+	string Variable1;
+	// DUPLICATE FIELD NAME Variable1 - fixed
+	NIFuint Variable1Offset;
+	string Variable2;
+	// DUPLICATE FIELD NAME Variable2 - fixed
+	NIFuint Variable2Offset;
 } ControllerLink;
 
 typedef struct {
-	unsigned int Unknown;
+	NIFuint Unknown;
 	ShortString Creator;
-	ShortString Export_Info_1;
-	ShortString Export_Info_2;
+	ShortString ExportInfo1;
+	ShortString ExportInfo2;
 } ExportInfo;
 
 typedef struct {
-	char *Header_String;
-	// [3], [(null)]
-	char *Copyright[3];
-	unsigned int Version;
-	byte Endian_Type;
-	unsigned int User_Version;
-	unsigned int Num_Blocks;
-	unsigned int User_Version_2;
-	unsigned int Unknown_Int_3;
-	ExportInfo Export_Info;
-	// DUPLICATE FIELD NAME Export_Info - fixed
-	unsigned short Num_Block_Types;
-	// [Num_Block_Types], [(null)]
-	SizedString *Block_Types;
-	// [Num_Blocks], [(null)]
-	NIFushort *Block_Type_Index;
-	// [Num_Blocks], [(null)]
-	NIFuint *Block_Size;
-	unsigned int Num_Strings;
-	unsigned int Max_String_Length;
-	// [Num_Strings], [(null)]
-	SizedString *Strings;
-	unsigned int Unknown_Int_2;
+	NIFchar *HeaderString;
+	NIFchar *Copyright[3];
+	NIFuint Version;
+	NIFbyte EndianType;
+	NIFuint UserVersion;
+	NIFuint NumBlocks;
+	NIFuint UserVersion2;
+	NIFuint UnknownInt3;
+	ExportInfo ExportInfo;
+	// DUPLICATE FIELD NAME ExportInfo - fixed
+	NIFushort NumBlockTypes;
+	SizedString *BlockTypes;// [NumBlockTypes]
+	NIFushort *BlockTypeIndex;// [NumBlocks]
+	NIFuint *BlockSize;// [NumBlocks]
+	NIFuint NumStrings;
+	NIFuint MaxStringLength;
+	SizedString *Strings;// [NumStrings]
+	NIFuint UnknownInt2;
 } Header;
 
 typedef struct {
 	SizedString Palette;
-	unsigned int Length;
+	NIFuint Length;
 } StringPalette;
 
 typedef struct {
@@ -1418,25 +1407,86 @@ typedef struct {
 	NIFfloat c;
 } TBC;
 
+			/*
+   		---/    keys	/ /---
+					---/*/
+
 typedef struct {
-	float Time;
-	TEMPLATE Value;
-	TEMPLATE Forward;
-	TEMPLATE Backward;
+	NIFfloat Time;
+	NIFfloat Value;
+	NIFfloat Forward;
+	NIFfloat Backward;
 	TBC TBC;
-} Key;
+} NiFloatKey;
 
 typedef struct {
-	unsigned int Num_Keys;
-	unsigned int Interpolation;
-	// [Num_Keys], [(null)]
-	Key *Keys;
-} KeyGroup;
+	NIFfloat Time;
+	NIFbyte Value;
+	NIFbyte Forward;
+	NIFbyte Backward;
+	TBC TBC;
+} NiByteKey;
 
 typedef struct {
-	float Time;
+	NIFfloat Time;
+	Color4 Value;
+	Color4 Forward;
+	Color4 Backward;
+	TBC TBC;
+} NiColor4Key;
+
+typedef struct {
+	NIFfloat Time;
+	Vector3 Value;
+	Vector3 Forward;
+	Vector3 Backward;
+	TBC TBC;
+} NiVector3Key;
+
+typedef struct {
+	NIFfloat Time;
+	string Value;
+	string Forward;
+	string Backward;
+	TBC TBC;
+} NiStringKey;
+
+typedef struct {
+	NIFfloat Time;
+	ByteColor4 Value;
+	ByteColor4 Forward;
+	ByteColor4 Backward;
+	TBC TBC;
+} NiByteColor4Key;
+
+typedef struct {
+	NIFuint NumKeys;
+	NIFuint Interpolation;
+	NiFloatKey *Keys;// [NumKeys]
+} NiFloatKeyGroup;
+
+typedef struct {
+	NIFuint NumKeys;
+	NIFuint Interpolation;
+	NiByteKey *Keys;// [NumKeys]
+} NiByteKeyGroup;
+
+typedef struct {
+	NIFuint NumKeys;
+	NIFuint Interpolation;
+	NiColor4Key *Keys;// [NumKeys]
+} NiColor4KeyGroup;
+
+typedef struct {
+	NIFuint NumKeys;
+	NIFuint Interpolation;
+	NiVector3Key *Keys;// [NumKeys], [(null)]
+} NiVector3KeyGroup;
+
+typedef struct {
+	NIFfloat Time;
 	// DUPLICATE FIELD NAME Time - fixed
-	TEMPLATE Value;
+	Quaternion Value;
 	TBC TBC;
 } QuatKey;
 
@@ -1446,36 +1496,36 @@ typedef struct {
 } TexCoord;
 
 typedef struct {
-	unsigned int Source;
-	unsigned int Clamp_Mode;
-	unsigned int Filter_Mode;
-	unsigned short Flags;
-	short Unknown_short;
-	unsigned int UV_Set;
-	short PS2_L;
-	short PS2_K;
-	unsigned short Unknown1;
-	byte Has_Texture_Transform;
+	NIFuint Source;
+	NIFuint ClampMode;
+	NIFuint FilterMode;
+	NIFushort Flags;
+	NIFshort Unknownshort;
+	NIFuint UVSet;
+	NIFshort PS2L;
+	NIFshort PS2K;
+	NIFushort Unknown1;
+	NIFbyte HasTextureTransform;
 	TexCoord Translation;
 	TexCoord Tiling;
-	float W_Rotation;
-	unsigned int Transform_Type_;
-	TexCoord Center_Offset;
+	NIFfloat WRotation;
+	NIFuint TransformType;
+	TexCoord CenterOffset;
 } TexDesc;
 
 typedef struct {
-	byte Is_Used;
-	TexDesc Texture_Data;
-	unsigned int Map_Index;
+	NIFbyte IsUsed;
+	TexDesc TextureData;
+	NIFuint MapIndex;
 } ShaderTexDesc;
 
 typedef struct {
-	byte Use_External;
-	FilePath File_Name;
-	unsigned int Unknown_Link;
-	byte Unknown_Byte;
-	// DUPLICATE FIELD NAME File_Name
-	unsigned int Pixel_Data;
+	NIFbyte UseExternal;
+	FilePath FileName;
+	NIFuint UnknownLink;
+	NIFbyte UnknownByte;
+	// DUPLICATE FIELD NAME FileName
+	NIFuint PixelData;
 } TexSource;
 
 typedef struct {
@@ -1485,37 +1535,30 @@ typedef struct {
 } Triangle;
 
 typedef struct {
-	unsigned short Num_Vertices;
-	unsigned short Num_Triangles;
-	unsigned short Num_Bones;
-	unsigned short Num_Strips;
-	unsigned short Num_Weights_Per_Vertex;
-	// [Num_Bones], [(null)]
-	unsigned short *Bones;
-	byte Has_Vertex_Map;
-	// [Num_Vertices], [(null)]
-	unsigned short *Vertex_Map;
-	// DUPLICATE FIELD NAME Vertex_Map - fixed
-	byte Has_Vertex_Weights;
-	// [Num_Vertices], [Num_Weights_Per_Vertex]
-	NIFfloat *Vertex_Weights;
-	// DUPLICATE FIELD NAME Vertex_Weights - fixed
-	// [Num_Strips], [(null)]
-	unsigned short *Strip_Lengths;
-	byte Has_Faces;
-	// [Num_Strips], [Strip_Lengths]
-	unsigned short **Strips;
+	NIFushort NumVertices;
+	NIFushort NumTriangles;
+	NIFushort NumBones;
+	NIFushort NumStrips;
+	NIFushort NumWeightsPerVertex;
+	NIFushort *Bones;// [NumBones]
+	NIFbyte HasVertexMap;
+	NIFushort *VertexMap;// [NumVertices]
+	// DUPLICATE FIELD NAME VertexMap - fixed
+	NIFbyte HasVertexWeights;
+	NIFfloat *VertexWeights;// [NumVertices], [NumWeightsPerVertex]
+	// DUPLICATE FIELD NAME VertexWeights - fixed
+	NIFushort *StripLengths;// [NumStrips]
+	NIFbyte HasFaces;
+	NIFushort **Strips;// [NumStrips], [StripLengths]
 	// DUPLICATE FIELD NAME Strips - fixed
-	// [Num_Triangles], [(null)]
-	Triangle *Triangles;
+	Triangle *Triangles;// [NumTriangles]
 	// DUPLICATE FIELD NAME Triangles - fixed
-	byte Has_Bone_Indices;
-	// [Num_Vertices], [Num_Weights_Per_Vertex]
-	byte *Bone_Indices;
+	NIFbyte HasBoneIndices;
+	NIFbyte *BoneIndices;// [NumVertices], [NumWeightsPerVertex]
 } SkinPartition;
 
 typedef struct {
-	unsigned int Unknown_Int;
+	NIFuint UnknownInt;
 	Vector3 Translation;
 	Matrix33 Rotation;
 	Vector3 Radius;
@@ -1523,180 +1566,176 @@ typedef struct {
 
 typedef struct {
 	Vector3 Offset;
-	unsigned short Orientation;
-	byte Position_Ref_1;
-	byte Position_Ref_2;
+	NIFushort Orientation;
+	NIFbyte PositionRef1;
+	NIFbyte PositionRef2;
 } FurniturePosition;
 
 typedef struct {
 	Triangle Triangle;
-	unsigned short Welding_Info;
+	NIFushort WeldingInfo;
 	Vector3 Normal;
 } hkTriangle;
 
 typedef struct {
-	string Frame_Name;
-	unsigned int Num_Keys;
-	unsigned int Interpolation;
-	// [Num_Keys], [(null)]
-	Key *Keys;
-	unsigned int Unknown_Int;
-	// DUPLICATE FIELD NAME Unknown_Int
-	// [ARG], [(null)]
-	Vector3 *Vectors;
+	string FrameName;
+	// ----------- KeyGroup, not applied here for unkn. reason
+	NIFuint NumKeys;
+	NIFuint Interpolation;
+	NiFloatKey *Keys;// [NumKeys]
+	// ---------------------------
+	NIFuint UnknownInt;
+	// DUPLICATE FIELD NAME UnknownInt
+	Vector3 *Vectors;// [ARG]
 } Morph;
 
 typedef struct {
 	Vector3 Velocity;
-	Vector3 Unknown_Vector;
-	float Lifetime;
-	float Lifespan;
-	float Timestamp;
-	unsigned short Unknown_Short;
-	unsigned short Vertex_ID;
+	Vector3 UnknownVector;
+	NIFfloat Lifetime;
+	NIFfloat Lifespan;
+	NIFfloat Timestamp;
+	NIFushort UnknownShort;
+	NIFushort VertexID;
 } Particle;
 
 typedef struct {
 	Matrix33 Rotation;
 	Vector3 Translation;
-	float Scale;
+	NIFfloat Scale;
 } SkinTransform;
 
 typedef struct {
-	SkinTransform Skin_Transform;
-	Vector3 Bounding_Sphere_Offset;
-	float Bounding_Sphere_Radius;
-	// [13], [(null)]
-	short Unknown_13_Shorts[13];
-	unsigned short Num_Vertices;
-	// [Num_Vertices], [(null)]
-	SkinWeight *Vertex_Weights;
-	// DUPLICATE FIELD NAME Vertex_Weights - fixed
+	SkinTransform SkinTransform;
+	Vector3 BoundingSphereOffset;
+	NIFfloat BoundingSphereRadius;
+	NIFshort Unknown13Shorts[13];
+	NIFushort NumVertices;
+	SkinWeight *VertexWeights;// [NumVertices]
+	// DUPLICATE FIELD NAME VertexWeights - fixed
 } SkinData;
 
 typedef struct {
 	Vector3 Center;
-	float Radius;
+	NIFfloat Radius;
 } SphereBV;
 
 typedef struct {
-	byte Layer;
-	byte Col_Filter;
-	unsigned short Unknown_Short;
+	NIFbyte Layer;
+	NIFbyte ColFilter;
+	NIFushort UnknownShort;
 } OblivionColFilter;
 
 typedef struct {
-	byte Layer;
-	byte Col_Filter;
-	unsigned short Unknown_Short;
-	unsigned int Num_Vertices;
-	unsigned int Material;
+	NIFbyte Layer;
+	NIFbyte ColFilter;
+	NIFushort UnknownShort;
+	NIFuint NumVertices;
+	NIFuint Material;
 } OblivionSubShape;
 
 typedef struct {
-	float Unknown_Float_1;
-	float Unknown_Float_2;
-	float Unknown_Float_3;
-	float Unknown_Float_4;
-	float Unknown_Float_5;
-	float Unknown_Float_6;
-	byte Unknown_Byte_1;
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
+	NIFfloat UnknownFloat3;
+	NIFfloat UnknownFloat4;
+	NIFfloat UnknownFloat5;
+	NIFfloat UnknownFloat6;
+	NIFbyte UnknownByte1;
 } MotorDescriptor;
 
 typedef struct {
-	Vector4 Pivot_A;
-	Vector4 Plane_A;
-	Vector4 Twist_A;
-	Vector4 Pivot_B;
-	Vector4 Plane_B;
-	Vector4 Twist_B;
-	// DUPLICATE FIELD NAME Twist_A
-	// DUPLICATE FIELD NAME Plane_A
-	Vector4 Motor_A;
-	// DUPLICATE FIELD NAME Pivot_A
-	// DUPLICATE FIELD NAME Twist_B
-	// DUPLICATE FIELD NAME Plane_B
-	Vector4 Motor_B;
-	// DUPLICATE FIELD NAME Pivot_B
-	float Cone_Max_Angle;
-	float Plane_Min_Angle;
-	float Plane_Max_Angle;
-	float Twist_Min_Angle;
-	float Twist_Max_Angle;
-	float Max_Friction;
-	byte Enable_Motor;
+	Vector4 PivotA;
+	Vector4 PlaneA;
+	Vector4 TwistA;
+	Vector4 PivotB;
+	Vector4 PlaneB;
+	Vector4 TwistB;
+	// DUPLICATE FIELD NAME TwistA
+	// DUPLICATE FIELD NAME PlaneA
+	Vector4 MotorA;
+	// DUPLICATE FIELD NAME PivotA
+	// DUPLICATE FIELD NAME TwistB
+	// DUPLICATE FIELD NAME PlaneB
+	Vector4 MotorB;
+	// DUPLICATE FIELD NAME PivotB
+	NIFfloat ConeMaxAngle;
+	NIFfloat PlaneMinAngle;
+	NIFfloat PlaneMaxAngle;
+	NIFfloat TwistMinAngle;
+	NIFfloat TwistMaxAngle;
+	NIFfloat MaxFriction;
+	NIFbyte EnableMotor;
 	MotorDescriptor Motor;
 } RagdollDescriptor;
 
 typedef struct {
-	Vector4 Pivot_A;
-	Vector4 Axle_A;
-	Vector4 Perp2_Axle_In_A1;
-	Vector4 Perp2_Axle_In_A2;
-	Vector4 Pivot_B;
-	Vector4 Axle_B;
-	Vector4 Perp2_Axle_In_B2;
-	// DUPLICATE FIELD NAME Axle_A - fixed
-	// DUPLICATE FIELD NAME Perp2_Axle_In_A1 - fixed
-	// DUPLICATE FIELD NAME Perp2_Axle_In_A2 - fixed
-	// DUPLICATE FIELD NAME Pivot_A - fixed
-	// DUPLICATE FIELD NAME Axle_B - fixed
-	Vector4 Perp2_Axle_In_B1;
-	// DUPLICATE FIELD NAME Perp2_Axle_In_B2 - fixed
-	// DUPLICATE FIELD NAME Pivot_B - fixed
-	float Min_Angle;
-	float Max_Angle;
-	float Max_Friction;
-	byte Enable_Motor;
+	Vector4 PivotA;
+	Vector4 AxleA;
+	Vector4 Perp2AxleInA1;
+	Vector4 Perp2AxleInA2;
+	Vector4 PivotB;
+	Vector4 AxleB;
+	Vector4 Perp2AxleInB2;
+	// DUPLICATE FIELD NAME AxleA - fixed
+	// DUPLICATE FIELD NAME Perp2AxleInA1 - fixed
+	// DUPLICATE FIELD NAME Perp2AxleInA2 - fixed
+	// DUPLICATE FIELD NAME PivotA - fixed
+	// DUPLICATE FIELD NAME AxleB - fixed
+	Vector4 Perp2AxleInB1;
+	// DUPLICATE FIELD NAME Perp2AxleInB2 - fixed
+	// DUPLICATE FIELD NAME PivotB - fixed
+	NIFfloat MinAngle;
+	NIFfloat MaxAngle;
+	NIFfloat MaxFriction;
+	NIFbyte EnableMotor;
 	MotorDescriptor Motor;
 } LimitedHingeDescriptor;
 
 typedef struct {
-	Vector4 Pivot_A;
-	Vector4 Perp2_Axle_In_A1;
-	Vector4 Perp2_Axle_In_A2;
-	Vector4 Pivot_B;
-	Vector4 Axle_B;
-	Vector4 Axle_A;
-	// DUPLICATE FIELD NAME Perp2_Axle_In_A1
-	// DUPLICATE FIELD NAME Perp2_Axle_In_A2
-	// DUPLICATE FIELD NAME Pivot_A
-	// DUPLICATE FIELD NAME Axle_B
-	Vector4 Perp2_Axle_In_B1;
-	Vector4 Perp2_Axle_In_B2;
-	// DUPLICATE FIELD NAME Pivot_B
+	Vector4 PivotA;
+	Vector4 Perp2AxleInA1;
+	Vector4 Perp2AxleInA2;
+	Vector4 PivotB;
+	Vector4 AxleB;
+	Vector4 AxleA;
+	// DUPLICATE FIELD NAME Perp2AxleInA1
+	// DUPLICATE FIELD NAME Perp2AxleInA2
+	// DUPLICATE FIELD NAME PivotA
+	// DUPLICATE FIELD NAME AxleB
+	Vector4 Perp2AxleInB1;
+	Vector4 Perp2AxleInB2;
+	// DUPLICATE FIELD NAME PivotB
 } HingeDescriptor;
 
 typedef struct {
-	float Vertex_Weight;
-	unsigned short Vertex_Index;
-	Vector3 Unknown_Vector;
+	NIFfloat VertexWeight;
+	NIFushort VertexIndex;
+	Vector3 UnknownVector;
 } OldSkinData;
 
 typedef struct {
-	byte Has_Image;
-	unsigned int Image;
-	unsigned int Clamp_;
-	unsigned int Filter_;
-	unsigned int UV_Set_;
-	short PS2_L;
-	short PS2_K;
-	short Unknown_Short_3;
+	NIFbyte HasImage;
+	NIFuint Image;
+	NIFuint Clamp;
+	NIFuint Filter;
+	NIFuint UVSet;
+	NIFshort PS2L;
+	NIFshort PS2K;
+	NIFshort UnknownShort3;
 } MultiTextureElement;
 
 typedef struct {
 	Vector3 Center;
-	// [3], [(null)]
 	Vector3 Axis[3];
-	// [3], [(null)]
-	float Extent[3];
+	NIFfloat Extent[3];
 } BoxBV;
 
 typedef struct {
 	Vector3 Center;
 	Vector3 Origin;
-	float Unknown_Float_1;
-	float Unknown_Float_2;
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
 } CapsuleBV;
 
 typedef struct {
@@ -1705,7 +1744,7 @@ typedef struct {
 } HalfSpaceBV;
 
 typedef struct {
-	unsigned int Collision_Type;
+	NIFuint CollisionType;
 	SphereBV Sphere;
 	BoxBV Box;
 	CapsuleBV Capsule;
@@ -1714,51 +1753,47 @@ typedef struct {
 } BoundingVolume;
 
 typedef struct {
-	unsigned int Num_BV;
-	// [Num_BV], [(null)]
-	BoundingVolume *Bounding_Volumes;
+	NIFuint NumBV;
+	BoundingVolume *BoundingVolumes;// [NumBV]
 } UnionBV;
 
 typedef struct {
-	unsigned int Interpolator;
-	float Weight_;
+	NIFuint Interpolator;
+	NIFfloat Weight;
 } MorphWeight;
 
 typedef struct {
-	string Texture_Name;
-	int Unknown_Int_3;
-	int Unknown_Int_4;
-	unsigned int Texturing_Property;
-	// [9], [(null)]
-	byte Unknown_Bytes[9];
+	string TextureName;
+	NIFint UnknownInt3;
+	NIFint UnknownInt4;
+	NIFuint TexturingProperty;
+	NIFbyte UnknownBytes[9];
 } ArkTexture;
 
 typedef struct {
-	float m11;
-	float m12;
-	float m13;
-	float m14;
-	float m21;
-	float m22;
-	float m23;
-	float m24;
-	float m31;
-	float m32;
-	float m33;
-	float m34;
+	NIFfloat m11;
+	NIFfloat m12;
+	NIFfloat m13;
+	NIFfloat m14;
+	NIFfloat m21;
+	NIFfloat m22;
+	NIFfloat m23;
+	NIFfloat m24;
+	NIFfloat m31;
+	NIFfloat m32;
+	NIFfloat m33;
+	NIFfloat m34;
 } InertiaMatrix;
 
 typedef struct {
-	short Num_Vectors;
-	// [Num_Vectors], [(null)]
-	Vector3 *Points;
-	// [Num_Vectors], [(null)]
-	Vector3 *Normals;
+	NIFshort NumVectors;
+	Vector3 *Points;// [NumVectors]
+	Vector3 *Normals;// [NumVectors]
 } DecalVectorArray;
 
 typedef struct {
-	NIFushort Part_Flag;
-	NIFushort Body_Part;
+	NIFushort PartFlag;
+	NIFushort BodyPart;
 } BodyPartList;
 
 typedef struct {
@@ -1766,69 +1801,60 @@ typedef struct {
 
 typedef struct {
 	NiObject *parent;
-	// [40], [(null)]
-	byte Unknown_1[40];
+	NIFbyte Unknown1[40];
 	NIFuint Parent;
-	NIFuint Num_1;
-	NIFuint Num_2;
-	// [Num_1], [Num_2]
-	NIFuint *Unknown_2;
+	NIFuint Num1;
+	NIFuint Num2;
+	NIFuint *Unknown2;// [Num1], [Num2]
 } Ni3dsAlphaAnimator;
 
 typedef struct {
 	NiObject *parent;
 	string Name;
-	unsigned int Has_Data;
-	// [21], [(null)]
-	NIFfloat Unknown_Floats_1[21];
-	unsigned short Unknown_Short;
-	unsigned int Child;
-	// [12], [(null)]
-	NIFfloat Unknown_Floats_2[12];
-	unsigned int Count;
-	// [Count], [5]
-	NIFbyte *Unknown_Array;
+	NIFuint HasData;
+	NIFfloat UnknownFloats1[21];
+	NIFushort UnknownShort;
+	NIFuint Child;
+	NIFfloat UnknownFloats2[12];
+	NIFuint Count;
+	NIFbyte *UnknownArray;// [Count], [5]
 } Ni3dsAnimationNode;
 
 typedef struct {
 	NiObject *parent;
-	// [184], [(null)]
-	byte Unknown_1[184];
+	NIFbyte Unknown1[184];
 } Ni3dsColorAnimator;
 
 typedef struct {
 	NiObject *parent;
-	// [14], [(null)]
-	byte Unknown_1[14];
+	NIFbyte Unknown1[14];
 } Ni3dsMorphShape;
 
 typedef struct {
 	NiObject *parent;
-	// [14], [(null)]
-	byte Unknown_1[14];
+	NIFbyte Unknown1[14];
 } Ni3dsParticleSystem;
 
 typedef struct {
 	NiObject *parent;
-	// [20], [(null)]
-	byte Unknown_1[20];
+	NIFbyte Unknown1[20];
 } Ni3dsPathController;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Next_Modifier;
-	unsigned int Controller;
+	NIFuint NextModifier;
+	NIFuint Controller;
 } NiParticleModifier;
 
 typedef struct {
 	NiObject *parent;
-	float Bounce;
-	byte Spawn_on_Collide;
-	byte Die_on_Collide;
-	unsigned int Spawn_Modifier;
-	unsigned int Parent;
-	unsigned int Next_Collider;
-	unsigned int Collider_Object;
+	NIFfloat Bounce;
+	NIFbyte SpawnonCollide;
+	NIFbyte DieonCollide;
+	NIFuint SpawnModifier;
+	NIFuint Parent;
+	NIFuint NextCollider;
+	NIFuint ColliderObject;
 } NiPSysCollider;
 
 typedef struct {
@@ -1841,10 +1867,10 @@ typedef struct {
 
 typedef struct {
 	bhkSerializable *parent;
-	unsigned int Shape;
-	byte Layer;
-	byte Col_Filter;
-	unsigned short Unknown_Short;
+	NIFuint Shape;
+	NIFbyte Layer;
+	NIFbyte ColFilter;
+	NIFushort UnknownShort;
 } bhkWorldObject;
 
 typedef struct {
@@ -1857,11 +1883,9 @@ typedef struct {
 
 typedef struct {
 	bhkShapePhantom *parent;
-	// [7], [(null)]
-	float Unkown_Floats[7];
-	// [3], [5]
-	float Unknown_Floats_2[3*5];
-	float Unknown_Float;
+	NIFfloat UnkownFloats[7];
+	NIFfloat UnknownFloats2[3*5];
+	NIFfloat UnknownFloat;
 } bhkSimpleShapePhantom;
 
 typedef struct {
@@ -1870,44 +1894,40 @@ typedef struct {
 
 typedef struct {
 	bhkEntity *parent;
-	int Unknown_Int_1;
-	int Unknown_Int_2;
-	// [3], [(null)]
-	int Unknown_3_Ints[3];
-	byte Collision_Response_;
-	byte Unknown_Byte;
-	unsigned short Process_Contact_Callback_Delay_;
-	// [2], [(null)]
-	unsigned short Unknown_2_Shorts[2];
-	byte Layer_Copy;
-	byte Col_Filter_Copy;
-	// [7], [(null)]
-	unsigned short Unknown_7_Shorts[7];
+	NIFint UnknownInt1;
+	NIFint UnknownInt2;
+	NIFint Unknown3Ints[3];
+	NIFbyte CollisionResponse;
+	NIFbyte UnknownByte;
+	NIFushort ProcessContactCallbackDelay;
+	NIFushort Unknown2Shorts[2];
+	NIFbyte LayerCopy;
+	NIFbyte ColFilterCopy;
+	NIFushort Unknown7Shorts[7];
 	Vector4 Translation;
 	QuaternionXYZW Rotation;
-	Vector4 Linear_Velocity;
-	Vector4 Angular_Velocity;
+	Vector4 LinearVelocity;
+	Vector4 AngularVelocity;
 	InertiaMatrix Inertia;
 	Vector4 Center;
-	float Mass;
-	float Linear_Damping;
-	float Angular_Damping;
-	float Friction;
-	float Restitution;
-	float Max_Linear_Velocity;
-	float Max_Angular_Velocity;
-	float Penetration_Depth;
-	byte Motion_System;
-	byte Deactivator_Type;
-	byte Solver_Deactivation;
-	byte Quality_Type;
-	unsigned int Auto_Remove_Level;
-	unsigned int User_Datas_In_Contact_Point_Properties_;
-	unsigned int Force_Collide_Onto_Ppu_;
-	unsigned int Num_Constraints;
-	// [Num_Constraints], [(null)]
-	NIFuint *Constraints;
-	unsigned int Unknown_Int_9;
+	NIFfloat Mass;
+	NIFfloat LinearDamping;
+	NIFfloat AngularDamping;
+	NIFfloat Friction;
+	NIFfloat Restitution;
+	NIFfloat MaxLinearVelocity;
+	NIFfloat MaxAngularVelocity;
+	NIFfloat PenetrationDepth;
+	NIFbyte MotionSystem;
+	NIFbyte DeactivatorType;
+	NIFbyte SolverDeactivation;
+	NIFbyte QualityType;
+	NIFuint AutoRemoveLevel;
+	NIFuint UserDatasInContactPointProperties;
+	NIFuint ForceCollideOntoPpu;
+	NIFuint NumConstraints;
+	NIFuint *Constraints;// [NumConstraints]
+	NIFuint UnknownInt9;
 } bhkRigidBody;
 
 typedef struct {
@@ -1916,36 +1936,35 @@ typedef struct {
 
 typedef struct {
 	bhkSerializable *parent;
-	unsigned int Num_Entities;
-	// [Num_Entities], [(null)]
-	unsigned int *Entities;
-	unsigned int Priority;
+	NIFuint NumEntities;
+	NIFuint *Entities;// [NumEntities]
+	NIFuint Priority;
 } bhkConstraint;
 
 typedef struct {
 	bhkConstraint *parent;
-	LimitedHingeDescriptor Limited_Hinge;
+	LimitedHingeDescriptor LimitedHinge;
 } bhkLimitedHingeConstraint;
 
 typedef struct {
 	bhkConstraint *parent;
-	unsigned int Type;
-	unsigned int Unknown_Int_2;
-	unsigned int Unknown_Link_1;
-	unsigned int Unknown_Link_2;
-	unsigned int Unknown_Int_3;
+	NIFuint Type;
+	NIFuint UnknownInt2;
+	NIFuint UnknownLink1;
+	NIFuint UnknownLink2;
+	NIFuint UnknownInt3;
 	HingeDescriptor Hinge;
 	RagdollDescriptor Ragdoll;
-	LimitedHingeDescriptor Limited_Hinge;
-	float Tau;
-	float Damping;
+	LimitedHingeDescriptor LimitedHinge;
+	NIFfloat Tau;
+	NIFfloat Damping;
 } bhkMalleableConstraint;
 
 typedef struct {
 	bhkConstraint *parent;
-	Vector4 Pivot_A;
-	Vector4 Pivot_B;
-	float Length;
+	Vector4 PivotA;
+	Vector4 PivotB;
+	NIFfloat Length;
 } bhkStiffSpringConstraint;
 
 typedef struct {
@@ -1955,24 +1974,23 @@ typedef struct {
 
 typedef struct {
 	bhkConstraint *parent;
-	Vector4 Pivot_A;
-	// [4], [(null)]
-	Vector4 Rotation_Matrix_A[4];
-	Vector4 Pivot_B;
-	Vector4 Sliding_B;
-	Vector4 Plane_B;
-	Vector4 Sliding_A;
-	Vector4 Rotation_A;
-	Vector4 Plane_A;
-	// DUPLICATE FIELD NAME Pivot_A - fixed
-	// DUPLICATE FIELD NAME Sliding_B - fixed
-	Vector4 Rotation_B;
-	// DUPLICATE FIELD NAME Plane_B - fixed
-	// DUPLICATE FIELD NAME Pivot_B - fixed
-	float Min_Distance;
-	float Max_Distance;
-	float Friction;
-	byte Unknown_Byte_1;
+	Vector4 PivotA;
+	Vector4 RotationMatrixA[4];
+	Vector4 PivotB;
+	Vector4 SlidingB;
+	Vector4 PlaneB;
+	Vector4 SlidingA;
+	Vector4 RotationA;
+	Vector4 PlaneA;
+	// DUPLICATE FIELD NAME PivotA - fixed
+	// DUPLICATE FIELD NAME SlidingB - fixed
+	Vector4 RotationB;
+	// DUPLICATE FIELD NAME PlaneB - fixed
+	// DUPLICATE FIELD NAME PivotB - fixed
+	NIFfloat MinDistance;
+	NIFfloat MaxDistance;
+	NIFfloat Friction;
+	NIFbyte UnknownByte1;
 } bhkPrismaticConstraint;
 
 typedef struct {
@@ -1986,18 +2004,17 @@ typedef struct {
 
 typedef struct {
 	bhkShape *parent;
-	unsigned int Shape;
-	unsigned int Material;
-	float Unknown_Float_1;
-	// [8], [(null)]
-	byte Unknown_8_Bytes[8];
+	NIFuint Shape;
+	NIFuint Material;
+	NIFfloat UnknownFloat1;
+	NIFbyte Unknown8Bytes[8];
 	Matrix44 Transform;
 } bhkTransformShape;
 
 typedef struct {
 	bhkShape *parent;
-	unsigned int Material;
-	float Radius;
+	NIFuint Material;
+	NIFfloat Radius;
 } bhkSphereRepShape;
 
 typedef struct {
@@ -2010,32 +2027,27 @@ typedef struct {
 
 typedef struct {
 	bhkConvexShape *parent;
-	// [8], [(null)]
-	byte Unknown_8_Bytes[8];
-	Vector3 First_Point;
-	float Radius_1;
-	Vector3 Second_Point;
-	float Radius_2;
+	NIFbyte Unknown8Bytes[8];
+	Vector3 FirstPoint;
+	NIFfloat Radius1;
+	Vector3 SecondPoint;
+	NIFfloat Radius2;
 } bhkCapsuleShape;
 
 typedef struct {
 	bhkConvexShape *parent;
-	// [8], [(null)]
-	byte Unknown_8_Bytes[8];
+	NIFbyte Unknown8Bytes[8];
 	Vector3 Dimensions;
-	float Minimum_Size;
+	NIFfloat MinimumSize;
 } bhkBoxShape;
 
 typedef struct {
 	bhkConvexShape *parent;
-	// [6], [(null)]
-	float Unknown_6_Floats[6];
-	unsigned int Num_Vertices;
-	// [Num_Vertices], [(null)]
-	Vector4 *Vertices;
-	unsigned int Num_Normals;
-	// [Num_Normals], [(null)]
-	Vector4 *Normals;
+	NIFfloat Unknown6Floats[6];
+	NIFuint NumVertices;
+	Vector4 *Vertices;// [NumVertices]
+	NIFuint NumNormals;
+	Vector4 *Normals;// [NumNormals]
 } bhkConvexVerticesShape;
 
 typedef struct {
@@ -2044,11 +2056,10 @@ typedef struct {
 
 typedef struct {
 	bhkSphereRepShape *parent;
-	float Unknown_Float_1;
-	float Unknown_Float_2;
-	unsigned int Num_Spheres;
-	// [Num_Spheres], [(null)]
-	SphereBV *Spheres;
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
+	NIFuint NumSpheres;
+	SphereBV *Spheres;// [NumSpheres]
 } bhkMultiSphereShape;
 
 typedef struct {
@@ -2057,18 +2068,16 @@ typedef struct {
 
 typedef struct {
 	bhkBvTreeShape *parent;
-	unsigned int Shape;
-	unsigned int Material;
-	unsigned int Unknown_Int_1;
-	unsigned int Unknown_Int_2;
-	float Unknown_Float;
-	unsigned int MOPP_Data_Size;
+	NIFuint Shape;
+	NIFuint Material;
+	NIFuint UnknownInt1;
+	NIFuint UnknownInt2;
+	NIFfloat UnknownFloat;
+	NIFuint MOPPDataSize;
 	Vector3 Origin;
-	float Scale;
-	// [MOPP_Data_Size_-_1], [(null)]
-	 byte /*parent-> or expr. */  * Old_MOPP_Data;
-	// [MOPP_Data_Size], [(null)]
-	byte *MOPP_Data;
+	NIFfloat Scale;
+	NIFbyte *OldMOPPData;// [MOPPDataSize-1]
+	NIFbyte *MOPPData;// [MOPPDataSize]
 } bhkMoppBvTreeShape;
 
 typedef struct {
@@ -2077,70 +2086,59 @@ typedef struct {
 
 typedef struct {
 	bhkShapeCollection *parent;
-	unsigned int Num_Sub_Shapes;
-	// [Num_Sub_Shapes], [(null)]
-	unsigned int *Sub_Shapes;
-	unsigned int Material;
-	// [6], [(null)]
-	float Unknown_Floats[6];
-	unsigned int Num_Unknown_Ints;
-	// [Num_Unknown_Ints], [(null)]
-	unsigned int *Unknown_Ints;
+	NIFuint NumSubShapes;
+	NIFuint *SubShapes;// [NumSubShapes]
+	NIFuint Material;
+	NIFfloat UnknownFloats[6];
+	NIFuint NumUnknownInts;
+	NIFuint *UnknownInts;// [NumUnknownInts]
 } bhkListShape;
 
 typedef struct {
 	bhkShape *parent;
-	// [9], [(null)]
-	float Unknown_1[9];
-	int Num_Unknown_Floats;
-	// [Num_Unknown_Floats], [3]
-	float *Unknown_Floats;
-	// [3], [(null)]
-	int Unknown_2[3];
-	unsigned int Num_Strips_Data;
-	// [Num_Strips_Data], [(null)]
-	unsigned int *Strips_Data;
+	NIFfloat Unknown1[9];
+	NIFint NumUnknownFloats;
+	NIFfloat *UnknownFloats;// [NumUnknownFloats], [3]
+	NIFint Unknown2[3];
+	NIFuint NumStripsData;
+	NIFuint *StripsData;// [NumStripsData]
 } bhkMeshShape;
 
 typedef struct {
 	bhkShapeCollection *parent;
-	unsigned short Num_Sub_Shapes;
-	// [Num_Sub_Shapes], [(null)]
-	OblivionSubShape *Sub_Shapes;
-	unsigned int Unknown_Int_1;
-	unsigned int Unknown_Int_2;
-	float Unknown_Float_1;
-	unsigned int Unknown_Int_3;
-	Vector3 Scale_Copy_;
-	float Unknown_Float_2;
-	float Unknown_Float_3;
+	NIFushort NumSubShapes;
+	OblivionSubShape *SubShapes;// [NumSubShapes]
+	NIFuint UnknownInt1;
+	NIFuint UnknownInt2;
+	NIFfloat UnknownFloat1;
+	NIFuint UnknownInt3;
+	Vector3 ScaleCopy;
+	NIFfloat UnknownFloat2;
+	NIFfloat UnknownFloat3;
 	Vector3 Scale;
-	float Unknown_Float_4;
-	unsigned int Data;
+	NIFfloat UnknownFloat4;
+	NIFuint Data;
 } bhkPackedNiTriStripsShape;
 
 typedef struct {
 	bhkShapeCollection *parent;
-	unsigned int Material;
-	float Unknown_Float_1;
-	unsigned int Unknown_Int_1;
-	// [4], [(null)]
-	unsigned int Unknown_Ints_1[4];
-	unsigned int Unknown_Int_2;
+	NIFuint Material;
+	NIFfloat UnknownFloat1;
+	NIFuint UnknownInt1;
+	NIFuint UnknownInts1[4];
+	NIFuint UnknownInt2;
 	Vector3 Scale;
-	unsigned int Unknown_Int_3;
-	unsigned int Num_Strips_Data;
-	// [Num_Strips_Data], [(null)]
-	unsigned int *Strips_Data;
-	unsigned int Num_Data_Layers;
-	// [Num_Data_Layers], [(null)]
-	OblivionColFilter *Data_Layers;
+	NIFuint UnknownInt3;
+	NIFuint NumStripsData;
+	NIFuint *StripsData;// [NumStripsData]
+	NIFuint NumDataLayers;
+	OblivionColFilter *DataLayers;// [NumDataLayers]
 } bhkNiTriStripsShape;
 
 typedef struct {
 	NiObject *parent;
 	string Name;
-	unsigned int Next_Extra_Data;
+	NIFuint NextExtraData;
 } NiExtraData;
 
 typedef struct {
@@ -2153,41 +2151,40 @@ typedef struct {
 
 typedef struct {
 	NiKeyBasedInterpolator *parent;
-	float Float_Value;
-	unsigned int Data;
+	NIFfloat FloatValue;
+	NIFuint Data;
 } NiFloatInterpolator;
 
 typedef struct {
 	NiKeyBasedInterpolator *parent;
 	Vector3 Translation;
 	Quaternion Rotation;
-	float Scale;
-	// [3], [(null)]
-	byte Unknown_Bytes[3];
-	unsigned int Data;
+	NIFfloat Scale;
+	NIFbyte UnknownBytes[3];
+	NIFuint Data;
 } NiTransformInterpolator;
 
 typedef struct {
 	NiKeyBasedInterpolator *parent;
-	Vector3 Point_3_Value;
-	unsigned int Data;
+	Vector3 Point3Value;
+	NIFuint Data;
 } NiPoint3Interpolator;
 
 typedef struct {
 	NiKeyBasedInterpolator *parent;
-	unsigned short Unknown_Short;
-	unsigned int Unknown_Int;
-	float Unknown_Float_1;
-	float Unknown_Float_2;
-	unsigned short Unknown_Short_2;
-	unsigned int Pos_Data;
-	unsigned int Float_Data;
+	NIFushort UnknownShort;
+	NIFuint UnknownInt;
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
+	NIFushort UnknownShort2;
+	NIFuint PosData;
+	NIFuint FloatData;
 } NiPathInterpolator;
 
 typedef struct {
 	NiKeyBasedInterpolator *parent;
-	byte Bool_Value;
-	unsigned int Data;
+	NIFbyte BoolValue;
+	NIFuint Data;
 } NiBoolInterpolator;
 
 typedef struct {
@@ -2196,50 +2193,49 @@ typedef struct {
 
 typedef struct {
 	NiInterpolator *parent;
-	unsigned short Unknown_Short;
-	unsigned int Unknown_Int;
+	NIFushort UnknownShort;
+	NIFuint UnknownInt;
 } NiBlendInterpolator;
 
 typedef struct {
 	NiInterpolator *parent;
-	float Start_Time;
-	float Stop_Time;
-	unsigned int Spline_Data;
-	unsigned int Basis_Data;
+	NIFfloat StartTime;
+	NIFfloat StopTime;
+	NIFuint SplineData;
+	NIFuint BasisData;
 } NiBSplineInterpolator;
 
 typedef struct {
 	NiObject *parent;
 	string Name;
-	unsigned int Has_Old_Extra_Data;
-	string Old_Extra_Prop_Name;
-	unsigned int Old_Extra_Internal_Id;
-	string Old_Extra_String;
-	byte Unknown_Byte;
-	unsigned int Extra_Data;
-	unsigned int Num_Extra_Data_List;
-	// [Num_Extra_Data_List], [(null)]
-	unsigned int *Extra_Data_List;
-	unsigned int Controller;
+	NIFuint HasOldExtraData;
+	string OldExtraPropName;
+	NIFuint OldExtraInternalId;
+	string OldExtraString;
+	NIFbyte UnknownByte;
+	NIFuint ExtraData;
+	NIFuint NumExtraDataList;
+	NIFuint *ExtraDataList;// [NumExtraDataList]
+	NIFuint Controller;
 } NiObjectNET;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Target;
+	NIFuint Target;
 } NiCollisionObject;
 
 typedef struct {
 	NiCollisionObject *parent;
-	unsigned int Propagation_Mode;
-	unsigned int Collision_Mode;
-	byte Use_ABV;
-	BoundingVolume Bounding_Volume;
+	NIFuint PropagationMode;
+	NIFuint CollisionMode;
+	NIFbyte UseABV;
+	BoundingVolume BoundingVolume;
 } NiCollisionData;
 
 typedef struct {
 	NiCollisionObject *parent;
-	unsigned short Flags;
-	unsigned int Body;
+	NIFushort Flags;
+	NIFuint Body;
 } bhkNiCollisionObject;
 
 typedef struct {
@@ -2248,8 +2244,8 @@ typedef struct {
 
 typedef struct {
 	bhkCollisionObject *parent;
-	float Unknown_Float_1;
-	float Unknown_Float_2;
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
 } bhkBlendCollisionObject;
 
 typedef struct {
@@ -2262,40 +2258,36 @@ typedef struct {
 
 typedef struct {
 	NiObjectNET *parent;
-	unsigned short Flags;
-	unsigned short Unknown_Short_1;
+	NIFushort Flags;
+	NIFushort UnknownShort1;
 	Vector3 Translation;
 	Matrix33 Rotation;
-	float Scale;
+	NIFfloat Scale;
 	Vector3 Velocity;
-	unsigned int Num_Properties;
-	// [Num_Properties], [(null)]
-	unsigned int *Properties;
-	// [4], [(null)]
-	unsigned int Unknown_1[4];
-	byte Unknown_2;
-	byte Has_Bounding_Box;
-	BoundingBox Bounding_Box;
-	unsigned int Collision_Object;
+	NIFuint NumProperties;
+	NIFuint *Properties;// [NumProperties]
+	NIFuint Unknown1[4];
+	NIFbyte Unknown2;
+	NIFbyte HasBoundingBox;
+	BoundingBox BoundingBox;
+	NIFuint CollisionObject;
 } NiAVObject;
 
 typedef struct {
 	NiAVObject *parent;
-	byte Switch_State;
-	unsigned int Num_Affected_Node_List_Pointers;
-	unsigned int Num_Affected_Nodes;
-	// [Num_Affected_Node_List_Pointers], [(null)]
-	unsigned int *Affected_Node_List_Pointers;
-	// [Num_Affected_Nodes], [(null)]
-	unsigned int *Affected_Nodes;
+	NIFbyte SwitchState;
+	NIFuint NumAffectedNodeListPointers;
+	NIFuint NumAffectedNodes;
+	NIFuint *AffectedNodeListPointers;// [NumAffectedNodeListPointers]
+	NIFuint *AffectedNodes;// [NumAffectedNodes]
 } NiDynamicEffect;
 
 typedef struct {
 	NiDynamicEffect *parent;
-	float Dimmer;
-	Color3 Ambient_Color;
-	Color3 Diffuse_Color;
-	Color3 Specular_Color;
+	NIFfloat Dimmer;
+	Color3 AmbientColor;
+	Color3 DiffuseColor;
+	Color3 SpecularColor;
 } NiLight;
 
 typedef struct {
@@ -2304,48 +2296,47 @@ typedef struct {
 
 typedef struct {
 	NiProperty *parent;
-	// [6], [(null)]
-	byte Unknown[6];
+	NIFbyte Unknown[6];
 } NiTransparentProperty;
 
 typedef struct {
 	NiObject *parent;
 	string Name;
-	unsigned int Order;
-	unsigned int Target;
-	byte Active;
+	NIFuint Order;
+	NIFuint Target;
+	NIFbyte Active;
 } NiPSysModifier;
 
 typedef struct {
 	NiPSysModifier *parent;
-	float Speed;
-	float Speed_Variation;
-	float Declination;
-	float Declination_Variation;
-	float Planar_Angle;
-	float Planar_Angle_Variation;
-	Color4 Initial_Color;
-	float Initial_Radius;
-	float Radius_Variation;
-	float Life_Span;
-	float Life_Span_Variation;
+	NIFfloat Speed;
+	NIFfloat SpeedVariation;
+	NIFfloat Declination;
+	NIFfloat DeclinationVariation;
+	NIFfloat PlanarAngle;
+	NIFfloat PlanarAngleVariation;
+	Color4 InitialColor;
+	NIFfloat InitialRadius;
+	NIFfloat RadiusVariation;
+	NIFfloat LifeSpan;
+	NIFfloat LifeSpanVariation;
 } NiPSysEmitter;
 
 typedef struct {
 	NiPSysEmitter *parent;
-	unsigned int Emitter_Object;
+	NIFuint EmitterObject;
 } NiPSysVolumeEmitter;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Next_Controller;
-	unsigned short Flags;
-	float Frequency;
-	float Phase;
-	float Start_Time;
-	float Stop_Time;
-	unsigned int Target;
-	unsigned int Unknown_Integer;
+	NIFuint NextController;
+	NIFushort Flags;
+	NIFfloat Frequency;
+	NIFfloat Phase;
+	NIFfloat StartTime;
+	NIFfloat StopTime;
+	NIFuint Target;
+	NIFuint UnknownInteger;
 } NiTimeController;
 
 typedef struct {
@@ -2354,25 +2345,21 @@ typedef struct {
 
 typedef struct {
 	NiInterpController *parent;
-	unsigned short Num_Extra_Targets;
-	// [Num_Extra_Targets], [(null)]
-	unsigned int *Extra_Targets;
+	NIFushort NumExtraTargets;
+	NIFuint *ExtraTargets;// [NumExtraTargets]
 } NiMultiTargetTransformController;
 
 typedef struct {
 	NiInterpController *parent;
-	unsigned short Extra_Flags;
-	byte Unknown_2;
-	unsigned int Data;
-	byte Always_Update;
-	unsigned int Num_Interpolators;
-	// [Num_Interpolators], [(null)]
-	unsigned int *Interpolators;
-	// [Num_Interpolators], [(null)]
-	MorphWeight *Interpolator_Weights;
-	unsigned int Num_Unknown_Ints;
-	// [Num_Unknown_Ints], [(null)]
-	unsigned int *Unknown_Ints;
+	NIFushort ExtraFlags;
+	NIFbyte Unknown2;
+	NIFuint Data;
+	NIFbyte AlwaysUpdate;
+	NIFuint NumInterpolators;
+	NIFuint *Interpolators;// [NumInterpolators]
+	MorphWeight *InterpolatorWeights;// [NumInterpolators]
+	NIFuint NumUnknownInts;
+	NIFuint *UnknownInts;// [NumUnknownInts]
 } NiGeomMorpherController;
 
 typedef struct {
@@ -2381,17 +2368,17 @@ typedef struct {
 
 typedef struct {
 	NiInterpController *parent;
-	unsigned int Data;
+	NIFuint Data;
 } NiMorpherController;
 
 typedef struct {
 	NiInterpController *parent;
-	unsigned int Interpolator;
+	NIFuint Interpolator;
 } NiSingleInterpController;
 
 typedef struct {
 	NiSingleInterpController *parent;
-	unsigned int Data;
+	NIFuint Data;
 } NiKeyframeController;
 
 typedef struct {
@@ -2400,13 +2387,13 @@ typedef struct {
 
 typedef struct {
 	NiSingleInterpController *parent;
-	string Modifier_Name;
+	string ModifierName;
 } NiPSysModifierCtlr;
 
 typedef struct {
 	NiPSysModifierCtlr *parent;
-	unsigned int Data;
-	unsigned int Visibility_Interpolator;
+	NIFuint Data;
+	NIFuint VisibilityInterpolator;
 } NiPSysEmitterCtlr;
 
 typedef struct {
@@ -2415,12 +2402,12 @@ typedef struct {
 
 typedef struct {
 	NiPSysModifierBoolCtlr *parent;
-	unsigned int Data;
+	NIFuint Data;
 } NiPSysModifierActiveCtlr;
 
 typedef struct {
 	NiPSysModifierCtlr *parent;
-	unsigned int Data;
+	NIFuint Data;
 } NiPSysModifierFloatCtlr;
 
 typedef struct {
@@ -2453,27 +2440,25 @@ typedef struct {
 
 typedef struct {
 	NiFloatInterpController *parent;
-	unsigned int Texture_Slot;
-	unsigned int Unknown_Int_2;
-	float Delta;
-	unsigned int Num_Sources;
-	// [Num_Sources], [(null)]
-	unsigned int *Sources;
-	// [Num_Sources], [(null)]
-	unsigned int *Images;
+	NIFuint TextureSlot;
+	NIFuint UnknownInt2;
+	NIFfloat Delta;
+	NIFuint NumSources;
+	NIFuint *Sources;// [NumSources]
+	NIFuint *Images;// [NumSources]
 } NiFlipController;
 
 typedef struct {
 	NiFloatInterpController *parent;
-	unsigned int Data;
+	NIFuint Data;
 } NiAlphaController;
 
 typedef struct {
 	NiFloatInterpController *parent;
-	byte Unknown2;
-	unsigned int Texture_Slot;
-	unsigned int Operation;
-	unsigned int Data;
+	NIFbyte Unknown2;
+	NIFuint TextureSlot;
+	NIFuint Operation;
+	NIFuint Data;
 } NiTextureTransformController;
 
 typedef struct {
@@ -2486,13 +2471,13 @@ typedef struct {
 
 typedef struct {
 	NiBoolInterpController *parent;
-	unsigned int Data;
+	NIFuint Data;
 } NiVisController;
 
 typedef struct {
 	NiSingleInterpController *parent;
-	unsigned short Target_Color;
-	unsigned int Data;
+	NIFushort TargetColor;
+	NIFuint Data;
 } NiPoint3InterpController;
 
 typedef struct {
@@ -2509,33 +2494,28 @@ typedef struct {
 
 typedef struct {
 	NiExtraDataController *parent;
-	string Controller_Data;
-	byte Num_Extra_Bytes;
-	// [7], [(null)]
-	byte Unknown_Bytes[7];
-	// [Num_Extra_Bytes], [(null)]
-	byte *Unknown_Extra_Bytes;
+	string ControllerData;
+	NIFbyte NumExtraBytes;
+	NIFbyte UnknownBytes[7];
+	NIFbyte *UnknownExtraBytes;// [NumExtraBytes]
 } NiFloatExtraDataController;
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned int Unknown_Int_1;
-	unsigned int Num_Node_Groups;
-	unsigned int Num_Node_Groups_2;
-	// [Num_Node_Groups], [(null)]
-	NodeGroup *Node_Groups;
-	unsigned int Num_Shape_Groups;
-	// DUPLICATE FIELD NAME Num_Shape_Groups
-	// [Num_Shape_Groups], [(null)]
-	SkinShapeGroup *Shape_Groups_1;
-	// DUPLICATE FIELD NAME Shape_Groups_1
-	unsigned int Num_Shape_Groups_2;
-	// DUPLICATE FIELD NAME Num_Shape_Groups_2
-	// [Num_Shape_Groups_2], [(null)]
-	unsigned int *Shape_Groups_2;
-	// DUPLICATE FIELD NAME Shape_Groups_2
-	int Unknown_Int_2;
-	int Unknown_Int_3;
+	NIFuint UnknownInt1;
+	NIFuint NumNodeGroups;
+	NIFuint NumNodeGroups2;
+	NodeGroup *NodeGroups;// [NumNodeGroups]
+	NIFuint NumShapeGroups;
+	// DUPLICATE FIELD NAME NumShapeGroups
+	SkinShapeGroup *ShapeGroups1;// [NumShapeGroups]
+	// DUPLICATE FIELD NAME ShapeGroups1
+	NIFuint NumShapeGroups2;
+	// DUPLICATE FIELD NAME NumShapeGroups2
+	NIFuint *ShapeGroups2;// [NumShapeGroups2]
+	// DUPLICATE FIELD NAME ShapeGroups2
+	NIFint UnknownInt2;
+	NIFint UnknownInt3;
 } NiBoneLODController;
 
 typedef struct {
@@ -2544,20 +2524,18 @@ typedef struct {
 
 typedef struct {
 	NiAVObject *parent;
-	unsigned int Data;
-	unsigned int Skin_Instance;
-	unsigned int Num_Materials;
-	// [Num_Materials], [(null)]
-	string *Material_Name;
-	// [Num_Materials], [(null)]
-	int *Material_Extra_Data;
-	int Active_Material;
-	byte Has_Shader;
-	string Shader_Name;
-	int Unknown_Integer;
-	byte Unknown_Byte;
-	int Unknown_Integer_2;
-	byte Dirty_Flag;
+	NIFuint Data;
+	NIFuint SkinInstance;
+	NIFuint NumMaterials;
+	string *MaterialName;// [NumMaterials]
+	NIFint *MaterialExtraData;// [NumMaterials]
+	NIFint ActiveMaterial;
+	NIFbyte HasShader;
+	string ShaderName;
+	NIFint UnknownInteger;
+	NIFbyte UnknownByte;
+	NIFint UnknownInteger2;
+	NIFbyte DirtyFlag;
 } NiGeometry;
 
 typedef struct {
@@ -2566,46 +2544,39 @@ typedef struct {
 
 typedef struct {
 	NiObject *parent;
-	int Unknown_Int;
-	unsigned short Num_Vertices;
-	byte Keep_Flags;
-	byte Compress_Flags;
-	byte Has_Vertices;
-	// [Num_Vertices], [(null)]
-	Vector3 *Vertices;
-	unsigned short Num_UV_Sets;
-	unsigned short BS_Num_UV_Sets;
-	byte Has_Normals;
-	// [Num_Vertices], [(null)]
-	Vector3 *Normals;
-	// [Num_Vertices], [(null)]
-	Vector3 *Tangents;
-	// [Num_Vertices], [(null)]
-	Vector3 *Binormals;
+	NIFint UnknownInt;
+	NIFushort NumVertices;
+	NIFbyte KeepFlags;
+	NIFbyte CompressFlags;
+	NIFbyte HasVertices;
+	Vector3 *Vertices;// [NumVertices]
+	NIFushort NumUVSets;
+	NIFushort BSNumUVSets;
+	NIFbyte HasNormals;
+	Vector3 *Normals;// [NumVertices]
+	Vector3 *Tangents;// [NumVertices]
+	Vector3 *Binormals;// [NumVertices]
 	Vector3 Center;
-	float Radius;
-	// [13], [(null)]
-	short Unknown_13_shorts[13];
-	byte Has_Vertex_Colors;
-	// [Num_Vertices], [(null)]
-	Color4 *Vertex_Colors;
-	// DUPLICATE FIELD NAME Num_UV_Sets - fixed
-	byte Has_UV;
-	// [Num_UV_Sets_&_63], [Num_Vertices]
-	TexCoord *UV_Sets;
-	// DUPLICATE FIELD NAME UV_Sets - fixed
-	unsigned short Consistency_Flags;
-	unsigned int Additional_Data;
+	NIFfloat Radius;
+	NIFshort Unknown13shorts[13];
+	NIFbyte HasVertexColors;
+	Color4 *VertexColors;// [NumVertices]
+	// DUPLICATE FIELD NAME NumUVSets - fixed
+	NIFbyte HasUV;
+	TexCoord *UVSets;// [NumUVSets & 63] OR [NumUVSets & 1], [Num_Vertices]
+	// DUPLICATE FIELD NAME UVSets - fixed
+	NIFushort ConsistencyFlags;
+	NIFuint AdditionalData;
 } NiGeometryData;
 
 typedef struct {
 	NiGeometryData *parent;
-	unsigned short Num_Triangles;
+	NIFushort NumTriangles;
 } NiTriBasedGeomData;
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned int Unknown_Int;
+	NIFuint UnknownInt;
 } bhkBlendController;
 
 typedef struct {
@@ -2616,14 +2587,13 @@ typedef struct {
 
 typedef struct {
 	NiExtraData *parent;
-	unsigned int Num_Positions;
-	// [Num_Positions], [(null)]
-	FurniturePosition *Positions;
+	NIFuint NumPositions;
+	FurniturePosition *Positions;// [NumPositions]
 } BSFurnitureMarker;
 
 typedef struct {
 	NiPSysModifier *parent;
-	float Damping;
+	NIFfloat Damping;
 } BSParentVelocityModifier;
 
 typedef struct {
@@ -2632,27 +2602,24 @@ typedef struct {
 
 typedef struct {
 	NiPSysModifier *parent;
-	float Strength;
+	NIFfloat Strength;
 } BSWindModifier;
 
 typedef struct {
 	bhkShapeCollection *parent;
-	unsigned int Num_Triangles;
-	// [Num_Triangles], [(null)]
-	hkTriangle *Triangles;
-	unsigned int Num_Vertices;
-	byte Unknown_Byte_1;
-	// [Num_Vertices], [(null)]
-	Vector3 *Vertices;
-	unsigned short Num_Sub_Shapes;
-	// [Num_Sub_Shapes], [(null)]
-	OblivionSubShape *Sub_Shapes;
+	NIFuint NumTriangles;
+	hkTriangle *Triangles;// [NumTriangles]
+	NIFuint NumVertices;
+	NIFbyte UnknownByte1;
+	Vector3 *Vertices;// [NumVertices]
+	NIFushort NumSubShapes;
+	OblivionSubShape *SubShapes;// [NumSubShapes]
 } hkPackedNiTriStripsData;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
-	byte Threshold;
+	NIFushort Flags;
+	NIFbyte Threshold;
 } NiAlphaProperty;
 
 typedef struct {
@@ -2662,62 +2629,49 @@ typedef struct {
 typedef struct {
 	NiObject *parent;
 	string Name;
-	unsigned short Num_Vertices;
-	byte Keep_Flags;
-	byte Compress_Flags;
-	byte Has_Vertices;
-	// [Num_Vertices], [(null)]
-	Vector3 *Vertices;
-	byte Num_UV_Sets;
-	byte TSpace_Flag;
-	byte Has_Normals;
-	// [Num_Vertices], [(null)]
-	Vector3 *Normals;
-	// [Num_Vertices], [(null)]
-	Vector3 *Tangents;
-	// [Num_Vertices], [(null)]
-	Vector3 *Binormals;
+	NIFushort NumVertices;
+	NIFbyte KeepFlags;
+	NIFbyte CompressFlags;
+	NIFbyte HasVertices;
+	Vector3 *Vertices;// [NumVertices]
+	NIFbyte NumUVSets;
+	NIFbyte TSpaceFlag;
+	NIFbyte HasNormals;
+	Vector3 *Normals;// [NumVertices]
+	Vector3 *Tangents;// [NumVertices]
+	Vector3 *Binormals;// [NumVertices]
 	Vector3 Center;
-	float Radius;
-	byte Has_Vertex_Colors;
-	// [Num_Vertices], [(null)]
-	Color4 *Vertex_Colors;
-	// DUPLICATE FIELD NAME Num_UV_Sets - fixed
-	// DUPLICATE FIELD NAME TSpace_Flag - fixed
-	byte Has_UV;
-	// [Num_UV_Sets_&_63], [Num_Vertices]
-	TexCoord *UV_Sets;
-	unsigned short Consistency_Flags;
-	unsigned int Additional_Data;
-	unsigned short Num_Particles;
-	float Particle_Radius;
-	byte Has_Radii;
-	// [Num_Vertices], [(null)]
-	float *Radii;
-	unsigned short Num_Active;
-	byte Has_Sizes;
-	// [Num_Vertices], [(null)]
-	float *Sizes;
-	byte Has_Rotations;
-	// [Num_Vertices], [(null)]
-	Quaternion *Rotations;
-	byte Has_Rotation_Angles;
-	// [Num_Vertices], [(null)]
-	float *Rotation_Angles;
-	byte Has_Rotation_Axes;
-	// [Num_Vertices], [(null)]
-	Vector3 *Rotation_Axes;
-	byte Has_Unknown_Stuff_1;
-	short Num_Unknown_Stuff_1;
-	// [Num_Unknown_Stuff_1], [(null)]
-	Vector4 *Unknown_Stuff_1;
+	NIFfloat Radius;
+	NIFbyte HasVertexColors;
+	Color4 *VertexColors;// [NumVertices]
+	// DUPLICATE FIELD NAME NumUVSets - fixed
+	// DUPLICATE FIELD NAME TSpaceFlag - fixed
+	NIFbyte HasUV;
+	TexCoord *UVSets;// [NumUVSets & 63], [NumVertices]
+	NIFushort ConsistencyFlags;
+	NIFuint AdditionalData;
+	NIFushort NumParticles;
+	NIFfloat ParticleRadius;
+	NIFbyte HasRadii;
+	NIFfloat *Radii;// [NumVertices]
+	NIFushort NumActive;
+	NIFbyte HasSizes;
+	NIFfloat *Sizes;// [NumVertices]
+	NIFbyte HasRotations;
+	Quaternion *Rotations;// [NumVertices]
+	NIFbyte HasRotationAngles;
+	NIFfloat *RotationAngles;// [NumVertices]
+	NIFbyte HasRotationAxes;
+	Vector3 *RotationAxes;// [NumVertices]
+	NIFbyte HasUnknownStuff1;
+	NIFshort NumUnknownStuff1;
+	Vector4 *UnknownStuff1;// [NumUnknownStuff1]
 } NiParticlesData;
 
 typedef struct {
 	NiParticlesData *parent;
-	byte Has_Rotations_2;
-	// [Num_Vertices], [(null)]
-	 Quaternion /*parent-> or expr. */  * Rotations_2;
+	NIFbyte HasRotations2;
+	Quaternion *Rotations2;// [parent->NumVertices]
 } NiRotatingParticlesData;
 
 typedef struct {
@@ -2726,78 +2680,69 @@ typedef struct {
 
 typedef struct {
 	Vector3 Translation;
-	// [3], [(null)]
-	float Unknown_Floats_1[3];
-	float Unknown_Float_1;
-	float Unknown_Float_2;
-	float Unknown_Float_3;
-	int Unknown_Int_1;
+	NIFfloat UnknownFloats1[3];
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
+	NIFfloat UnknownFloat3;
+	NIFint UnknownInt1;
 } ParticleDesc;
 
 typedef struct {
 	NiRotatingParticlesData *parent;
-	// [Num_Vertices], [(null)]
-	 ParticleDesc /*parent-> or expr. */  * Particle_Descriptions;
-	byte Has_Unknown_Floats_3;
-	// [Num_Vertices], [(null)]
-	float /*parent-> or expr. */ *Unknown_Floats_3;
-	unsigned short Unknown_Short_1;
-	unsigned short Unknown_Short_2;
+	ParticleDesc *ParticleDescriptions;// [parent->NumVertices]
+	NIFbyte HasUnknownFloats3;
+	NIFfloat *UnknownFloats3;// [parent->NumVertices]
+	NIFushort UnknownShort1;
+	NIFushort UnknownShort2;
 } NiPSysData;
 
 typedef struct {
 	NiPSysData *parent;
-	unsigned int Unknown_Int_2;
-	byte Unknown_Byte_3;
-	unsigned int Num_Unknown_Ints_1;
-	// [Num_Unknown_Ints_1], [(null)]
-	unsigned int *Unknown_Ints_1;
-	unsigned int Unknown_Node;
+	NIFuint UnknownInt2;
+	NIFbyte UnknownByte3;
+	NIFuint NumUnknownInts1;
+	NIFuint *UnknownInts1;// [NumUnknownInts1]
+	NIFuint UnknownNode;
 } NiMeshPSysData;
 
 typedef struct {
 	NiExtraData *parent;
-	ByteArray Binary_Data;
+	ByteArray BinaryData;
 } NiBinaryExtraData;
 
 typedef struct {
 	NiExtraData *parent;
-	unsigned int Unknown_Int;
-	unsigned int Data;
+	NIFuint UnknownInt;
+	NIFuint Data;
 } NiBinaryVoxelExtraData;
 
 typedef struct {
 	NiObject *parent;
-	unsigned short Unknown_Short_1;
-	unsigned short Unknown_Short_2;
-	unsigned short Unknown_Short_3;
-	// [7], [(null)]
-	float Unknown_7_Floats[7];
-	// [7], [12]
-	byte Unknown_Bytes_1[7*12];
-	unsigned int Num_Unknown_Vectors;
-	// [Num_Unknown_Vectors], [(null)]
-	Vector4 *Unknown_Vectors;
-	unsigned int Num_Unknown_Bytes_2;
-	// [Num_Unknown_Bytes_2], [(null)]
-	byte *Unknown_Bytes_2;
-	// [5], [(null)]
-	unsigned int Unknown_5_Ints[5];
+	NIFushort UnknownShort1;
+	NIFushort UnknownShort2;
+	NIFushort UnknownShort3;
+	NIFfloat Unknown7Floats[7];
+	NIFbyte UnknownBytes1[7*12];
+	NIFuint NumUnknownVectors;
+	Vector4 *UnknownVectors;// [NumUnknownVectors]
+	NIFuint NumUnknownBytes2;
+	NIFbyte *UnknownBytes2;// [NumUnknownBytes2]
+	NIFuint Unknown5Ints[5];
 } NiBinaryVoxelData;
 
 typedef struct {
 	NiBlendInterpolator *parent;
-	byte Bool_Value;
+	NIFbyte BoolValue;
 } NiBlendBoolInterpolator;
 
 typedef struct {
 	NiBlendInterpolator *parent;
-	float Float_Value;
+	NIFfloat FloatValue;
 } NiBlendFloatInterpolator;
 
 typedef struct {
 	NiBlendInterpolator *parent;
-	Vector3 Point_Value;
+	Vector3 PointValue;
 } NiBlendPoint3Interpolator;
 
 typedef struct {
@@ -2806,17 +2751,17 @@ typedef struct {
 
 typedef struct {
 	NiObject *parent;
-	KeyGroup Data;
+	NiByteKeyGroup Data;
 } NiBoolData;
 
 typedef struct {
 	NiExtraData *parent;
-	byte Boolean_Data;
+	NIFbyte BooleanData;
 } NiBooleanExtraData;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Num_Control_Points;
+	NIFuint NumControlPoints;
 } NiBSplineBasisData;
 
 typedef struct {
@@ -2825,16 +2770,15 @@ typedef struct {
 
 typedef struct {
 	NiBSplineFloatInterpolator *parent;
-	float Base;
-	unsigned int Offset;
-	float Bias;
-	float Multiplier;
+	NIFfloat Base;
+	NIFuint Offset;
+	NIFfloat Bias;
+	NIFfloat Multiplier;
 } NiBSplineCompFloatInterpolator;
 
 typedef struct {
 	NiBSplineInterpolator *parent;
-	// [6], [(null)]
-	float Unknown_Floats[6];
+	NIFfloat UnknownFloats[6];
 } NiBSplinePoint3Interpolator;
 
 typedef struct {
@@ -2845,20 +2789,20 @@ typedef struct {
 	NiBSplineInterpolator *parent;
 	Vector3 Translation;
 	Quaternion Rotation;
-	float Scale;
-	unsigned int Translation_Offset;
-	unsigned int Rotation_Offset;
-	unsigned int Scale_Offset;
+	NIFfloat Scale;
+	NIFuint TranslationOffset;
+	NIFuint RotationOffset;
+	NIFuint ScaleOffset;
 } NiBSplineTransformInterpolator;
 
 typedef struct {
 	NiBSplineTransformInterpolator *parent;
-	float Translation_Bias;
-	float Translation_Multiplier;
-	float Rotation_Bias;
-	float Rotation_Multiplier;
-	float Scale_Bias;
-	float Scale_Multiplier;
+	NIFfloat TranslationBias;
+	NIFfloat TranslationMultiplier;
+	NIFfloat RotationBias;
+	NIFfloat RotationMultiplier;
+	NIFfloat ScaleBias;
+	NIFfloat ScaleMultiplier;
 } NiBSplineCompTransformInterpolator;
 
 typedef struct {
@@ -2867,38 +2811,36 @@ typedef struct {
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Num_Float_Control_Points;
-	// [Num_Float_Control_Points], [(null)]
-	float *Float_Control_Points;
-	unsigned int Num_Short_Control_Points;
-	// [Num_Short_Control_Points], [(null)]
-	short *Short_Control_Points;
+	NIFuint NumFloatControlPoints;
+	NIFfloat *FloatControlPoints;// [NumFloatControlPoints]
+	NIFuint NumShortControlPoints;
+	NIFshort *ShortControlPoints;// [NumShortControlPoints]
 } NiBSplineData;
 
 typedef struct {
 	NiAVObject *parent;
-	unsigned short Unknown_Short;
-	float Frustum_Left;
-	float Frustum_Right;
-	float Frustum_Top;
-	float Frustum_Bottom;
-	float Frustum_Near;
-	float Frustum_Far;
-	byte Use_Orthographic_Projection;
-	float Viewport_Left;
-	float Viewport_Right;
-	float Viewport_Top;
-	float Viewport_Bottom;
-	float LOD_Adjust;
-	unsigned int Unknown_Link;
-	unsigned int Unknown_Int;
-	unsigned int Unknown_Int_2;
-	unsigned int Unknown_Int_3;
+	NIFushort UnknownShort;
+	NIFfloat FrustumLeft;
+	NIFfloat FrustumRight;
+	NIFfloat FrustumTop;
+	NIFfloat FrustumBottom;
+	NIFfloat FrustumNear;
+	NIFfloat FrustumFar;
+	NIFbyte UseOrthographicProjection;
+	NIFfloat ViewportLeft;
+	NIFfloat ViewportRight;
+	NIFfloat ViewportTop;
+	NIFfloat ViewportBottom;
+	NIFfloat LODAdjust;
+	NIFuint UnknownLink;
+	NIFuint UnknownInt;
+	NIFuint UnknownInt2;
+	NIFuint UnknownInt3;
 } NiCamera;
 
 typedef struct {
 	NiObject *parent;
-	KeyGroup Data;
+	NiColor4KeyGroup Data;
 } NiColorData;
 
 typedef struct {
@@ -2908,43 +2850,41 @@ typedef struct {
 
 typedef struct {
 	NiTimeController *parent;
-	byte Cumulative;
-	unsigned int Num_Controller_Sequences;
-	// [Num_Controller_Sequences], [(null)]
-	unsigned int *Controller_Sequences;
-	unsigned int Object_Palette;
+	NIFbyte Cumulative;
+	NIFuint NumControllerSequences;
+	NIFuint *ControllerSequences;// [NumControllerSequences]
+	NIFuint ObjectPalette;
 } NiControllerManager;
 
 typedef struct {
 	NiObject *parent;
 	string Name;
-	string Text_Keys_Name;
-	unsigned int Text_Keys;
-	int Unknown_Int_4;
-	int Unknown_Int_5;
-	unsigned int Num_Controlled_Blocks;
-	unsigned int Unknown_Int_1;
-	// [Num_Controlled_Blocks], [(null)]
-	ControllerLink *Controlled_Blocks;
+	string TextKeysName;
+	NIFuint TextKeys;
+	NIFint UnknownInt4;
+	NIFint UnknownInt5;
+	NIFuint NumControlledBlocks;
+	NIFuint UnknownInt1;
+	ControllerLink *ControlledBlocks;// [NumControlledBlocks]
 } NiSequence;
 
 typedef struct {
 	NiSequence *parent;
-	float Weight;
-	unsigned int Text_Keys;
-	unsigned int Cycle_Type;
-	unsigned int Unknown_Int_0;
-	float Frequency;
-	float Start_Time;
-	float Unknown_Float_2;
-	float Stop_Time;
-	byte Unknown_Byte;
-	unsigned int Manager;
-	string Target_Name;
-	unsigned int String_Palette;
-	short Unknown_Short_1;
-	short Unknown_Short_2;
-	unsigned int Unknown_Int_3;
+	NIFfloat Weight;
+	NIFuint TextKeys;
+	NIFuint CycleType;
+	NIFuint UnknownInt0;
+	NIFfloat Frequency;
+	NIFfloat StartTime;
+	NIFfloat UnknownFloat2;
+	NIFfloat StopTime;
+	NIFbyte UnknownByte;
+	NIFuint Manager;
+	string TargetName;
+	NIFuint StringPalette;
+	NIFshort UnknownShort1;
+	NIFshort UnknownShort2;
+	NIFuint UnknownInt3;
 } NiControllerSequence;
 
 typedef struct {
@@ -2953,10 +2893,9 @@ typedef struct {
 
 typedef struct {
 	NiAVObjectPalette *parent;
-	unsigned int Unknown_Int;
-	unsigned int Num_Objs;
-	// [Num_Objs], [(null)]
-	AVObject *Objs;
+	NIFuint UnknownInt;
+	NIFuint NumObjs;
+	AVObject *Objs;// [NumObjs]
 } NiDefaultAVObjectPalette;
 
 typedef struct {
@@ -2965,50 +2904,49 @@ typedef struct {
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
+	NIFushort Flags;
 } NiDitherProperty;
 
 typedef struct {
 	NiSingleInterpController *parent;
-	unsigned int Data;
+	NIFuint Data;
 } NiRollController;
 
 typedef struct {
 	NiObject *parent;
-	KeyGroup Data;
+	NiFloatKeyGroup Data;
 } NiFloatData;
 
 typedef struct {
 	NiExtraData *parent;
-	float Float_Data;
+	NIFfloat FloatData;
 } NiFloatExtraData;
 
 typedef struct {
 	NiExtraData *parent;
-	unsigned int Num_Floats;
-	// [Num_Floats], [(null)]
-	float *Data;
+	NIFuint NumFloats;
+	NIFfloat *Data;// [NumFloats]
 } NiFloatsExtraData;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
-	float Fog_Depth;
-	Color3 Fog_Color;
+	NIFushort Flags;
+	NIFfloat FogDepth;
+	Color3 FogColor;
 } NiFogProperty;
 
 typedef struct {
 	NiParticleModifier *parent;
-	float Unknown_Float_1;
-	float Force;
-	unsigned int Type;
+	NIFfloat UnknownFloat1;
+	NIFfloat Force;
+	NIFuint Type;
 	Vector3 Position;
 	Vector3 Direction;
 } NiGravity;
 
 typedef struct {
 	NiExtraData *parent;
-	unsigned int Integer_Data;
+	NIFuint IntegerData;
 } NiIntegerExtraData;
 
 typedef struct {
@@ -3017,77 +2955,71 @@ typedef struct {
 
 typedef struct {
 	NiExtraData *parent;
-	unsigned int Num_Integers;
-	// [Num_Integers], [(null)]
-	unsigned int *Data;
+	NIFuint NumIntegers;
+	NIFuint *Data;// [NumIntegers]
 } NiIntegersExtraData;
 
 typedef struct {
 	NiKeyframeController *parent;
-	unsigned int Data_2;
+	NIFuint Data2;
 } BSKeyframeController;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Num_Rotation_Keys;
-	unsigned int Rotation_Type;
-	// [Num_Rotation_Keys], [(null)]
-	QuatKey *Quaternion_Keys;
-	float Unknown_Float;
-	// [3], [(null)]
-	KeyGroup XYZ_Rotations[3];
-	KeyGroup Translations;
-	KeyGroup Scales;
+	NIFuint NumRotationKeys;
+	NIFuint RotationType;
+	QuatKey *QuaternionKeys;// [NumRotationKeys]
+	NIFfloat UnknownFloat;
+	NiFloatKeyGroup XYZRotations[3];
+	NiVector3KeyGroup Translations;
+	NiFloatKeyGroup Scales;
 } NiKeyframeData;
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned short Unknown1;
-	unsigned int Look_At_Node;
+	NIFushort Unknown1;
+	NIFuint LookAtNode;
 } NiLookAtController;
 
 typedef struct {
 	NiInterpolator *parent;
-	unsigned short Unknown_Short;
-	unsigned int Look_At;
+	NIFushort UnknownShort;
+	NIFuint LookAt;
 	string Target;
 	Vector3 Translation;
 	Quaternion Rotation;
-	float Scale;
-	unsigned int Unknown_Link_1;
-	unsigned int Unknown_Link_2;
-	unsigned int Unknown_Link_3;
+	NIFfloat Scale;
+	NIFuint UnknownLink1;
+	NIFuint UnknownLink2;
+	NIFuint UnknownLink3;
 } NiLookAtInterpolator;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
-	Color3 Ambient_Color;
-	Color3 Diffuse_Color;
-	Color3 Specular_Color;
-	Color3 Emissive_Color;
-	float Glossiness;
-	float Alpha;
-	float Emit_Multi;
+	NIFushort Flags;
+	Color3 AmbientColor;
+	Color3 DiffuseColor;
+	Color3 SpecularColor;
+	Color3 EmissiveColor;
+	NIFfloat Glossiness;
+	NIFfloat Alpha;
+	NIFfloat EmitMulti;
 } NiMaterialProperty;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Num_Morphs;
-	unsigned int Num_Vertices;
-	byte Relative_Targets;
-	// [Num_Morphs], [(null)]
-	Morph *Morphs;
+	NIFuint NumMorphs;
+	NIFuint NumVertices;
+	NIFbyte RelativeTargets;
+	Morph *Morphs;// [NumMorphs]
 } NiMorphData;
 
 typedef struct {
 	NiAVObject *parent;
-	unsigned int Num_Children;
-	// [Num_Children], [(null)]
-	unsigned int *Children;
-	unsigned int Num_Effects;
-	// [Num_Effects], [(null)]
-	unsigned int *Effects;
+	NIFuint NumChildren;
+	NIFuint *Children;// [NumChildren]
+	NIFuint NumEffects;
+	NIFuint *Effects;// [NumEffects]
 } NiNode;
 
 typedef struct {
@@ -3100,9 +3032,8 @@ typedef struct {
 
 typedef struct {
 	NiNode *parent;
-	byte Unknown1;
-	// [292], [(null)]
-	byte Unknown_292_Bytes[292];
+	NIFbyte Unknown1;
+	NIFbyte Unknown292Bytes[292];
 } FxWidget;
 
 typedef struct {
@@ -3111,17 +3042,16 @@ typedef struct {
 
 typedef struct {
 	FxWidget *parent;
-	unsigned int Unknown_Int_1;
-	unsigned int Unknown_Int__2;
-	unsigned int Unknown_Int_3;
-	unsigned int Num_Buttons;
-	// [Num_Buttons], [(null)]
-	unsigned int *Buttons;
+	NIFuint UnknownInt1;
+	NIFuint UnknownInt2;
+	NIFuint UnknownInt3;
+	NIFuint NumButtons;
+	NIFuint *Buttons;// [NumButtons]
 } FxRadioButton;
 
 typedef struct {
 	NiNode *parent;
-	unsigned short Billboard_Mode;
+	NIFushort BillboardMode;
 } NiBillboardNode;
 
 typedef struct {
@@ -3134,62 +3064,59 @@ typedef struct {
 
 typedef struct {
 	NiNode *parent;
-	unsigned short Unknown_Flags_1;
-	int Unknown_Int_1;
+	NIFushort UnknownFlags1;
+	NIFint UnknownInt1;
 } NiSwitchNode;
 
 typedef struct {
 	NiSwitchNode *parent;
-	Vector3 LOD_Center;
-	unsigned int Num_LOD_Levels;
-	// [Num_LOD_Levels], [(null)]
-	LODRange *LOD_Levels;
-	unsigned int LOD_Level_Data;
+	Vector3 LODCenter;
+	NIFuint NumLODLevels;
+	LODRange *LODLevels;// [NumLODLevels]
+	NIFuint LODLevelData;
 } NiLODNode;
 
 typedef struct {
 	NiObject *parent;
-	byte Unknown_Byte;
-	unsigned int Num_Entries;
-	// [256], [(null)]
+	NIFbyte UnknownByte;
+	NIFuint NumEntries;
 	ByteColor4 Palette[256];
 } NiPalette;
 
 typedef struct {
 	NiParticleModifier *parent;
-	float Decay_;
-	float Duration_;
-	float DeltaV_;
-	float Start_;
-	unsigned int Decay_Type_;
-	unsigned int Symmetry_Type_;
-	Vector3 Position_;
-	Vector3 Direction_;
+	NIFfloat Decay;
+	NIFfloat Duration;
+	NIFfloat DeltaV;
+	NIFfloat Start;
+	NIFuint DecayType;
+	NIFuint SymmetryType;
+	Vector3 Position;
+	Vector3 Direction;
 } NiParticleBomb;
 
 typedef struct {
 	NiParticleModifier *parent;
-	unsigned int Color_Data;
+	NIFuint ColorData;
 } NiParticleColorModifier;
 
 typedef struct {
 	NiParticleModifier *parent;
-	float Grow;
-	float Fade;
+	NIFfloat Grow;
+	NIFfloat Fade;
 } NiParticleGrowFade;
 
 typedef struct {
 	NiParticleModifier *parent;
-	unsigned int Num_Particle_Meshes;
-	// [Num_Particle_Meshes], [(null)]
-	unsigned int *Particle_Meshes;
+	NIFuint NumParticleMeshes;
+	NIFuint *ParticleMeshes;// [NumParticleMeshes]
 } NiParticleMeshModifier;
 
 typedef struct {
 	NiParticleModifier *parent;
-	byte Random_Initial_Axis_;
-	Vector3 Initial_Axis_;
-	float Rotation_Speed_;
+	NIFbyte RandomInitialAxis;
+	Vector3 InitialAxis;
+	NIFfloat RotationSpeed;
 } NiParticleRotation;
 
 typedef struct {
@@ -3206,15 +3133,14 @@ typedef struct {
 
 typedef struct {
 	NiRotatingParticlesData *parent;
-	unsigned int Unknown_Link_2;
+	NIFuint UnknownLink2;
 } NiParticleMeshesData;
 
 typedef struct {
 	NiParticles *parent;
-	byte World_Space;
-	unsigned int Num_Modifiers;
-	// [Num_Modifiers], [(null)]
-	unsigned int *Modifiers;
+	NIFbyte WorldSpace;
+	NIFuint NumModifiers;
+	NIFuint *Modifiers;// [NumModifiers]
 } NiParticleSystem;
 
 typedef struct {
@@ -3223,50 +3149,48 @@ typedef struct {
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned int Old_Speed;
-	float Speed;
-	float Speed_Random;
-	float Vertical_Direction;
-	float Vertical_Angle;
-	float Horizontal_Direction;
-	float Horizontal_Angle;
-	Vector3 Unknown_Normal_;
-	Color4 Unknown_Color_;
-	float Size;
-	float Emit_Start_Time;
-	float Emit_Stop_Time;
-	byte Unknown_Byte;
-	unsigned int Old_Emit_Rate;
-	float Emit_Rate;
-	float Lifetime;
-	float Lifetime_Random;
-	unsigned short Emit_Flags;
-	Vector3 Start_Random;
-	unsigned int Emitter;
-	unsigned short Unknown_Short_2_;
-	float Unknown_Float_13_;
-	unsigned int Unknown_Int_1_;
-	unsigned int Unknown_Int_2_;
-	unsigned short Unknown_Short_3_;
-	Vector3 Particle_Velocity;
-	Vector3 Particle_Unknown_Vector;
-	float Particle_Lifetime;
-	unsigned int Particle_Link;
-	unsigned int Particle_Timestamp;
-	unsigned short Particle_Unknown_Short;
-	unsigned short Particle_Vertex_Id;
-	unsigned short Num_Particles;
-	unsigned short Num_Valid;
-	// [Num_Particles], [(null)]
-	Particle *Particles;
-	unsigned int Unknown_Link;
-	unsigned int Particle_Extra;
-	unsigned int Unknown_Link_2;
-	byte Trailer;
-	unsigned int Color_Data;
-	float Unknown_Float_1;
-	// [Particle_Unknown_Short], [(null)]
-	float *Unknown_Floats_2;
+	NIFuint OldSpeed;
+	NIFfloat Speed;
+	NIFfloat SpeedRandom;
+	NIFfloat VerticalDirection;
+	NIFfloat VerticalAngle;
+	NIFfloat HorizontalDirection;
+	NIFfloat HorizontalAngle;
+	Vector3 UnknownNormal;
+	Color4 UnknownColor;
+	NIFfloat Size;
+	NIFfloat EmitStartTime;
+	NIFfloat EmitStopTime;
+	NIFbyte UnknownByte;
+	NIFuint OldEmitRate;
+	NIFfloat EmitRate;
+	NIFfloat Lifetime;
+	NIFfloat LifetimeRandom;
+	NIFushort EmitFlags;
+	Vector3 StartRandom;
+	NIFuint Emitter;
+	NIFushort UnknownShort2;
+	NIFfloat UnknownFloat13;
+	NIFuint UnknownInt1;
+	NIFuint UnknownInt2;
+	NIFushort UnknownShort3;
+	Vector3 ParticleVelocity;
+	Vector3 ParticleUnknownVector;
+	NIFfloat ParticleLifetime;
+	NIFuint ParticleLink;
+	NIFuint ParticleTimestamp;
+	NIFushort ParticleUnknownShort;
+	NIFushort ParticleVertexId;
+	NIFushort NumParticles;
+	NIFushort NumValid;
+	Particle *Particles;// [NumParticles]
+	NIFuint UnknownLink;
+	NIFuint ParticleExtra;
+	NIFuint UnknownLink2;
+	NIFbyte Trailer;
+	NIFuint ColorData;
+	NIFfloat UnknownFloat1;
+	NIFfloat *UnknownFloats2;// [ParticleUnknownShort]
 } NiParticleSystemController;
 
 typedef struct {
@@ -3275,213 +3199,204 @@ typedef struct {
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned short Unknown_Short_2;
-	unsigned int Unknown_Int_1;
-	float Unknown_Float_2;
-	float Unknown_Float_3;
-	unsigned short Unknown_Short;
-	unsigned int Pos_Data;
-	unsigned int Float_Data;
+	NIFushort UnknownShort2;
+	NIFuint UnknownInt1;
+	NIFfloat UnknownFloat2;
+	NIFfloat UnknownFloat3;
+	NIFushort UnknownShort;
+	NIFuint PosData;
+	NIFuint FloatData;
 } NiPathController;
 
 typedef struct {
-	unsigned int Type;
-	unsigned int Convention;
-	byte Bits_Per_Channel;
-	byte Unknown_Byte_1;
+	NIFuint Type;
+	NIFuint Convention;
+	NIFbyte BitsPerChannel;
+	NIFbyte UnknownByte1;
 } ChannelData;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Pixel_Format;
-	unsigned int Red_Mask;
-	unsigned int Green_Mask;
-	unsigned int Blue_Mask;
-	unsigned int Alpha_Mask;
-	byte Bits_Per_Pixel;
-	// [3], [(null)]
-	byte Unknown_3_Bytes[3];
-	// [8], [(null)]
-	byte Unknown_8_Bytes[8];
-	unsigned int Unknown_Int;
-	// DUPLICATE FIELD NAME Bits_Per_Pixel - fixed
-	int Unknown_Int_2;
-	unsigned int Unknown_Int_3;
-	byte Flags;
-	unsigned int Unknown_Int_4;
-	byte Unknown_Byte_1;
-	// [4], [(null)]
+	NIFuint PixelFormat;
+	NIFuint RedMask;
+	NIFuint GreenMask;
+	NIFuint BlueMask;
+	NIFuint AlphaMask;
+	NIFbyte BitsPerPixel;
+	NIFbyte Unknown3Bytes[3];
+	NIFbyte Unknown8Bytes[8];
+	NIFuint UnknownInt;
+	// DUPLICATE FIELD NAME BitsPerPixel - fixed
+	NIFint UnknownInt2;
+	NIFuint UnknownInt3;
+	NIFbyte Flags;
+	NIFuint UnknownInt4;
+	NIFbyte UnknownByte1;
 	ChannelData Channels[4];
-	unsigned int Palette;
-	unsigned int Num_Mipmaps;
-	unsigned int Bytes_Per_Pixel;
-	// [Num_Mipmaps], [(null)]
-	MipMap *Mipmaps;
+	NIFuint Palette;
+	NIFuint NumMipmaps;
+	NIFuint BytesPerPixel;
+	MipMap *Mipmaps;// [NumMipmaps]
 } ATextureRenderData;
 
 typedef struct {
 	ATextureRenderData *parent;
-	unsigned int Num_Pixels;
-	unsigned int Unknown_Int_6;
-	unsigned int Num_Faces;
-	unsigned int Unknown_Int_7;
-	// [Num_Faces], [Num_Pixels]
-	byte *Pixel_Data;
+	NIFuint NumPixels;
+	NIFuint UnknownInt6;
+	NIFuint NumFaces;
+	NIFuint UnknownInt7;
+	NIFbyte *PixelData;// [NumFaces], [NumPixels]
 } NiPersistentSrcTextureRendererData;
 
 typedef struct {
 	ATextureRenderData *parent;
-	unsigned int Num_Pixels;
-	unsigned int Num_Faces;
-	// [Num_Faces], [Num_Pixels]
-	byte *Pixel_Data;
-	// DUPLICATE FIELD NAME Pixel_Data - fixed
+	NIFuint NumPixels;
+	NIFuint NumFaces;
+	NIFbyte *PixelData;// [NumFaces], [NumPixels]
+	// DUPLICATE FIELD NAME PixelData - fixed
 } NiPixelData;
 
 typedef struct {
 	NiParticleModifier *parent;
-	unsigned short Unknown_Short;
-	float Unknown_Float_1;
-	float Unknown_Float_2;
-	unsigned short Unknown_Short_2;
-	float Unknown_Float_3;
-	float Unknown_Float_4;
-	float Unknown_Float_5;
-	float Unknown_Float_6;
-	float Unknown_Float_7;
-	float Unknown_Float_8;
-	float Unknown_Float_9;
-	float Unknown_Float_10;
-	float Unknown_Float_11;
-	float Unknown_Float_12;
-	float Unknown_Float_13;
-	float Unknown_Float_14;
-	float Unknown_Float_15;
-	float Unknown_Float_16;
+	NIFushort UnknownShort;
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
+	NIFushort UnknownShort2;
+	NIFfloat UnknownFloat3;
+	NIFfloat UnknownFloat4;
+	NIFfloat UnknownFloat5;
+	NIFfloat UnknownFloat6;
+	NIFfloat UnknownFloat7;
+	NIFfloat UnknownFloat8;
+	NIFfloat UnknownFloat9;
+	NIFfloat UnknownFloat10;
+	NIFfloat UnknownFloat11;
+	NIFfloat UnknownFloat12;
+	NIFfloat UnknownFloat13;
+	NIFfloat UnknownFloat14;
+	NIFfloat UnknownFloat15;
+	NIFfloat UnknownFloat16;
 } NiPlanarCollider;
 
 typedef struct {
 	NiLight *parent;
-	float Constant_Attenuation;
-	float Linear_Attenuation;
-	float Quadratic_Attenuation;
+	NIFfloat ConstantAttenuation;
+	NIFfloat LinearAttenuation;
+	NIFfloat QuadraticAttenuation;
 } NiPointLight;
 
 typedef struct {
 	NiObject *parent;
-	KeyGroup Data;
+	NiVector3KeyGroup Data;
 } NiPosData;
 
 typedef struct {
 	NiPSysModifier *parent;
-	byte Spawn_on_Death;
-	unsigned int Spawn_Modifier;
+	NIFbyte SpawnonDeath;
+	NIFuint SpawnModifier;
 } NiPSysAgeDeathModifier;
 
 typedef struct {
 	NiPSysModifier *parent;
-	unsigned int Bomb_Object;
-	Vector3 Bomb_Axis;
-	float Decay;
-	float Delta_V;
-	unsigned int Decay_Type;
-	unsigned int Symmetry_Type;
+	NIFuint BombObject;
+	Vector3 BombAxis;
+	NIFfloat Decay;
+	NIFfloat DeltaV;
+	NIFuint DecayType;
+	NIFuint SymmetryType;
 } NiPSysBombModifier;
 
 typedef struct {
 	NiPSysModifier *parent;
-	unsigned short Update_Skip;
+	NIFushort UpdateSkip;
 } NiPSysBoundUpdateModifier;
 
 typedef struct {
 	NiPSysVolumeEmitter *parent;
-	float Width;
-	float Height;
-	float Depth;
+	NIFfloat Width;
+	NIFfloat Height;
+	NIFfloat Depth;
 } NiPSysBoxEmitter;
 
 typedef struct {
 	NiPSysModifier *parent;
-	unsigned int Collider;
+	NIFuint Collider;
 } NiPSysColliderManager;
 
 typedef struct {
 	NiPSysModifier *parent;
-	unsigned int Data;
+	NIFuint Data;
 } NiPSysColorModifier;
 
 typedef struct {
 	NiPSysVolumeEmitter *parent;
-	float Radius;
-	float Height;
+	NIFfloat Radius;
+	NIFfloat Height;
 } NiPSysCylinderEmitter;
 
 typedef struct {
 	NiPSysModifier *parent;
-	unsigned int Parent;
-	Vector3 Drag_Axis;
-	float Percentage;
-	float Range;
-	float Range_Falloff;
+	NIFuint Parent;
+	Vector3 DragAxis;
+	NIFfloat Percentage;
+	NIFfloat Range;
+	NIFfloat RangeFalloff;
 } NiPSysDragModifier;
 
 typedef struct {
 	NiObject *parent;
-	KeyGroup Float_Keys_;
-	unsigned int Num_Visibility_Keys_;
-	// [Num_Visibility_Keys_], [(null)]
-	Key *Visibility_Keys_;
+	NiFloatKeyGroup FloatKeys;
+	NIFuint NumVisibilityKeys;
+	NiByteKey *VisibilityKeys;// [NumVisibilityKeys]
 } NiPSysEmitterCtlrData;
 
 typedef struct {
 	NiPSysModifier *parent;
-	unsigned int Gravity_Object;
-	Vector3 Gravity_Axis;
-	float Decay;
-	float Strength;
-	unsigned int Force_Type;
-	float Turbulence;
-	float Turbulence_Scale;
-	byte Unknown_Byte;
+	NIFuint GravityObject;
+	Vector3 GravityAxis;
+	NIFfloat Decay;
+	NIFfloat Strength;
+	NIFuint ForceType;
+	NIFfloat Turbulence;
+	NIFfloat TurbulenceScale;
+	NIFbyte UnknownByte;
 } NiPSysGravityModifier;
 
 typedef struct {
 	NiPSysModifier *parent;
-	float Grow_Time;
-	unsigned short Grow_Generation;
-	float Fade_Time;
-	unsigned short Fade_Generation;
-	float Base_Scale;
+	NIFfloat GrowTime;
+	NIFushort GrowGeneration;
+	NIFfloat FadeTime;
+	NIFushort FadeGeneration;
+	NIFfloat BaseScale;
 } NiPSysGrowFadeModifier;
 
 typedef struct {
 	NiPSysEmitter *parent;
-	unsigned int Num_Emitter_Meshes;
-	// [Num_Emitter_Meshes], [(null)]
-	unsigned int *Emitter_Meshes;
-	unsigned int Initial_Velocity_Type;
-	unsigned int Emission_Type;
-	Vector3 Emission_Axis;
+	NIFuint NumEmitterMeshes;
+	NIFuint *EmitterMeshes;// [NumEmitterMeshes]
+	NIFuint InitialVelocityType;
+	NIFuint EmissionType;
+	Vector3 EmissionAxis;
 } NiPSysMeshEmitter;
 
 typedef struct {
 	NiPSysModifier *parent;
-	unsigned int Num_Meshes;
-	// [Num_Meshes], [(null)]
-	unsigned int *Meshes;
+	NIFuint NumMeshes;
+	NIFuint *Meshes;// [NumMeshes]
 } NiPSysMeshUpdateModifier;
 
 typedef struct {
 	NiPSysCollider *parent;
-	float Width;
-	float Height;
-	Vector3 X_Axis;
-	Vector3 Y_Axis;
+	NIFfloat Width;
+	NIFfloat Height;
+	Vector3 XAxis;
+	Vector3 YAxis;
 } NiPSysPlanarCollider;
 
 typedef struct {
 	NiPSysCollider *parent;
-	float Radius;
+	NIFfloat Radius;
 } NiPSysSphericalCollider;
 
 typedef struct {
@@ -3494,31 +3409,31 @@ typedef struct {
 
 typedef struct {
 	NiPSysModifier *parent;
-	float Initial_Rotation_Speed;
-	float Initial_Rotation_Speed_Variation;
-	float Initial_Rotation_Angle;
-	float Initial_Rotation_Angle_Variation;
-	byte Random_Rot_Speed_Sign;
-	byte Random_Initial_Axis;
-	Vector3 Initial_Axis;
+	NIFfloat InitialRotationSpeed;
+	NIFfloat InitialRotationSpeedVariation;
+	NIFfloat InitialRotationAngle;
+	NIFfloat InitialRotationAngleVariation;
+	NIFbyte RandomRotSpeedSign;
+	NIFbyte RandomInitialAxis;
+	Vector3 InitialAxis;
 } NiPSysRotationModifier;
 
 typedef struct {
 	NiPSysModifier *parent;
-	unsigned short Num_Spawn_Generations;
-	float Percentage_Spawned;
-	unsigned short Min_Num_to_Spawn;
-	unsigned short Max_Num_to_Spawn;
-	float Spawn_Speed_Chaos;
-	float Spawn_Dir_Chaos;
-	float Life_Span;
-	float Life_Span_Variation;
-	int Unknown_int;
+	NIFushort NumSpawnGenerations;
+	NIFfloat PercentageSpawned;
+	NIFushort MinNumtoSpawn;
+	NIFushort MaxNumtoSpawn;
+	NIFfloat SpawnSpeedChaos;
+	NIFfloat SpawnDirChaos;
+	NIFfloat LifeSpan;
+	NIFfloat LifeSpanVariation;
+	NIFint Unknownint;
 } NiPSysSpawnModifier;
 
 typedef struct {
 	NiPSysVolumeEmitter *parent;
-	float Radius;
+	NIFfloat Radius;
 } NiPSysSphereEmitter;
 
 typedef struct {
@@ -3527,11 +3442,11 @@ typedef struct {
 
 typedef struct {
 	NiPSysModifier *parent;
-	unsigned int Field_Object;
-	float Magnitude;
-	float Attenuation;
-	byte Use_Max_Distance;
-	float Max_Distance;
+	NIFuint FieldObject;
+	NIFfloat Magnitude;
+	NIFfloat Attenuation;
+	NIFbyte UseMaxDistance;
+	NIFfloat MaxDistance;
 } NiPSysFieldModifier;
 
 typedef struct {
@@ -3546,13 +3461,13 @@ typedef struct {
 
 typedef struct {
 	NiPSysFieldModifier *parent;
-	byte Use_Direction_;
+	NIFbyte UseDirection;
 	Vector3 Direction;
 } NiPSysDragFieldModifier;
 
 typedef struct {
 	NiPSysFieldModifier *parent;
-	float Frequency;
+	NIFfloat Frequency;
 } NiPSysTurbulenceFieldModifier;
 
 typedef struct {
@@ -3606,27 +3521,27 @@ typedef struct {
 typedef struct {
 	NiPSysFieldModifier *parent;
 	Vector3 Direction;
-	float Unknown_Float_2;
-	float Unknown_Float_3;
-	byte Unknown_Boolean_1;
-	byte Unknown_Boolean_2;
-	byte Unknown_Boolean_3;
-	float Unknown_Float_4;
+	NIFfloat UnknownFloat2;
+	NIFfloat UnknownFloat3;
+	NIFbyte UnknownBoolean1;
+	NIFbyte UnknownBoolean2;
+	NIFbyte UnknownBoolean3;
+	NIFfloat UnknownFloat4;
 } NiPSysAirFieldModifier;
 
 typedef struct {
 	NiPSysEmitter *parent;
-	int Unknown_Int_1;
-	float Unknown_Float_1;
-	float Unknown_Float_2;
-	float Unknown_Float_3;
-	int Unknown_Int_2;
-	float Unknown_Float_4;
-	int Unknown_Int_3;
-	float Unknown_Float_5;
-	int Unknown_Int_4;
-	float Unknown_Float_6;
-	float Unknown_Float_7;
+	NIFint UnknownInt1;
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
+	NIFfloat UnknownFloat3;
+	NIFint UnknownInt2;
+	NIFfloat UnknownFloat4;
+	NIFint UnknownInt3;
+	NIFfloat UnknownFloat5;
+	NIFint UnknownInt4;
+	NIFfloat UnknownFloat6;
+	NIFfloat UnknownFloat7;
 } NiPSysTrailEmitter;
 
 typedef struct {
@@ -3635,7 +3550,7 @@ typedef struct {
 
 typedef struct {
 	NiPSysFieldModifier *parent;
-	int Radial_Type;
+	NIFint RadialType;
 } NiPSysRadialFieldModifier;
 
 typedef struct {
@@ -3644,21 +3559,19 @@ typedef struct {
 
 typedef struct {
 	NiLODData *parent;
-	Vector3 LOD_Center;
-	unsigned int Num_LOD_Levels;
-	// [Num_LOD_Levels], [(null)]
-	LODRange *LOD_Levels;
+	Vector3 LODCenter;
+	NIFuint NumLODLevels;
+	LODRange *LODLevels;// [NumLODLevels]
 } NiRangeLODData;
 
 typedef struct {
 	NiLODData *parent;
-	Vector3 Bound_Center;
-	float Bound_Radius;
-	Vector3 World_Center;
-	float World_Radius;
-	unsigned int Proportion_Count;
-	// [Proportion_Count], [(null)]
-	float *Proportion_Levels;
+	Vector3 BoundCenter;
+	NIFfloat BoundRadius;
+	Vector3 WorldCenter;
+	NIFfloat WorldRadius;
+	NIFuint ProportionCount;
+	NIFfloat *ProportionLevels;// [ProportionCount]
 } NiScreenLODData;
 
 typedef struct {
@@ -3671,38 +3584,33 @@ typedef struct {
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
+	NIFushort Flags;
 } NiShadeProperty;
 
 typedef struct {
 	NiObject *parent;
-	SkinTransform Skin_Transform;
-	unsigned int Num_Bones;
-	unsigned int Skin_Partition;
-	byte Has_Vertex_Weights;
-	// [Num_Bones], [(null)]
-	SkinData *Bone_List;
+	SkinTransform SkinTransform;
+	NIFuint NumBones;
+	NIFuint SkinPartition;
+	NIFbyte HasVertexWeights;
+	SkinData *BoneList;// [NumBones]
 } NiSkinData;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Data;
-	unsigned int Skin_Partition;
-	unsigned int Skeleton_Root;
-	unsigned int Num_Bones;
-	// [Num_Bones], [(null)]
-	unsigned int *Bones;
+	NIFuint Data;
+	NIFuint SkinPartition;
+	NIFuint SkeletonRoot;
+	NIFuint NumBones;
+	NIFuint *Bones;// [NumBones]
 } NiSkinInstance;
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned int Num_Bones;
-	// [Num_Bones], [(null)]
-	unsigned int *Vertex_Counts;
-	// [Num_Bones], [(null)]
-	unsigned int *Bones;
-	// [Num_Bones], [Vertex_Counts]
-	OldSkinData **Bone_Data;
+	NIFuint NumBones;
+	NIFuint *VertexCounts;// [NumBones]
+	NIFuint *Bones;// [NumBones]
+	OldSkinData **BoneData;// [NumBones], [VertexCounts]
 } NiTriShapeSkinController;
 
 typedef struct {
@@ -3711,9 +3619,8 @@ typedef struct {
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Num_Skin_Partition_Blocks;
-	// [Num_Skin_Partition_Blocks], [(null)]
-	SkinPartition *Skin_Partition_Blocks;
+	NIFuint NumSkinPartitionBlocks;
+	SkinPartition *SkinPartitionBlocks;// [NumSkinPartitionBlocks]
 } NiSkinPartition;
 
 typedef struct {
@@ -3722,63 +3629,63 @@ typedef struct {
 
 typedef struct {
 	NiTexture *parent;
-	byte Use_External;
-	FilePath File_Name;
-	unsigned int Unknown_Link;
-	byte Unknown_Byte;
-	// DUPLICATE FIELD NAME File_Name
-	unsigned int Pixel_Data;
-	unsigned int Pixel_Layout;
-	unsigned int Use_Mipmaps;
-	unsigned int Alpha_Format;
-	byte Is_Static;
-	byte Direct_Render;
-	byte Persist_Render_Data;
+	NIFbyte UseExternal;
+	FilePath FileName;
+	NIFuint UnknownLink;
+	NIFbyte UnknownByte;
+	// DUPLICATE FIELD NAME FileName
+	NIFuint PixelData;
+	NIFuint PixelLayout;
+	NIFuint UseMipmaps;
+	NIFuint AlphaFormat;
+	NIFbyte IsStatic;
+	NIFbyte DirectRender;
+	NIFbyte PersistRenderData;
 } NiSourceTexture;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
+	NIFushort Flags;
 } NiSpecularProperty;
 
 typedef struct {
 	NiParticleModifier *parent;
-	float Unknown_Float_1;
-	unsigned short Unknown_Short_1;
-	float Unknown_Float_2;
-	unsigned short Unknown_Short_2;
-	float Unknown_Float_3;
-	float Unknown_Float_4;
-	float Unknown_Float_5;
+	NIFfloat UnknownFloat1;
+	NIFushort UnknownShort1;
+	NIFfloat UnknownFloat2;
+	NIFushort UnknownShort2;
+	NIFfloat UnknownFloat3;
+	NIFfloat UnknownFloat4;
+	NIFfloat UnknownFloat5;
 } NiSphericalCollider;
 
 typedef struct {
 	NiPointLight *parent;
-	float Cutoff_Angle;
-	float Unknown_Float;
-	float Exponent;
+	NIFfloat CutoffAngle;
+	NIFfloat UnknownFloat;
+	NIFfloat Exponent;
 } NiSpotLight;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
-	byte Stencil_Enabled;
-	unsigned int Stencil_Function;
-	unsigned int Stencil_Ref;
-	unsigned int Stencil_Mask;
-	unsigned int Fail_Action;
-	unsigned int Z_Fail_Action;
-	unsigned int Pass_Action;
-	unsigned int Draw_Mode;
+	NIFushort Flags;
+	NIFbyte StencilEnabled;
+	NIFuint StencilFunction;
+	NIFuint StencilRef;
+	NIFuint StencilMask;
+	NIFuint FailAction;
+	NIFuint ZFailAction;
+	NIFuint PassAction;
+	NIFuint DrawMode;
 	// DUPLICATE FIELD NAME Flags - fixed
-	// DUPLICATE FIELD NAME Stencil_Ref - fixed
-	// DUPLICATE FIELD NAME Stencil_Mask - fixed
+	// DUPLICATE FIELD NAME StencilRef - fixed
+	// DUPLICATE FIELD NAME StencilMask - fixed
 } NiStencilProperty;
 
 typedef struct {
 	NiExtraData *parent;
-	unsigned int Bytes_Remaining;
-	string String_Data;
+	NIFuint BytesRemaining;
+	string StringData;
 } NiStringExtraData;
 
 typedef struct {
@@ -3788,110 +3695,106 @@ typedef struct {
 
 typedef struct {
 	NiExtraData *parent;
-	unsigned int Num_Strings;
-	// [Num_Strings], [(null)]
-	string *Data;
+	NIFuint NumStrings;
+	string *Data;// [NumStrings]
 } NiStringsExtraData;
 
 typedef struct {
 	NiExtraData *parent;
-	unsigned int Unknown_Int_1;
-	unsigned int Num_Text_Keys;
-	// [Num_Text_Keys], [(null)]
-	Key *Text_Keys;
+	NIFuint UnknownInt1;
+	NIFuint NumTextKeys;
+	NiStringKey *TextKeys;// [NumTextKeys]
 } NiTextKeyExtraData;
 
 typedef struct {
 	NiDynamicEffect *parent;
-	Matrix33 Model_Projection_Matrix;
-	Vector3 Model_Projection_Transform;
-	unsigned int Texture_Filtering;
-	unsigned int Texture_Clamping;
-	short Unknown;
-	unsigned int Texture_Type;
-	unsigned int Coordinate_Generation_Type;
-	unsigned int Image;
-	unsigned int Source_Texture;
-	byte Clipping_Plane;
-	Vector3 Unknown_Vector;
-	float Unknown_Float;
-	short PS2_L;
-	short PS2_K;
-	unsigned short Unknown_Short;
+	Matrix33 ModelProjectionMatrix;
+	Vector3 ModelProjectionTransform;
+	NIFuint TextureFiltering;
+	NIFuint TextureClamping;
+	NIFshort Unknown;
+	NIFuint TextureType;
+	NIFuint CoordinateGenerationType;
+	NIFuint Image;
+	NIFuint SourceTexture;
+	NIFbyte ClippingPlane;
+	Vector3 UnknownVector;
+	NIFfloat UnknownFloat;
+	NIFshort PS2L;
+	NIFshort PS2K;
+	NIFushort UnknownShort;
 } NiTextureEffect;
 
 typedef struct {
 	NiProperty *parent;
-	short Unknown_Short;
-	short PS2_L;
-	short PS2_K;
+	NIFshort UnknownShort;
+	NIFshort PS2L;
+	NIFshort PS2K;
 } NiTextureModeProperty;
 
 typedef struct {
 	NiObject *parent;
-	byte Use_External;
-	FilePath File_Name;
-	unsigned int Image_Data;
-	unsigned int Unknown_Int;
-	float Unknown_Float;
+	NIFbyte UseExternal;
+	FilePath FileName;
+	NIFuint ImageData;
+	NIFuint UnknownInt;
+	NIFfloat UnknownFloat;
 } NiImage;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
-	unsigned int Image;
-	unsigned int Unknown_Int_1;
-	unsigned int Unknown_Int_2;
+	NIFushort Flags;
+	NIFuint Image;
+	NIFuint UnknownInt1;
+	NIFuint UnknownInt2;
 } NiTextureProperty;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
-	unsigned int Unknown_Int;
-	// [5], [(null)]
-	MultiTextureElement Texture_Elements[5];
+	NIFushort Flags;
+	NIFuint UnknownInt;
+	MultiTextureElement TextureElements[5];
 } NiMultiTextureProperty;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
+	NIFushort Flags;
 	// DUPLICATE FIELD NAME Flags - fixed
-	unsigned int Apply_Mode;
-	unsigned int Texture_Count;
-	byte Has_Base_Texture;
-	TexDesc Base_Texture;
-	byte Has_Dark_Texture;
-	TexDesc Dark_Texture;
-	byte Has_Detail_Texture;
-	TexDesc Detail_Texture;
-	byte Has_Gloss_Texture;
-	TexDesc Gloss_Texture;
-	byte Has_Glow_Texture;
-	TexDesc Glow_Texture;
-	byte Has_Bump_Map_Texture;
-	TexDesc Bump_Map_Texture;
-	float Bump_Map_Luma_Scale;
-	float Bump_Map_Luma_Offset;
-	Matrix22 Bump_Map_Matrix;
-	byte Has_Normal_Texture;
-	TexDesc Normal_Texture;
-	byte Has_Unknown2_Texture;
-	TexDesc Unknown2_Texture;
-	float Unknown2_Float;
-	byte Has_Decal_0_Texture;
-	TexDesc Decal_0_Texture;
-	byte Has_Decal_1_Texture;
-	// DUPLICATE FIELD NAME Has_Decal_1_Texture - fixed
-	TexDesc Decal_1_Texture;
-	byte Has_Decal_2_Texture;
-	// DUPLICATE FIELD NAME Has_Decal_2_Texture - fixed
-	TexDesc Decal_2_Texture;
-	byte Has_Decal_3_Texture;
-	// DUPLICATE FIELD NAME Has_Decal_3_Texture - fixed
-	TexDesc Decal_3_Texture;
-	unsigned int Num_Shader_Textures;
-	// [Num_Shader_Textures], [(null)]
-	ShaderTexDesc *Shader_Textures;
+	NIFuint ApplyMode;
+	NIFuint TextureCount;
+	NIFbyte HasBaseTexture;
+	TexDesc BaseTexture;
+	NIFbyte HasDarkTexture;
+	TexDesc DarkTexture;
+	NIFbyte HasDetailTexture;
+	TexDesc DetailTexture;
+	NIFbyte HasGlossTexture;
+	TexDesc GlossTexture;
+	NIFbyte HasGlowTexture;
+	TexDesc GlowTexture;
+	NIFbyte HasBumpMapTexture;
+	TexDesc BumpMapTexture;
+	NIFfloat BumpMapLumaScale;
+	NIFfloat BumpMapLumaOffset;
+	Matrix22 BumpMapMatrix;
+	NIFbyte HasNormalTexture;
+	TexDesc NormalTexture;
+	NIFbyte HasUnknown2Texture;
+	TexDesc Unknown2Texture;
+	NIFfloat Unknown2Float;
+	NIFbyte HasDecal0Texture;
+	TexDesc Decal0Texture;
+	NIFbyte HasDecal1Texture;
+	// DUPLICATE FIELD NAME HasDecal1Texture - fixed
+	TexDesc Decal1Texture;
+	NIFbyte HasDecal2Texture;
+	// DUPLICATE FIELD NAME HasDecal2Texture - fixed
+	TexDesc Decal2Texture;
+	NIFbyte HasDecal3Texture;
+	// DUPLICATE FIELD NAME HasDecal3Texture - fixed
+	TexDesc Decal3Texture;
+	NIFuint NumShaderTextures;
+	ShaderTexDesc *ShaderTextures;// [NumShaderTextures]
 } NiTexturingProperty;
 
 typedef struct {
@@ -3904,14 +3807,12 @@ typedef struct {
 
 typedef struct {
 	NiTriBasedGeomData *parent;
-	unsigned int Num_Triangle_Points;
-	byte Has_Triangles;
-	// [Num_Triangles], [(null)]
-	 Triangle /*parent-> or expr. */  * Triangles;
+	NIFuint NumTrianglePoints;
+	NIFbyte HasTriangles;
+	Triangle *Triangles;// [parent->NumTriangles]
 	// DUPLICATE FIELD NAME Triangles - fixed
-	unsigned short Num_Match_Groups;
-	// [Num_Match_Groups], [(null)]
-	MatchGroup *Match_Groups;
+	NIFushort NumMatchGroups;
+	MatchGroup *MatchGroups;// [NumMatchGroups]
 } NiTriShapeData;
 
 typedef struct {
@@ -3920,24 +3821,21 @@ typedef struct {
 
 typedef struct {
 	NiTriBasedGeomData *parent;
-	unsigned short Num_Strips;
-	// [Num_Strips], [(null)]
-	unsigned short *Strip_Lengths;
-	byte Has_Points;
-	// [Num_Strips], [Strip_Lengths]
-	unsigned short **Points;
+	NIFushort NumStrips;
+	NIFushort *StripLengths;// [NumStrips]
+	NIFbyte HasPoints;
+	NIFushort **Points;// [NumStrips], [StripLengths]
 	// DUPLICATE FIELD NAME Points - fixed
 } NiTriStripsData;
 
 typedef struct {
 	NiObjectNET *parent;
-	unsigned short Unknown_1;
-	Matrix44 Unknown_Matrix;
-	unsigned int Num_Children;
-	// [Num_Children], [(null)]
-	unsigned int *Children;
-	unsigned int Child_2;
-	unsigned int Child_3;
+	NIFushort Unknown1;
+	Matrix44 UnknownMatrix;
+	NIFuint NumChildren;
+	NIFuint *Children;// [NumChildren]
+	NIFuint Child2;
+	NIFuint Child3;
 } NiEnvMappedTriShape;
 
 typedef struct {
@@ -3946,37 +3844,30 @@ typedef struct {
 
 typedef struct {
 	NiObject *parent;
-	// [6], [(null)]
-	unsigned int Unknown_1[6];
-	unsigned short Unknown_2;
+	NIFuint Unknown1[6];
+	NIFushort Unknown2;
 	Matrix33 Matrix;
-	Vector3 Vector_1;
-	Vector3 Vector_2;
-	// [4], [(null)]
-	short Unknown_3[4];
-	byte Unknown_4;
-	unsigned int Unknown_5;
-	// [24], [(null)]
-	short Unknown_6[24];
+	Vector3 Vector1;
+	Vector3 Vector2;
+	NIFshort Unknown3[4];
+	NIFbyte Unknown4;
+	NIFuint Unknown5;
+	NIFshort Unknown6[24];
 } NiBezierTriangle4;
 
 typedef struct {
 	NiAVObject *parent;
-	unsigned int Num_Bezier_Triangles;
-	// [Num_Bezier_Triangles], [(null)]
-	unsigned int *Bezier_Triangle;
-	unsigned int Unknown_1;
-	unsigned short Count_1;
-	unsigned short Unknown_2;
-	// [Count_1], [(null)]
-	Vector3 *Points_1;
-	unsigned int Unknown_3;
-	// [Count_1], [2]
-	float *Points_2;
-	unsigned int Unknown_4;
-	unsigned short Count_2;
-	// [Count_2], [4]
-	unsigned short *Data_2;
+	NIFuint NumBezierTriangles;
+	NIFuint *BezierTriangle;// [NumBezierTriangles]
+	NIFuint Unknown1;
+	NIFushort Count1;
+	NIFushort Unknown2;
+	Vector3 *Points1;// [Count1]
+	NIFuint Unknown3;
+	NIFfloat *Points2;// [Count1], [2]
+	NIFuint Unknown4;
+	NIFushort Count2;
+	NIFushort *Data2;// [Count2], [4]
 } NiBezierMesh;
 
 typedef struct {
@@ -3985,69 +3876,63 @@ typedef struct {
 
 typedef struct {
 	NiTriBasedGeomData *parent;
-	unsigned short Unknown_Shorts;
-	unsigned short Unknown_Count_1;
-	unsigned short Unknown_Count_2;
-	unsigned short Unknown_Count_3;
-	float Unknown_Float;
-	unsigned short Unknown_Short;
-	// [Unknown_Count_1], [6]
-	unsigned short *Unknown_Clod_Shorts_1;
-	// [Unknown_Count_2], [(null)]
-	unsigned short *Unknown_Clod_Shorts_2;
-	// [Unknown_Count_3], [6]
-	unsigned short *Unknown_Clod_Shorts_3;
+	NIFushort UnknownShorts;
+	NIFushort UnknownCount1;
+	NIFushort UnknownCount2;
+	NIFushort UnknownCount3;
+	NIFfloat UnknownFloat;
+	NIFushort UnknownShort;
+	NIFushort *UnknownClodShorts1;// [UnknownCount1], [6]
+	NIFushort *UnknownClodShorts2;// [UnknownCount2]
+	NIFushort *UnknownClodShorts3;// [UnknownCount3], [6]
 } NiClodData;
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned short Unknown_Short;
-	unsigned int Data;
+	NIFushort UnknownShort;
+	NIFuint Data;
 } NiUVController;
 
 typedef struct {
 	NiObject *parent;
-	// [4], [(null)]
-	KeyGroup UV_Groups[4];
+	NiFloatKeyGroup UVGroups[4];
 } NiUVData;
 
 typedef struct {
 	NiExtraData *parent;
-	Vector3 Vector_Data;
-	float Unknown_Float;
+	Vector3 VectorData;
+	NIFfloat UnknownFloat;
 } NiVectorExtraData;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
-	unsigned int Vertex_Mode;
-	unsigned int Lighting_Mode;
+	NIFushort Flags;
+	NIFuint VertexMode;
+	NIFuint LightingMode;
 } NiVertexColorProperty;
 
 typedef struct {
 	NiExtraData *parent;
-	unsigned int Num_Bytes;
-	unsigned short Num_Vertices;
-	// [Num_Vertices], [(null)]
-	float *Weight;
+	NIFuint NumBytes;
+	NIFushort NumVertices;
+	NIFfloat *Weight;// [NumVertices]
 } NiVertWeightsExtraData;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Num_Keys;
-	// [Num_Keys], [(null)]
-	Key *Keys;
+	NIFuint NumKeys;
+	NiByteKey *Keys;// [NumKeys]
 } NiVisData;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
+	NIFushort Flags;
 } NiWireframeProperty;
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
-	unsigned int Function;
+	NIFushort Flags;
+	NIFuint Function;
 } NiZBufferProperty;
 
 typedef struct {
@@ -4056,19 +3941,17 @@ typedef struct {
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Width;
-	unsigned int Height;
-	unsigned int Image_Type;
-	// [Width], [Height]
-	ByteColor3 *RGB_Image_Data;
-	// [Width], [Height]
-	ByteColor4 *RGBA_Image_Data;
+	NIFuint Width;
+	NIFuint Height;
+	NIFuint ImageType;
+	ByteColor3 *RGBImageData;// [Width], [Height]
+	ByteColor4 *RGBAImageData;// [Width], [Height]
 } NiRawImageData;
 
 typedef struct {
 	NiNode *parent;
-	unsigned int Sorting_Mode;
-	int Unknown_Int_2;
+	NIFuint SortingMode;
+	NIFint UnknownInt2;
 } NiSortAdjustNode;
 
 typedef struct {
@@ -4077,185 +3960,161 @@ typedef struct {
 
 typedef struct {
 	NiObjectNET *parent;
-	float Unknown_Float_1;
-	unsigned int Unknown_Int_1;
-	// [Unknown_Int_1], [(null)]
-	unsigned int *Unknown_Refs_1;
-	int Num_Dests;
-	// [Num_Dests], [(null)]
-	unsigned int *Transform_Dests;
-	byte Unknown_Byte;
-	int Unknown_Int;
-	unsigned int Prop_Description;
+	NIFfloat UnknownFloat1;
+	NIFuint UnknownInt1;
+	NIFuint *UnknownRefs1;// [UnknownInt1]
+	NIFint NumDests;
+	NIFuint *TransformDests;// [NumDests]
+	NIFbyte UnknownByte;
+	NIFint UnknownInt;
+	NIFuint PropDescription;
 } NiPhysXProp;
 
 typedef struct {
-	byte Number;
-	byte Unknown_Byte_1;
-	unsigned int Material_Desc;
+	NIFbyte Number;
+	NIFbyte UnknownByte1;
+	NIFuint MaterialDesc;
 } physXMaterialRef;
 
 typedef struct {
 	NiObject *parent;
-	int Num_Dests;
-	// [Num_Dests], [(null)]
-	unsigned int *Actor_Descs;
-	unsigned int Num_Joints;
-	// [Num_Joints], [(null)]
-	unsigned int *Joint_Descs;
-	int Unknown_Int_1;
-	unsigned int Num_Materials;
-	// [Num_Materials], [(null)]
-	physXMaterialRef *Material_Descs;
-	unsigned int Unknown_Int_2;
-	unsigned int Unknown_Int_3;
-	string Unknown_String_4;
-	unsigned int Unknown_Int_5;
-	byte Unknown_Byte_6;
+	NIFint NumDests;
+	NIFuint *ActorDescs;// [NumDests]
+	NIFuint NumJoints;
+	NIFuint *JointDescs;// [NumJoints]
+	NIFint UnknownInt1;
+	NIFuint NumMaterials;
+	physXMaterialRef *MaterialDescs;// [NumMaterials]
+	NIFuint UnknownInt2;
+	NIFuint UnknownInt3;
+	string UnknownString4;
+	NIFuint UnknownInt5;
+	NIFbyte UnknownByte6;
 } NiPhysXPropDesc;
 
 typedef struct {
 	NiObject *parent;
-	int Unknown_Int_1;
-	int Unknown_Int_2;
-	Quaternion Unknown_Quat_1;
-	Quaternion Unknown_Quat_2;
-	Quaternion Unknown_Quat_3;
-	unsigned int Unknown_Ref_0;
-	float Unknown_Int_4;
-	int Unknown_Int_5;
-	byte Unknown_Byte_1;
-	byte Unknown_Byte_2;
-	int Unknown_Int_6;
-	unsigned int Shape_Description;
-	unsigned int Unknown_Ref_1;
-	unsigned int Unknown_Ref_2;
-	// [Unknown_Int_6], [(null)]
-	unsigned int *Unknown_Refs_3;
+	NIFint UnknownInt1;
+	NIFint UnknownInt2;
+	Quaternion UnknownQuat1;
+	Quaternion UnknownQuat2;
+	Quaternion UnknownQuat3;
+	NIFuint UnknownRef0;
+	NIFfloat UnknownInt4;
+	NIFint UnknownInt5;
+	NIFbyte UnknownByte1;
+	NIFbyte UnknownByte2;
+	NIFint UnknownInt6;
+	NIFuint ShapeDescription;
+	NIFuint UnknownRef1;
+	NIFuint UnknownRef2;
+	NIFuint *UnknownRefs3;// [UnknownInt6]
 } NiPhysXActorDesc;
 
 typedef struct {
 	NiObject *parent;
-	// [136], [(null)]
-	byte Unknown_Bytes[136];
+	NIFbyte UnknownBytes[136];
 } NiPhysXBodyDesc;
 
 typedef struct {
 	NiObject *parent;
-	// [388], [(null)]
-	byte Unknown_Bytes[388];
+	NIFbyte UnknownBytes[388];
 } NiPhysXD6JointDesc;
 
 typedef struct {
 	NiObject *parent;
-	int Unknown_Int_1;
-	Quaternion Unknown_Quat_1;
-	Quaternion Unknown_Quat_2;
-	Quaternion Unknown_Quat_3;
-	short Unknown_Short_1;
-	int Unknown_Int_2;
-	short Unknown_Short_2;
-	float Unknown_Float_1;
-	float Unknown_Float_2;
-	float Unknown_Float_3;
-	int Unknown_Int_3;
-	int Unknown_Int_4;
-	int Unknown_Int_5;
-	int Unknown_Int_7;
-	int Unknown_Int_8;
-	unsigned int Mesh_Description;
+	NIFint UnknownInt1;
+	Quaternion UnknownQuat1;
+	Quaternion UnknownQuat2;
+	Quaternion UnknownQuat3;
+	NIFshort UnknownShort1;
+	NIFint UnknownInt2;
+	NIFshort UnknownShort2;
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
+	NIFfloat UnknownFloat3;
+	NIFint UnknownInt3;
+	NIFint UnknownInt4;
+	NIFint UnknownInt5;
+	NIFint UnknownInt7;
+	NIFint UnknownInt8;
+	NIFuint MeshDescription;
 } NiPhysXShapeDesc;
 
 typedef struct {
 	NiObject *parent;
-	short Unknown_Short_1;
-	float Unknown_Float_1;
-	short Unknown_Short_2;
-	// [3], [(null)]
-	byte Unknown_Bytes_1[3];
-	byte Unknown_Byte_1;
-	// a very odd thing same names and only size differs
-	// DUPLICATE FIELD NAME Unknown_Bytes_1 - fixed
-	byte Unknown_Bytes_1A[4];
-	// [8], [(null)]
-	byte Unknown_Bytes_2[8];
-	float Unknown_Float_2;
-	int Unknown_Int_1;
-	int Unknown_Int_2;
-	int Num_Vertices;
-	int Unknown_Int_4;
-	// [Num_Vertices], [(null)]
-	Vector3 *Vertices;
-	// [982], [(null)]
-	byte Unknown_Bytes_3[982];
-	// [368], [(null)]
-	short Unknown_Shorts_1[368];
-	// [3328], [(null)]
-	unsigned int Unknown_Ints_1[3328];
-	byte Unknown_Byte_2;
+	NIFshort UnknownShort1;
+	NIFfloat UnknownFloat1;
+	NIFshort UnknownShort2;
+	NIFbyte UnknownBytes1[3];
+	NIFbyte UnknownByte1;
+	// DUPLICATE FIELD NAME UnknownBytes1 - fixed
+	NIFbyte UnknownBytes1A[4];
+	NIFbyte UnknownBytes2[8];
+	NIFfloat UnknownFloat2;
+	NIFint UnknownInt1;
+	NIFint UnknownInt2;
+	NIFint NumVertices;
+	NIFint UnknownInt4;
+	Vector3 *Vertices;// [NumVertices]
+	NIFbyte UnknownBytes3[982];
+	NIFshort UnknownShorts1[368];
+	NIFuint UnknownInts1[3328];
+	NIFbyte UnknownByte2;
 } NiPhysXMeshDesc;
 
 typedef struct {
 	NiObject *parent;
-	// [12], [(null)]
-	unsigned int Unknown_Int[12];
-	byte Unknown_Byte_1;
-	byte Unknown_Byte_2;
+	NIFuint UnknownInt[12];
+	NIFbyte UnknownByte1;
+	NIFbyte UnknownByte2;
 } NiPhysXMaterialDesc;
 
 typedef struct {
 	NiObject *parent;
-	// [6], [(null)]
-	byte Unknown_Bytes[6];
+	NIFbyte UnknownBytes[6];
 } NiPhysXKinematicSrc;
 
 typedef struct {
 	NiObject *parent;
-	byte Unknown_Byte_1;
-	byte Unknown_Byte_2;
-	unsigned int Node;
+	NIFbyte UnknownByte1;
+	NIFbyte UnknownByte2;
+	NIFuint Node;
 } NiPhysXTransformDest;
 
 typedef struct {
 	NiExtraData *parent;
-	// [4], [(null)]
-	int Unknown_Ints[4];
-	// [37], [(null)]
-	byte Unknown_Bytes[37];
+	NIFint UnknownInts[4];
+	NIFbyte UnknownBytes[37];
 } NiArkAnimationExtraData;
 
 typedef struct {
 	NiExtraData *parent;
-	int Unknown_Int_1;
-	int Unknown_Int_2;
-	string Importer_Name;
-	// [13], [(null)]
-	byte Unknown_Bytes[13];
-	// [7], [(null)]
-	float Unknown_Floats[7];
+	NIFint UnknownInt1;
+	NIFint UnknownInt2;
+	string ImporterName;
+	NIFbyte UnknownBytes[13];
+	NIFfloat UnknownFloats[7];
 } NiArkImporterExtraData;
 
 typedef struct {
 	NiExtraData *parent;
-	// [2], [(null)]
-	int Unknown_Ints_1[2];
-	byte Unknown_Byte;
-	int Unknown_Int_2;
-	int Num_Textures;
-	// [Num_Textures], [(null)]
-	ArkTexture *Textures;
+	NIFint UnknownInts1[2];
+	NIFbyte UnknownByte;
+	NIFint UnknownInt2;
+	NIFint NumTextures;
+	ArkTexture *Textures;// [NumTextures]
 } NiArkTextureExtraData;
 
 typedef struct {
 	NiExtraData *parent;
-	// [13], [(null)]
-	byte Unknown_Bytes[13];
+	NIFbyte UnknownBytes[13];
 } NiArkViewportInfoExtraData;
 
 typedef struct {
 	NiExtraData *parent;
-	int Unknown_Int;
-	string Unknown_String;
+	NIFint UnknownInt;
+	string UnknownString;
 } NiArkShaderExtraData;
 
 typedef struct {
@@ -4264,30 +4123,27 @@ typedef struct {
 
 typedef struct {
 	NiGeometryData *parent;
-	// [Num_Vertices], [(null)]
-	 byte /*parent-> or expr. */  * Lines;
+	NIFbyte *Lines;// [parent->NumVertices]
 } NiLinesData;
 
 typedef struct {
-	NIFushort Num_Vertices;
-	NIFushort Vertex_Offset;
-	NIFushort Num_Triangles;
-	NIFushort Triangle_Offset;
+	NIFushort NumVertices;
+	NIFushort VertexOffset;
+	NIFushort NumTriangles;
+	NIFushort TriangleOffset;
 } Polygon;
 
 typedef struct {
 	NiTriShapeData *parent;
-	unsigned short Max_Polygons;
-	// [Max_Polygons], [(null)]
-	Polygon *Polygons;
-	// [Max_Polygons], [(null)]
-	unsigned short *Polygon_Indices;
-	unsigned short Unknown_UShort_1;
-	unsigned short Num_Polygons;
-	unsigned short Used_Vertices;
-	unsigned short Unknown_UShort_2;
-	unsigned short Used_Triangle_Points;
-	unsigned short Unknown_UShort_3;
+	NIFushort MaxPolygons;
+	Polygon *Polygons;// [MaxPolygons]
+	NIFushort *PolygonIndices;// [MaxPolygons]
+	NIFushort UnknownUShort1;
+	NIFushort NumPolygons;
+	NIFushort UsedVertices;
+	NIFushort UnknownUShort2;
+	NIFushort UsedTrianglePoints;
+	NIFushort UnknownUShort3;
 } NiScreenElementsData;
 
 typedef struct {
@@ -4296,36 +4152,30 @@ typedef struct {
 
 typedef struct {
 	NiNode *parent;
-	unsigned int Shell_Link;
-	int Num_Rooms;
-	// [Num_Rooms], [(null)]
-	unsigned int *Rooms;
+	NIFuint ShellLink;
+	NIFint NumRooms;
+	NIFuint *Rooms;// [NumRooms]
 } NiRoomGroup;
 
 typedef struct {
 	NiNode *parent;
-	int Num_Walls;
-	// [Num_Walls], [(null)]
-	Vector4 *Wall_Plane;
-	int Num_In_Portals;
-	// [Num_In_Portals], [(null)]
-	unsigned int *In_Portals;
-	int Num_Portals_2;
-	// [Num_Portals_2], [(null)]
-	unsigned int *Portals_2;
-	int Num_Items;
-	// [Num_Items], [(null)]
-	unsigned int *Items;
+	NIFint NumWalls;
+	Vector4 *WallPlane;// [NumWalls]
+	NIFint NumInPortals;
+	NIFuint *InPortals;// [NumInPortals]
+	NIFint NumPortals2;
+	NIFuint *Portals2;// [NumPortals2]
+	NIFint NumItems;
+	NIFuint *Items;// [NumItems]
 } NiRoom;
 
 typedef struct {
 	NiAVObject *parent;
-	unsigned short Unknown_Flags;
-	short Unknown_Short_1;
-	unsigned short Num_Vertices;
-	// [Num_Vertices], [(null)]
-	Vector3 *Vertices;
-	unsigned int Target;
+	NIFushort UnknownFlags;
+	NIFshort UnknownShort1;
+	NIFushort NumVertices;
+	Vector3 *Vertices;// [NumVertices]
+	NIFuint Target;
 } NiPortal;
 
 typedef struct {
@@ -4334,41 +4184,40 @@ typedef struct {
 
 typedef struct {
 	NiProperty *parent;
-	unsigned short Flags;
-	unsigned int Shader_Type;
-	unsigned int Shader_Flags;
-	int Unknown_Int_2;
-	float Envmap_Scale;
+	NIFushort Flags;
+	NIFuint ShaderType;
+	NIFuint ShaderFlags;
+	NIFint UnknownInt2;
+	NIFfloat EnvmapScale;
 } BSShaderProperty;
 
 typedef struct {
 	BSShaderProperty *parent;
-	int Unknown_Int_3;
+	NIFint UnknownInt3;
 } BSShaderLightingProperty;
 
 typedef struct {
 	BSShaderLightingProperty *parent;
-	SizedString File_Name;
-	float Unknown_Float_2;
-	float Unknown_Float_3;
-	float Unknown_Float_4;
-	float Unknown_Float_5;
+	SizedString FileName;
+	NIFfloat UnknownFloat2;
+	NIFfloat UnknownFloat3;
+	NIFfloat UnknownFloat4;
+	NIFfloat UnknownFloat5;
 } BSShaderNoLightingProperty;
 
 typedef struct {
 	BSShaderLightingProperty *parent;
-	unsigned int Texture_Set;
-	float Unknown_Float_2;
-	int Refraction_Period;
-	float Unknown_Float_4;
-	float Unknown_Float_5;
+	NIFuint TextureSet;
+	NIFfloat UnknownFloat2;
+	NIFint RefractionPeriod;
+	NIFfloat UnknownFloat4;
+	NIFfloat UnknownFloat5;
 } BSShaderPPLightingProperty;
 
 typedef struct {
 	NiObject *parent;
-	int Num_Textures;
-	// [Num_Textures], [(null)]
-	SizedString *Textures;
+	NIFint NumTextures;
+	SizedString *Textures;// [NumTextures]
 } BSShaderTextureSet;
 
 typedef struct {
@@ -4377,14 +4226,14 @@ typedef struct {
 
 typedef struct {
 	BSShaderProperty *parent;
-	int Unknown_Int_4;
-	SizedString File_Name;
-	int Unknown_Int_5;
+	NIFint UnknownInt4;
+	SizedString FileName;
+	NIFint UnknownInt5;
 } SkyShaderProperty;
 
 typedef struct {
 	BSShaderLightingProperty *parent;
-	SizedString File_Name;
+	SizedString FileName;
 } TileShaderProperty;
 
 typedef struct {
@@ -4397,7 +4246,7 @@ typedef struct {
 
 typedef struct {
 	BSShaderProperty *parent;
-	SizedString File_Name;
+	SizedString FileName;
 } TallGrassShaderProperty;
 
 typedef struct {
@@ -4414,35 +4263,32 @@ typedef struct {
 
 typedef struct {
 	NiSkinInstance *parent;
-	int Num_Partitions;
-	// [Num_Partitions], [(null)]
-	BodyPartList *Partitions;
+	NIFint NumPartitions;
+	BodyPartList *Partitions;// [NumPartitions]
 } BSDismemberSkinInstance;
 
 typedef struct {
 	NiExtraData *parent;
-	float Unknown_Float_1;
-	short Num_Vector_Blocks;
-	// [Num_Vector_Blocks], [(null)]
-	DecalVectorArray *Vector_Blocks;
+	NIFfloat UnknownFloat1;
+	NIFshort NumVectorBlocks;
+	DecalVectorArray *VectorBlocks;// [NumVectorBlocks]
 } BSDecalPlacementVectorExtraData;
 
 typedef struct {
 	NiPSysModifier *parent;
-	float Fade_In_Percent;
-	float Fade_out_Percent;
-	float Color_1_End_Percent;
-	float Color_1_Start_Percent;
-	float Color_2_End_Percent;
-	float Color_2_Start_Percent;
-	// [3], [(null)]
+	NIFfloat FadeInPercent;
+	NIFfloat FadeoutPercent;
+	NIFfloat Color1EndPercent;
+	NIFfloat Color1StartPercent;
+	NIFfloat Color2EndPercent;
+	NIFfloat Color2StartPercent;
 	Color4 Colors[3];
 } BSPSysSimpleColorModifier;
 
 typedef struct {
 	NiNode *parent;
-	int Value;
-	byte Unknown_byte;
+	NIFint Value;
+	NIFbyte Unknownbyte;
 } BSValueNode;
 
 typedef struct {
@@ -4451,15 +4297,15 @@ typedef struct {
 
 typedef struct {
 	NiPSysData *parent;
-	short Unknown_Short_1;
-	byte Unknown_byte_1;
-	int Unknown_Int_2;
-	int Unknown_Int_3;
+	NIFshort UnknownShort1;
+	NIFbyte Unknownbyte1;
+	NIFint UnknownInt2;
+	NIFint UnknownInt3;
 } BSStripPSysData;
 
 typedef struct {
 	NiPSysModifier *parent;
-	float Update_Delta_Time;
+	NIFfloat UpdateDeltaTime;
 } BSPSysStripUpdateModifier;
 
 typedef struct {
@@ -4468,18 +4314,17 @@ typedef struct {
 
 typedef struct {
 	NiNode *parent;
-	unsigned short Max_Emitter_Objects;
-	int Num_Particle_Systems;
-	// [Num_Particle_Systems], [(null)]
-	unsigned int *Particle_Systems;
+	NIFushort MaxEmitterObjects;
+	NIFint NumParticleSystems;
+	NIFuint *ParticleSystems;// [NumParticleSystems]
 } BSMasterParticleSystem;
 
 typedef struct {
 	NiPSysModifierCtlr *parent;
-	unsigned int Data;
-	unsigned int Visibility_Interpolator;
-	short Unknown_Short_1;
-	int Unknown_Int_1;
+	NIFuint Data;
+	NIFuint VisibilityInterpolator;
+	NIFshort UnknownShort1;
+	NIFint UnknownInt1;
 } BSPSysMultiTargetEmitterCtlr;
 
 typedef struct {
@@ -4488,88 +4333,84 @@ typedef struct {
 
 typedef struct {
 	NiNode *parent;
-	Vector4 Alpha_Sort_Bound;
-	byte Is_Static_Bound;
+	Vector4 AlphaSortBound;
+	NIFbyte IsStaticBound;
 } BSOrderedNode;
 
 typedef struct {
 	NiNode *parent;
-	byte Unknown_Byte_1;
-	short Unknown_Short_2;
+	NIFbyte UnknownByte1;
+	NIFshort UnknownShort2;
 } BSBlastNode;
 
 typedef struct {
 	NiNode *parent;
-	byte Unknown_Byte_1;
-	short Unknown_Short_2;
+	NIFbyte UnknownByte1;
+	NIFshort UnknownShort2;
 } BSDamageStage;
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned int Interpolator;
+	NIFuint Interpolator;
 } BSRefractionFirePeriodController;
 
 typedef struct {
 	bhkShape *parent;
-	unsigned int Num_Sub_Shapes;
-	// [Num_Sub_Shapes], [(null)]
-	unsigned int *Sub_Shapes;
-	unsigned int Material;
-	// [6], [(null)]
-	float Unknown_Floats[6];
-	byte Unknown_Byte_1;
-	float Unknown_Float_1;
+	NIFuint NumSubShapes;
+	NIFuint *SubShapes;// [NumSubShapes]
+	NIFuint Material;
+	NIFfloat UnknownFloats[6];
+	NIFbyte UnknownByte1;
+	NIFfloat UnknownFloat1;
 } bhkConvexListShape;
 
 typedef struct {
-	int Unknown_Int_1;
-	int Unknown_Int_2;
-	int Unknown_Int_3;
-	int Unknown_Int_4;
-	int Unknown_Int_5;
-	int Unknown_Int_6;
-	int Unknown_Int_7;
-	int Unknown_Int_8;
+	NIFint UnknownInt1;
+	NIFint UnknownInt2;
+	NIFint UnknownInt3;
+	NIFint UnknownInt4;
+	NIFint UnknownInt5;
+	NIFint UnknownInt6;
+	NIFint UnknownInt7;
+	NIFint UnknownInt8;
 } BSTreadTransfSubInfo;
 
 typedef struct {
-	float Unknown_Float_1;
-	// [2], [(null)]
+	NIFfloat UnknownFloat1;
 	BSTreadTransfSubInfo Data[2];
 } BSTreadTransfInfo;
 
 typedef struct {
 	NiInterpolator *parent;
-	int Num_Transfers;
-	// [Num_Transfers], [(null)]
-	BSTreadTransfInfo *Tread_Transfer_Info;
-	int Unknown_Int_1;
+	NIFint NumTransfers;
+	BSTreadTransfInfo *TreadTransferInfo;// [NumTransfers]
+	NIFint UnknownInt1;
 } BSTreadTransfInterpolator;
 
 typedef struct {
 	NiObject *parent;
-	short Unknown_Short_1;
+	NIFshort UnknownShort1;
 } BSAnimNotes;
 
 typedef struct {
 	bhkSerializable *parent;
-	int Unknown_Int_1;
-	int Unknown_Int_2;
-	int Unknown_Int_3;
-	float Unknown_Float_1;
-	float Unknown_Float_2;
-	float Unknown_Float_3;
-	float Unknown_Float_4;
+	NIFint UnknownInt1;
+	NIFint UnknownInt2;
+	NIFint UnknownInt3;
+	NIFfloat UnknownFloat1;
+	NIFfloat UnknownFloat2;
+	NIFfloat UnknownFloat3;
+	NIFfloat UnknownFloat4;
 } bhkLiquidAction;
 
 typedef struct {
 	NiNode *parent;
-	unsigned int Multi_Bound;
+	NIFuint MultiBound;
 } BSMultiBoundNode;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Data;
+	NIFuint Data;
 } BSMultiBound;
 
 typedef struct {
@@ -4578,215 +4419,188 @@ typedef struct {
 
 typedef struct {
 	BSMultiBoundData *parent;
-	int Unknown_Int_1;
-	int Unknown_Int_2;
-	int Unknown_Int_3;
-	float Radius;
+	NIFint UnknownInt1;
+	NIFint UnknownInt2;
+	NIFint UnknownInt3;
+	NIFfloat Radius;
 } BSMultiBoundSphere;
 
 typedef struct {
-	int Unknown_Int_1;
-	int Unknown_Int_2;
-	byte Unknown_Byte_1;
+	NIFint UnknownInt1;
+	NIFint UnknownInt2;
+	NIFbyte UnknownByte1;
 } BSSegmentedTriangle;
 
 typedef struct {
 	NiTriShape *parent;
-	int Num_Seg_Triangles;
-	// [Num_Seg_Triangles], [(null)]
-	BSSegmentedTriangle *Seg_Triangles;
+	NIFint NumSegTriangles;
+	BSSegmentedTriangle *SegTriangles;// [NumSegTriangles]
 } BSSegmentedTriShape;
 
 typedef struct {
 	BSMultiBoundData *parent;
-	// [6], [(null)]
-	float Unknown_Floats_1[6];
+	NIFfloat UnknownFloats1[6];
 } BSMultiBoundAABB;
 
 typedef struct {
-	int Data_Type;
-	int Block_Size;
-	int Num_Blocks;
-	int Block_Size_2;
-	int Block_Index;
-	int Unknown_Int_1;
-	byte Unknown_Byte_1;
+	NIFint DataType;
+	NIFint BlockSize;
+	NIFint NumBlocks;
+	NIFint BlockSize2;
+	NIFint BlockIndex;
+	NIFint UnknownInt1;
+	NIFbyte UnknownByte1;
 } AdditionalDataInfo;
 
 typedef struct {
-	byte Has_Data;
-	int Block_Size;
-	int Num_Blocks;
-	// [Num_Blocks], [(null)]
-	int *Block_Offsets;
-	int Num_Data;
-	// [Num_Data], [(null)]
-	int *Data_Sizes;
-	// [Num_Data], [Block_Size]
-	byte *Data;
+	NIFbyte HasData;
+	NIFint BlockSize;
+	NIFint NumBlocks;
+	NIFint *BlockOffsets;// [NumBlocks]
+	NIFint NumData;
+	NIFint *DataSizes;// [NumData]
+	NIFbyte *Data;// [NumData], [BlockSize]
 } AdditionalDataBlock;
 
 typedef struct {
 	NiObject *parent;
-	unsigned short Num_Vertices;
-	unsigned int Num_Block_Infos;
-	// [Num_Block_Infos], [(null)]
-	AdditionalDataInfo *Block_Infos;
-	int Num_Blocks;
-	// [Num_Blocks], [(null)]
-	AdditionalDataBlock *Blocks;
+	NIFushort NumVertices;
+	NIFuint NumBlockInfos;
+	AdditionalDataInfo *BlockInfos;// [NumBlockInfos]
+	NIFint NumBlocks;
+	AdditionalDataBlock *Blocks;// [NumBlocks]
 } NiAdditionalGeometryData;
 
 typedef struct {
 	NiExtraData *parent;
-	int Num_Items;
-	// [Num_Items], [(null)]
-	int *Items;
+	NIFint NumItems;
+	NIFint *Items;// [NumItems]
 } BSWArray;
 
 typedef struct {
 	bhkShapePhantom *parent;
-	// [15], [(null)]
-	int Unknown_Ints_1[15];
+	NIFint UnknownInts1[15];
 } bhkAabbPhantom;
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned int Interpolator;
+	NIFuint Interpolator;
 } BSFrustumFOVController;
 
 typedef struct {
 	NiNode *parent;
-	byte Unknown_byte_1;
-	short Unknown_Short_1;
+	NIFbyte Unknownbyte1;
+	NIFshort UnknownShort1;
 } BSDebrisNode;
 
 typedef struct {
 	bhkConstraint *parent;
-	// [41], [(null)]
-	int Unknown_Ints_1[41];
-	short Unknown_Short_1;
+	NIFint UnknownInts1[41];
+	NIFshort UnknownShort1;
 } bhkBreakableConstraint;
 
 typedef struct {
 	bhkSerializable *parent;
-	// [17], [(null)]
-	int Unknown_Ints_1[17];
+	NIFint UnknownInts1[17];
 } bhkOrientHingedBodyAction;
 
 typedef struct {
-	NIFuint Start_Index;
-	NIFuint Num_Indices;
+	NIFuint StartIndex;
+	NIFuint NumIndices;
 } Region;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Usage;
-	unsigned int Access;
-	unsigned int Num_Bytes;
-	unsigned int Cloning_Behavior;
-	unsigned int Num_Regions;
-	// [Num_Regions], [(null)]
-	Region *Regions;
-	unsigned int Num_Components;
-	// [Num_Components], [(null)]
-	unsigned int *Component_Formats;
-	// [Num_Bytes], [(null)]
-	byte *Data;
-	byte Streamable;
+	NIFuint Usage;
+	NIFuint Access;
+	NIFuint NumBytes;
+	NIFuint CloningBehavior;
+	NIFuint NumRegions;
+	Region *Regions;// [NumRegions]
+	NIFuint NumComponents;
+	NIFuint *ComponentFormats;// [NumComponents]
+	NIFbyte *Data;// [NumBytes]
+	NIFbyte Streamable;
 } NiDataStream;
 
 typedef struct {
 	string Name;
-	unsigned int Index;
+	NIFuint Index;
 } SemanticData;
 
 typedef struct {
-	unsigned int Stream;
-	byte Is_Per_Instance;
-	unsigned short Num_Submeshes;
-	// [Num_Submeshes], [(null)]
-	unsigned short *Submesh_To_Region_Map;
-	int Num_Components;
-	// [Num_Components], [(null)]
-	SemanticData *Component_Semantics;
+	NIFuint Stream;
+	NIFbyte IsPerInstance;
+	NIFushort NumSubmeshes;
+	NIFushort *SubmeshToRegionMap;// [NumSubmeshes]
+	NIFint NumComponents;
+	SemanticData *ComponentSemantics;// [NumComponents]
 } MeshData;
 
 typedef struct {
-	string Material_Name;
-	unsigned int Material_Extra_Data;
+	string MaterialName;
+	NIFuint MaterialExtraData;
 } MaterialData;
 
 typedef struct {
 	NiAVObject *parent;
-	unsigned int Num_Materials;
-	// [Num_Materials], [(null)]
-	MaterialData *Material_Data;
-	int Active_Material;
-	byte Material_Needs_Update_Default;
+	NIFuint NumMaterials;
+	MaterialData *MaterialData;// [NumMaterials]
+	NIFint ActiveMaterial;
+	NIFbyte MaterialNeedsUpdateDefault;
 } NiRenderObject;
 
 typedef struct {
 	NiObject *parent;
-	unsigned int Num_Submit_Points;
-	// [Num_Submit_Points], [(null)]
-	unsigned short *Submit_Points;
-	unsigned int Num_Complete_Points;
-	// [Num_Complete_Points], [(null)]
-	unsigned short *Complete_Points;
+	NIFuint NumSubmitPoints;
+	NIFushort *SubmitPoints;// [NumSubmitPoints]
+	NIFuint NumCompletePoints;
+	NIFushort *CompletePoints;// [NumCompletePoints]
 } NiMeshModifier;
 
 typedef struct {
 	NiRenderObject *parent;
-	unsigned int Primitive_Type;
-	unsigned short Num_Submeshes;
-	byte Instancing_Enabled;
+	NIFuint PrimitiveType;
+	NIFushort NumSubmeshes;
+	NIFbyte InstancingEnabled;
 	SphereBV Bound;
-	unsigned int Num_Datas;
-	// [Num_Datas], [(null)]
-	MeshData *Datas;
-	unsigned int Num_Modifiers;
-	// [Num_Modifiers], [(null)]
-	unsigned int *Modifiers;
+	NIFuint NumDatas;
+	MeshData *Datas;// [NumDatas]
+	NIFuint NumModifiers;
+	NIFuint *Modifiers;// [NumModifiers]
 } NiMesh;
 
 typedef struct {
 	NiInterpController *parent;
-	int Unknown_2;
-	unsigned int Num_Interpolators;
-	// [Num_Interpolators], [(null)]
-	unsigned int *Interpolators;
-	unsigned int Num_Targets;
-	// [Num_Targets], [(null)]
-	string *Target_Names;
+	NIFint Unknown2;
+	NIFuint NumInterpolators;
+	NIFuint *Interpolators;// [NumInterpolators]
+	NIFuint NumTargets;
+	string *TargetNames;// [NumTargets]
 } NiMorphWeightsController;
 
 typedef struct {
 	SemanticData Semantic;
-	unsigned int Normalize_Flag;
+	NIFuint NormalizeFlag;
 } ElementReference;
 
 typedef struct {
 	NiMeshModifier *parent;
-	byte Flags;
-	unsigned short Num_Targets;
-	unsigned int Num_Elements;
-	// [Num_Elements], [(null)]
-	ElementReference *Elements;
+	NIFbyte Flags;
+	NIFushort NumTargets;
+	NIFuint NumElements;
+	ElementReference *Elements;// [NumElements]
 } NiMorphMeshModifier;
 
 typedef struct {
 	NiMeshModifier *parent;
-	unsigned short Flags;
-	unsigned int Skeleton_Root;
-	SkinTransform Skeleton_Transform;
-	unsigned int Num_Bones;
-	// [Num_Bones], [(null)]
-	unsigned int *Bones;
-	// [Num_Bones], [(null)]
-	SkinTransform *Bone_Transforms;
-	// [Num_Bones], [(null)]
-	SphereBV *Bone_Bounds;
+	NIFushort Flags;
+	NIFuint SkeletonRoot;
+	SkinTransform SkeletonTransform;
+	NIFuint NumBones;
+	NIFuint *Bones;// [NumBones]
+	SkinTransform *BoneTransforms;// [NumBones]
+	SphereBV *BoneBounds;// [NumBones]
 } NiSkinningMeshModifier;
 
 typedef struct {
@@ -4799,50 +4613,47 @@ typedef struct {
 
 typedef struct {
 	NiAVObject *parent;
-	int Unknown_3;
-	// [Unknown_3], [(null)]
-	int *Unknown_38;
-	int Unknown_4;
-	int Unknown_5;
-	// [Unknown_3], [(null)]
-	int *Unknown_39;
-	int Unknown_6;
-	int Unknown_7;
-	int Unknown_8;
-	int Unknown_9;
-	float Unknown_10;
-	int Unknown_11;
-	int Unknown_12;
-	unsigned int Simulator;
-	unsigned int Generator;
-	int Unknown_15;
-	int Unknown_16;
-	int Unknown_17;
-	unsigned int Emitter;
-	int Unknown_19;
-	int Unknown_20;
-	int Unknown_21;
-	// [4], [(null)]
-	byte Unknown_22[4];
-	int Unknown_27;
-	int Unknown_28;
-	int Unknown_29;
-	int Unknown_30;
-	int Unknown_31;
-	int Unknown_32;
-	int Unknown_33;
-	int Unknown_34;
-	byte Unknown_35;
-	int Unknown_36;
-	short Unknown_37;
+	NIFint Unknown3;
+	NIFint *Unknown38;// [Unknown3]
+	NIFint Unknown4;
+	NIFint Unknown5;
+	NIFint *Unknown39;// [Unknown3]
+	NIFint Unknown6;
+	NIFint Unknown7;
+	NIFint Unknown8;
+	NIFint Unknown9;
+	NIFfloat Unknown10;
+	NIFint Unknown11;
+	NIFint Unknown12;
+	NIFuint Simulator;
+	NIFuint Generator;
+	NIFint Unknown15;
+	NIFint Unknown16;
+	NIFint Unknown17;
+	NIFuint Emitter;
+	NIFint Unknown19;
+	NIFint Unknown20;
+	NIFint Unknown21;
+	NIFbyte Unknown22[4];
+	NIFint Unknown27;
+	NIFint Unknown28;
+	NIFint Unknown29;
+	NIFint Unknown30;
+	NIFint Unknown31;
+	NIFint Unknown32;
+	NIFint Unknown33;
+	NIFint Unknown34;
+	NIFbyte Unknown35;
+	NIFint Unknown36;
+	NIFshort Unknown37;
 } NiPSParticleSystem;
 
 typedef struct {
 	NiPSParticleSystem *parent;
-	int Unknown_23;
-	int Unknown_24;
-	int Unknown_25;
-	byte Unknown_26;
+	NIFint Unknown23;
+	NIFint Unknown24;
+	NIFint Unknown25;
+	NIFbyte Unknown26;
 } NiPSMeshParticleSystem;
 
 typedef struct {
@@ -4851,15 +4662,14 @@ typedef struct {
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned int Interpolator;
-	int Unknown_2;
+	NIFuint Interpolator;
+	NIFint Unknown2;
 } NiPSForceActiveCtlr;
 
 typedef struct {
 	NiMeshModifier *parent;
-	unsigned int Num_Simulation_Steps;
-	// [Num_Simulation_Steps], [(null)]
-	unsigned int *Simulation_Steps;
+	NIFuint NumSimulationSteps;
+	NIFuint *SimulationSteps;// [NumSimulationSteps]
 } NiPSSimulator;
 
 typedef struct {
@@ -4868,47 +4678,41 @@ typedef struct {
 
 typedef struct {
 	NiPSSimulatorStep *parent;
-	byte Num_Size_Keys;
-	// [Num_Size_Keys], [(null)]
-	Key *Size_Keys;
-	unsigned int Size_Loop_Behavior;
-	float Unknown_1;
-	float Unknown_2;
-	float Unknown_3;
-	byte Num_Color_Keys;
-	// [Num_Color_Keys], [(null)]
-	Key *Color_Keys;
-	unsigned int Color_Loop_Behavior;
-	byte Num_Rotation_Keys;
-	// [Num_Rotation_Keys], [(null)]
-	QuatKey *Rotation_Keys;
-	unsigned int Rotation_Loop_Behavior;
-	float Grow_Time;
-	float Shrink_Time;
-	unsigned short Grow_Generation;
-	unsigned short Shrink_Generation;
+	NIFbyte NumSizeKeys;
+	NiFloatKey *SizeKeys;// [NumSizeKeys]
+	NIFuint SizeLoopBehavior;
+	NIFfloat Unknown1;
+	NIFfloat Unknown2;
+	NIFfloat Unknown3;
+	NIFbyte NumColorKeys;
+	NiByteColor4Key *ColorKeys;// [NumColorKeys]
+	NIFuint ColorLoopBehavior;
+	NIFbyte NumRotationKeys;
+	QuatKey *RotationKeys;// [NumRotationKeys]
+	NIFuint RotationLoopBehavior;
+	NIFfloat GrowTime;
+	NIFfloat ShrinkTime;
+	NIFushort GrowGeneration;
+	NIFushort ShrinkGeneration;
 } NiPSSimulatorGeneralStep;
 
 typedef struct {
 	NiPSSimulatorStep *parent;
-	unsigned int Num_Forces;
-	// [Num_Forces], [(null)]
-	unsigned int *Forces;
+	NIFuint NumForces;
+	NIFuint *Forces;// [NumForces]
 } NiPSSimulatorForcesStep;
 
 typedef struct {
 	NiPSSimulatorStep *parent;
-	unsigned int Num_Colliders;
-	// [Num_Colliders], [(null)]
-	unsigned int *Colliders;
+	NIFuint NumColliders;
+	NIFuint *Colliders;// [NumColliders]
 } NiPSSimulatorCollidersStep;
 
 typedef struct {
 	NiPSSimulatorStep *parent;
-	byte Num_Rotation_Keys;
-	// [Num_Rotation_Keys], [(null)]
-	QuatKey *Rotation_Keys;
-	unsigned int Rotation_Loop_Behavior;
+	NIFbyte NumRotationKeys;
+	QuatKey *RotationKeys;// [NumRotationKeys]
+	NIFuint RotationLoopBehavior;
 } NiPSSimulatorMeshAlignStep;
 
 typedef struct {
@@ -4917,211 +4721,209 @@ typedef struct {
 
 typedef struct {
 	NiObject *parent;
-	byte Unknown_1;
-	byte Unknown_2;
-	byte Unknown_3;
-	byte Unknown_4;
-	byte Unknown_5;
-	byte Unknown_6;
-	byte Unknown_7;
-	byte Unknown_8;
-	byte Unknown_9;
-	byte Unknown_10;
-	byte Unknown_11;
-	byte Unknown_12;
+	NIFbyte Unknown1;
+	NIFbyte Unknown2;
+	NIFbyte Unknown3;
+	NIFbyte Unknown4;
+	NIFbyte Unknown5;
+	NIFbyte Unknown6;
+	NIFbyte Unknown7;
+	NIFbyte Unknown8;
+	NIFbyte Unknown9;
+	NIFbyte Unknown10;
+	NIFbyte Unknown11;
+	NIFbyte Unknown12;
 } NiPSFacingQuadGenerator;
 
 typedef struct {
 	NiObject *parent;
 	string Name;
-	unsigned short Unknown_Flags;
-	unsigned int Num_Unknown_Links_1;
-	// [Num_Unknown_Links_1], [(null)]
-	unsigned int *Unknown_Links_1;
-	int Unkown_Int_2;
-	unsigned int Target;
-	float Unkown_Float_4;
-	byte Unkown_Byte_5;
-	int Unkown_Int_6;
-	int Unkown_Int_7;
-	int Unkown_Int_8;
-	byte Unkown_Byte_9;
+	NIFushort UnknownFlags;
+	NIFuint NumUnknownLinks1;
+	NIFuint *UnknownLinks1;// [NumUnknownLinks1]
+	NIFint UnkownInt2;
+	NIFuint Target;
+	NIFfloat UnkownFloat4;
+	NIFbyte UnkownByte5;
+	NIFint UnkownInt6;
+	NIFint UnkownInt7;
+	NIFint UnkownInt8;
+	NIFbyte UnkownByte9;
 } NiShadowGenerator;
 
 typedef struct {
 	NiObject *parent;
-	byte Unknown_1;
-	byte Unknown_2;
+	NIFbyte Unknown1;
+	NIFbyte Unknown2;
 } NiPSBoundUpdater;
 
 typedef struct {
 	NiObject *parent;
-	int Unknown_1;
-	int Unknown_2;
-	byte Unknown_3;
-	float Unknown_4;
-	float Unknown_5;
-	float Unknown_6;
-	float Unknown_7;
-	float Unknown_8;
-	float Unknown_9;
-	int Unknown_10;
+	NIFint Unknown1;
+	NIFint Unknown2;
+	NIFbyte Unknown3;
+	NIFfloat Unknown4;
+	NIFfloat Unknown5;
+	NIFfloat Unknown6;
+	NIFfloat Unknown7;
+	NIFfloat Unknown8;
+	NIFfloat Unknown9;
+	NIFint Unknown10;
 } NiPSDragForce;
 
 typedef struct {
 	NiObject *parent;
-	byte Unknown_1;
-	byte Unknown_2;
-	byte Unknown_3;
-	byte Unknown_4;
-	byte Unknown_5;
-	byte Unknown_6;
-	byte Unknown_7;
-	byte Unknown_8;
-	byte Unknown_9;
-	byte Unknown_10;
-	byte Unknown_11;
-	byte Unknown_12;
-	byte Unknown_13;
-	byte Unknown_14;
-	byte Unknown_15;
-	byte Unknown_16;
-	byte Unknown_17;
-	float Unknown_18;
-	byte Unknown_19;
-	byte Unknown_20;
-	byte Unknown_21;
-	byte Unknown_22;
-	byte Unknown_23;
-	byte Unknown_24;
-	byte Unknown_25;
-	byte Unknown_26;
-	byte Unknown_27;
-	byte Unknown_28;
-	byte Unknown_29;
-	byte Unknown_30;
-	byte Unknown_31;
-	byte Unknown_32;
-	byte Unknown_33;
-	byte Unknown_34;
-	float Unknown_35;
-	unsigned int Unknown_36;
+	NIFbyte Unknown1;
+	NIFbyte Unknown2;
+	NIFbyte Unknown3;
+	NIFbyte Unknown4;
+	NIFbyte Unknown5;
+	NIFbyte Unknown6;
+	NIFbyte Unknown7;
+	NIFbyte Unknown8;
+	NIFbyte Unknown9;
+	NIFbyte Unknown10;
+	NIFbyte Unknown11;
+	NIFbyte Unknown12;
+	NIFbyte Unknown13;
+	NIFbyte Unknown14;
+	NIFbyte Unknown15;
+	NIFbyte Unknown16;
+	NIFbyte Unknown17;
+	NIFfloat Unknown18;
+	NIFbyte Unknown19;
+	NIFbyte Unknown20;
+	NIFbyte Unknown21;
+	NIFbyte Unknown22;
+	NIFbyte Unknown23;
+	NIFbyte Unknown24;
+	NIFbyte Unknown25;
+	NIFbyte Unknown26;
+	NIFbyte Unknown27;
+	NIFbyte Unknown28;
+	NIFbyte Unknown29;
+	NIFbyte Unknown30;
+	NIFbyte Unknown31;
+	NIFbyte Unknown32;
+	NIFbyte Unknown33;
+	NIFbyte Unknown34;
+	NIFfloat Unknown35;
+	NIFuint Unknown36;
 } NiPSGravityForce;
 
 typedef struct {
 	NiObject *parent;
 	string Name;
-	float Unknown_1;
-	float Unknown_2;
-	byte Unknown_3;
-	byte Unknown_4;
-	byte Unknown_5;
-	byte Unknown_6;
-	float Unknown_7;
-	byte Unknown_8;
-	byte Unknown_9;
-	byte Unknown_10;
-	byte Unknown_11;
-	float Unknown_12;
-	int Unknown_13;
-	float Unknown_14;
-	float Unknown_15;
-	float Unknown_16;
-	float Unknown_17;
-	float Unknown_18;
-	float Unknown_19;
-	float Unknown_20;
-	float Unknown_21;
-	float Unknown_22;
-	byte Unknown_23;
-	byte Unknown_24;
-	byte Unknown_25;
-	byte Unknown_26;
-	byte Unknown_27;
-	byte Unknown_28;
-	byte Unknown_29;
-	byte Unknown_30;
-	byte Unknown_31;
-	byte Unknown_32;
-	byte Unknown_33;
-	byte Unknown_34;
-	byte Unknown_35;
-	byte Unknown_36;
-	byte Unknown_37;
-	byte Unknown_38;
-	byte Unknown_39;
-	byte Unknown_40;
-	byte Unknown_41;
-	byte Unknown_42;
-	byte Unknown_43;
-	byte Unknown_44;
-	byte Unknown_45;
-	byte Unknown_46;
-	byte Unknown_47;
-	byte Unknown_48;
+	NIFfloat Unknown1;
+	NIFfloat Unknown2;
+	NIFbyte Unknown3;
+	NIFbyte Unknown4;
+	NIFbyte Unknown5;
+	NIFbyte Unknown6;
+	NIFfloat Unknown7;
+	NIFbyte Unknown8;
+	NIFbyte Unknown9;
+	NIFbyte Unknown10;
+	NIFbyte Unknown11;
+	NIFfloat Unknown12;
+	NIFint Unknown13;
+	NIFfloat Unknown14;
+	NIFfloat Unknown15;
+	NIFfloat Unknown16;
+	NIFfloat Unknown17;
+	NIFfloat Unknown18;
+	NIFfloat Unknown19;
+	NIFfloat Unknown20;
+	NIFfloat Unknown21;
+	NIFfloat Unknown22;
+	NIFbyte Unknown23;
+	NIFbyte Unknown24;
+	NIFbyte Unknown25;
+	NIFbyte Unknown26;
+	NIFbyte Unknown27;
+	NIFbyte Unknown28;
+	NIFbyte Unknown29;
+	NIFbyte Unknown30;
+	NIFbyte Unknown31;
+	NIFbyte Unknown32;
+	NIFbyte Unknown33;
+	NIFbyte Unknown34;
+	NIFbyte Unknown35;
+	NIFbyte Unknown36;
+	NIFbyte Unknown37;
+	NIFbyte Unknown38;
+	NIFbyte Unknown39;
+	NIFbyte Unknown40;
+	NIFbyte Unknown41;
+	NIFbyte Unknown42;
+	NIFbyte Unknown43;
+	NIFbyte Unknown44;
+	NIFbyte Unknown45;
+	NIFbyte Unknown46;
+	NIFbyte Unknown47;
+	NIFbyte Unknown48;
 } NiPSBoxEmitter;
 
 typedef struct {
 	NiObject *parent;
 	string Name;
-	int Unknown_1;
-	int Unknown_2;
-	int Unknown_3;
-	int Unknown_27;
-	float Unknown_4;
-	float Unknown_5;
-	float Unknown_6;
-	float Unknown_28;
-	int Unknown_7;
-	float Unknown_8;
-	float Unknown_9;
-	float Unknown_10;
-	float Unknown_11;
-	float Unknown_12;
-	int Unknown_13;
-	float Unknown_14;
-	float Unknown_15;
-	float Unknown_16;
-	int Unknown_17;
-	int Unknown_18;
-	short Unknown_19;
-	int Unknown_20;
-	int Unknown_21;
-	float Unknown_22;
-	int Unknown_23;
-	int Unknown_24;
-	int Unknown_25;
-	int Unknown_26;
+	NIFint Unknown1;
+	NIFint Unknown2;
+	NIFint Unknown3;
+	NIFint Unknown27;
+	NIFfloat Unknown4;
+	NIFfloat Unknown5;
+	NIFfloat Unknown6;
+	NIFfloat Unknown28;
+	NIFint Unknown7;
+	NIFfloat Unknown8;
+	NIFfloat Unknown9;
+	NIFfloat Unknown10;
+	NIFfloat Unknown11;
+	NIFfloat Unknown12;
+	NIFint Unknown13;
+	NIFfloat Unknown14;
+	NIFfloat Unknown15;
+	NIFfloat Unknown16;
+	NIFint Unknown17;
+	NIFint Unknown18;
+	NIFshort Unknown19;
+	NIFint Unknown20;
+	NIFint Unknown21;
+	NIFfloat Unknown22;
+	NIFint Unknown23;
+	NIFint Unknown24;
+	NIFint Unknown25;
+	NIFint Unknown26;
 } NiPSMeshEmitter;
 
 typedef struct {
 	NiTimeController *parent;
-	int Unknown_2;
-	int Unknown_3;
+	NIFint Unknown2;
+	NIFint Unknown3;
 } NiPSGravityStrengthCtlr;
 
 typedef struct {
 	NiObject *parent;
 	string Name;
-	int Unknown_Int_1;
-	int Unknown_Int_2;
-	short Unknown_Short_3;
-	byte Unknown_Byte_4;
-	// [8], [(null)]
-	float Unknown_Floats_5[8];
-	unsigned int Unknown_Link_6;
+	NIFint UnknownInt1;
+	NIFint UnknownInt2;
+	NIFshort UnknownShort3;
+	NIFbyte UnknownByte4;
+	NIFfloat UnknownFloats5[8];
+	NIFuint UnknownLink6;
 } NiPSPlanarCollider;
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned int Interpolator;
-	int Unknown_3;
+	NIFuint Interpolator;
+	NIFint Unknown3;
 } NiPSEmitterSpeedCtlr;
 
 typedef struct {
 	NiTimeController *parent;
-	unsigned int Interpolator;
-	int Unknown_2;
+	NIFuint Interpolator;
+	NIFint Unknown2;
 } NiPSEmitterRadiusCtlr;
 
 typedef struct {
@@ -5131,32 +4933,32 @@ typedef struct {
 typedef struct {
 	NiObject *parent;
 	string Name;
-	int Unknown_2;
-	int Unknown_3;
-	int Unknown_4;
-	int Unknown_5;
-	float Unknown_6;
-	int Unknown_7;
-	float Unknown_8;
-	float Unknown_9;
-	int Unknown_10;
-	float Unknown_11;
-	int Unknown_12;
-	int Unknown_13;
-	int Unknown_14;
-	int Unknown_15;
-	int Unknown_16;
-	float Unknown_17;
-	int Unknown_18;
-	int Unknown_19;
-	short Unknown_20;
-	int Unknown_21;
-	float Unknown_22;
+	NIFint Unknown2;
+	NIFint Unknown3;
+	NIFint Unknown4;
+	NIFint Unknown5;
+	NIFfloat Unknown6;
+	NIFint Unknown7;
+	NIFfloat Unknown8;
+	NIFfloat Unknown9;
+	NIFint Unknown10;
+	NIFfloat Unknown11;
+	NIFint Unknown12;
+	NIFint Unknown13;
+	NIFint Unknown14;
+	NIFint Unknown15;
+	NIFint Unknown16;
+	NIFfloat Unknown17;
+	NIFint Unknown18;
+	NIFint Unknown19;
+	NIFshort Unknown20;
+	NIFint Unknown21;
+	NIFfloat Unknown22;
 } NiPSSphereEmitter;
 
 typedef struct {
 	NiPSSphereEmitter *parent;
-	float Unknown_23;
+	NIFfloat Unknown23;
 } NiPSCylinderEmitter;
 
 typedef struct {
@@ -5198,27 +5000,27 @@ typedef struct {
 typedef struct {
 	NiObject *parent;
 	string Name;
-	byte Unknown_1;
-	int Unknown_2;
-	int Unknown_3;
-	int Unknown_4;
-	int Unknown_5;
-	int Unknown_6;
-	int Unknown_7;
-	int Unknown_8;
-	int Unknown_9;
-	int Unknown_10;
+	NIFbyte Unknown1;
+	NIFint Unknown2;
+	NIFint Unknown3;
+	NIFint Unknown4;
+	NIFint Unknown5;
+	NIFint Unknown6;
+	NIFint Unknown7;
+	NIFint Unknown8;
+	NIFint Unknown9;
+	NIFint Unknown10;
 } NiPSBombForce;
 
 typedef struct {
 	NiObject *parent;
-	int Unknown_1;
-	int Unknown_2;
-	byte Unknown_3;
-	float Unknown_4;
-	int Unknown_5;
-	short Unknown_6;
-	int Unknown_7;
+	NIFint Unknown1;
+	NIFint Unknown2;
+	NIFbyte Unknown3;
+	NIFfloat Unknown4;
+	NIFint Unknown5;
+	NIFshort Unknown6;
+	NIFint Unknown7;
 } NiPSSphericalCollider;
 
 typedef struct {
@@ -5243,14 +5045,12 @@ typedef struct {
 
 typedef struct {
 	NiTimeController *parent;
-	float Unknown_Float;
-	float Unknown_Float_2;
-	unsigned int Num_Bones;
-	// [Num_Bones], [(null)]
-	unsigned int *Bones;
-	unsigned int Num_Bones_2;
-	// [Num_Bones_2], [(null)]
-	unsigned int *Bones_2;
+	NIFfloat UnknownFloat;
+	NIFfloat UnknownFloat2;
+	NIFuint NumBones;
+	NIFuint *Bones;// [NumBones]
+	NIFuint NumBones2;
+	NIFuint *Bones2;// [NumBones2]
 } NiFurSpringController;
 
 inline void readSizedString (SizedString * obj, unsigned int ARG);
@@ -5284,8 +5084,8 @@ void readExportInfo (ExportInfo * obj, unsigned int ARG);
 void readHeader (Header * obj, unsigned int ARG);
 void readStringPalette (StringPalette * obj, unsigned int ARG);
 void readTBC (TBC * obj, unsigned int ARG);
-inline void readKey (Key * obj, unsigned int ARG, int t);
-inline void readKeyGroup (KeyGroup * obj, unsigned int ARG, int t);
+//inline void readKey (Key * obj, unsigned int ARG, int t);
+//inline void readKeyGroup (KeyGroup * obj, unsigned int ARG, int t);
 inline void readQuatKey (QuatKey * obj, unsigned int ARG);
 inline void readTexCoord (TexCoord * obj, unsigned int ARG);
 void readTexDesc (TexDesc * obj, unsigned int ARG);

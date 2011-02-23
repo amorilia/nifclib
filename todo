@@ -6,7 +6,7 @@
 
 - a lot of bytes can be read at once - yet it makes it complicated on data structure change, although these changes can not happen rapidly and in large amounts
 
-[*] - there are two views: binaryreader and client. To keep existing programs working existing client view must be kept intact, except if it prevents speed-read
+[*] - there are two views: binaryreader and client. To keep existing programs working existing client view must be kept intact, except if it prevents speed-read or if it needs to replicate low-level io business logic
 
 - all read procs may become inline, because of the rprocs called by the hash table
 
@@ -16,7 +16,7 @@
 
 - autoremove the empty things like NiObject
 
-- use NIF types - NIFbyte, etc. (niff.h)
+[Done] - use NIF types - NIFbyte, etc. (niff.h)
 
 - generator logic for records with same type fields (!= pointer):
 	if (AllFieldsAreTheSameType)
@@ -26,26 +26,26 @@
 	BUF - &(obj->$FIELD[0].$FIELD0)
 	- NIFbyte, NIFchar, NIFshort, NIFushort, NIFint, NIFuint, NIFfloat
 
-- in a few places, SkinPartition, NiGeometryData and NiParticlesData, a change of ** to * was needed (where the field type of the record is the same or the type is a simple type and the arrays are not jagged) - think about how it can be done in the generator because these changes are great performance boosts
+[Done] - in a few places, SkinPartition, NiGeometryData and NiParticlesData, a change of ** to * was needed (where the field type of the record is the same or the type is a simple type and the arrays are not jagged) - think about how it can be done in the generator because these changes are great performance boosts
 	- NiPersistentSrcTextureRendererData
 	- NiPixelData
 
 - NiParticlesData and NiGeometryData have quite a lot in common
 
-- the most performance gain is when replacing two dimensional arrays with block reads:
+[Done] - the most performance gain is when replacing two dimensional arrays with block reads:
 	SkinPartition, NiPixelData
 
-- the "TEMPLATE" things are artificial - no single function read templates with two or more different types, so TODO: morph the TEMPLATE - remove readTEMPALTE - its useless and just slows the things down
+[Done] - the "TEMPLATE" things are artificial - no single function read templates with two or more different types, so TODO: morph the TEMPLATE - remove readTEMPALTE - its useless and just slows the things down
 
 - there are fixed size records - turn their readers into a blockreaders - pragmapack will be needed
 
 - argument changes to "r" - record
 
-- remove all '_' - they only make the lines longer
+[Done] - remove all '_' - they only make the lines longer
 
 - size of things should be const
 
-- change unsigned int to NIFuint, etc.
+[Done] - change unsigned int to NIFuint, etc.
 
 - change sizeof(NIFuint) to SIZEOFDWORD, etc.
 
