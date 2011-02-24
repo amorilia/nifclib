@@ -100,7 +100,7 @@ main(int argc, char **argv)
 	printf ("time %.2f milliseconds \n", ttaken/1000.0f);
 	return !r;*/
 
-	char *dir = "/mnt/archive/rain/temp/nifs";
+	char *dir = ".";
 	gettimeofday (&tstart, NULL);
 	pathwalk (dir, DoReadNif);
 	gettimeofday (&tstop, NULL);
@@ -142,7 +142,7 @@ DoReadNif(char *fname)
 				if (fname[len-4] == '.') {
 					//simple_read (fname);
 					if (!readnif (fname)) {
-							printf ("files ok %d\n", cnt);
+							printf ("files ok %d\n", nifcnt);
 							exit (1);
 					} else {
 						total_bytes += NIFF_FSIZE;
@@ -152,6 +152,6 @@ DoReadNif(char *fname)
 						total_reallocs += NIFF_REALLOCS;
 					}
 					nifcnt++;
-					printf ("%5d\r", cnt); fflush (stdout);
+					printf ("%5d\r", nifcnt); fflush (stdout);
 	}
 }
