@@ -26,7 +26,6 @@
 #include "utils.h"
 #include "niff.h"
 
-//int ncalls[512];
 #define COVERAGE
 /*#define COVERAGE\
 	printf ("%d\n", __LINE__);*/
@@ -45,7 +44,6 @@ dbg(const char *format, ...)
 	return done;
 }
 
-//static FILE *R;
 static NifStream *R;
 static Stream *S;
 static int ERR;
@@ -193,7 +191,7 @@ static void
 *GetMem (size_t size)
 {
 	if (size <= 0) {
-		dbg ("*** GetMem: size of %d is not ok\n");
+		//dbg ("\n*** GetMem: size of %d is not ok\n", size);
 		return NULL;
 	}
 	if (MM_cnt == MM_cap) {
@@ -299,7 +297,7 @@ readnif(char *fname)
 	}
 	else if (Version < 0x05000001) {
 		for (i = 0; i < h->NumBlocks; i++) {
-			dbg ("reading zblock #%d", i);
+			dbg ("zblock #%d", i);
 			DO (SizedString *n = GETMEM (sizeof(SizedString));)
 			DO (readSizedString (n, 0);)
 			dbg (", name = \"%s\",", (char *)(n->Value));
@@ -311,7 +309,7 @@ readnif(char *fname)
 	}
 	else {
 		for (i = 0; i < h->NumBlocks; i++) {
-			dbg ("reading block #%2d ", i);
+			dbg ("block #%2d ", i);
 			if (VersionCheck (0x05000001, 0x0A01006A)) {
 				NIFuint z = readuint (READER);// 0
 				if (z) {
@@ -325,21 +323,23 @@ readnif(char *fname)
 				break;
 			}
 			NIFchar *tname = (NIFchar *)(h->BlockTypes[tidx].Value);
-			dbg ("reading NIFOBJECT \"%s\"", tname);
+			dbg ("obj \"%s\"", tname);
 			DO (ReadNifObject(tname);)
 			TellFilePos (READER);
 		}
 	}
+	//
 	// footer
+	//
 	if (!STOP) {
 		Footer *f = GETMEM (sizeof(Footer));
 		if (!STOP)
 			readFooter (f, 0);
 	}
 	int result = 0;
-	if (ftell(R->f) != fsize)
+	if (ftell (R->f) != fsize)
 		dbg ("WRN extra bytes: %ld/%ld [bytes] were read.\n",
-			ftell(R->f), fsize);
+			ftell (R->f), fsize);
 	// according to nifskope it is ok for a nif to contain
 	// extra bytes: morrowind/DoD/DameCecilia2Hair.nif
 	// I have truncated the useless bytes and it loads it just fine.
@@ -367,8 +367,8 @@ VersionCheck(register NIFuint a, register NIFuint b)
 }
 
 			/*
-   		---/   489 read procs and their hash init / /---
-					                          ---/*/
+		---/   over 400 read procs and their hash init  / /---
+													---/*/
 /*
 ****
 *  There are a lot of functions here what never get
@@ -826,13 +826,6 @@ RPBodyPartList()
 	if (STOP) return;
 	readBodyPartList (t, 0);
 }
-/*static void
-RPNiObject()
-{
-	NiObject *t = GETMEM (sizeof(NiObject));
-	if (STOP) return;
-	readNiObject (t, 0);
-}*/
 static void
 RPNi3dsAlphaAnimator()
 {
@@ -4279,8 +4272,8 @@ ReleaseRpHash()
 }
 
 			/*
-   		---/  call read proc by name / /---
-					             ---/*/
+		---/   call read proc by name   / /---
+									---/*/
 
 static void
 ReadNifObject(NIFchar *name)
@@ -4296,8 +4289,8 @@ ReadNifObject(NIFchar *name)
 }
 
 		 /*|
-   		---|  end of hashed reader  | \---
-					             ---|*/
+		---|  end of hashed reader  | \---
+								 ---|*/
 
 static void
 TellFilePos(READERARGLST)
@@ -4307,8 +4300,8 @@ TellFilePos(READERARGLST)
 		pos, r->buf_len, r->buf_pos);
 }
 			/*
-   		---/   binary reader   / /---
-					       ---/*/
+		---/    binary reader   / /---
+							---/*/
 
 static int BDBG = 0;
 #define INFO(m,f,val) if (BDBG) dbg ("  "m": "f"\n", val)
@@ -4318,7 +4311,7 @@ readbool(READERARGLST)
 {
 	// A boolean; 32-bit from 4.0.0.2, and 8-bit from 4.1.0.1 on.
 	if (Version > 0x04010001) {
-		byte b = readbyte (READER);
+		NIFbyte b = readbyte (READER);
 		INFO (" readbool", "%d", b);
 		return b;
 	}
@@ -4869,6 +4862,10 @@ readHeader(Header *obj, unsigned int ARG)
 		obj->BlockSize =
 		    GETMEM ((obj->NumBlocks) * sizeof (unsigned int));
 		READ (uint, obj->BlockSize, obj->NumBlocks, SIZEOFDWORD, "readHeader")
+		// TODO: useful info "hooks" like this one should go to the trace part
+		/*for (i = 0; i < obj->NumBlocks; i++) {
+			dbg ("BlockSize[%d] = %d\n", i, obj->BlockSize[i]);
+		}*/
 	}
 	if (VersionCheck (0x14010003, 0)) {
 		obj->NumStrings = readuint (READER);
@@ -5292,16 +5289,17 @@ readRagdollDescriptor(RagdollDescriptor *obj, unsigned int ARG)
 {
 	COVERAGE
 	if (VersionCheck (0, 0x14000005)) {
-		readVector4 (&obj->PivotA, 0);
-		readVector4 (&obj->PlaneA, 0);
-		readVector4 (&obj->TwistA, 0);
-		readVector4 (&obj->PivotB, 0);
-		readVector4 (&obj->PlaneB, 0);
-		readVector4 (&obj->TwistB, 0);
+		READ (float, &(obj->PivotA.x), 6*4, SIZEOFDWORD, "readRagdollDescriptor")
 	}
-	if (VersionCheck (0x14020007, 0)) {
+	if (VersionCheck (0x14020007, 0)) {// !!! not sequential !!!
+		readVector4 (&obj->TwistA, 0);
+		readVector4 (&obj->PlaneA, 0);
 		readVector4 (&obj->MotorA, 0);
+		readVector4 (&obj->PivotA, 0);
+		readVector4 (&obj->TwistB, 0);
+		readVector4 (&obj->PlaneB, 0);
 		readVector4 (&obj->MotorB, 0);
+		readVector4 (&obj->PivotB, 0);
 	}
 	READ (float, &(obj->ConeMaxAngle), 6, SIZEOFDWORD, "readRagdollDescriptor")
 	if (VersionCheck (0x14020007, 0)) {
@@ -5316,18 +5314,10 @@ readLimitedHingeDescriptor(LimitedHingeDescriptor *obj, unsigned int ARG)
 {
 	COVERAGE
 	if (VersionCheck (0, 0x14000005)) {
-		readVector4 (&obj->PivotA, 0);
-		readVector4 (&obj->AxleA, 0);
-		readVector4 (&obj->Perp2AxleInA1, 0);
-		readVector4 (&obj->Perp2AxleInA2, 0);
-		readVector4 (&obj->PivotB, 0);
-		readVector4 (&obj->AxleB, 0);
-		readVector4 (&obj->Perp2AxleInB2, 0);
+		READ (float, &(obj->PivotA.x), 7*4, SIZEOFDWORD, "readLimitedHingeDescriptor")
 	}
 	else if (VersionCheck (0x14020007, 0)) {
-		readVector4 (&obj->AxleA, 0);
-		readVector4 (&obj->Perp2AxleInA1, 0);
-		readVector4 (&obj->Perp2AxleInA2, 0);
+		READ (float, &(obj->AxleA.x), 3*4, SIZEOFDWORD, "readLimitedHingeDescriptor")
 		readVector4 (&obj->PivotA, 0);
 		readVector4 (&obj->AxleB, 0);
 		readVector4 (&obj->Perp2AxleInB1, 0);
@@ -5347,16 +5337,17 @@ readHingeDescriptor(HingeDescriptor *obj, unsigned int ARG)
 {
 	COVERAGE
 	if (VersionCheck (0, 0x14000005)) {
-		readVector4 (&obj->PivotA, 0);
+		READ (float, &(obj->PivotA.x), 5*4, SIZEOFDWORD, "readHingeDescriptor")
+	}
+	else if (VersionCheck (0x14020007, 0)) {// !!! not sequential !!!
+		readVector4 (&obj->AxleA, 0);
 		readVector4 (&obj->Perp2AxleInA1, 0);
 		readVector4 (&obj->Perp2AxleInA2, 0);
-		readVector4 (&obj->PivotB, 0);
+		readVector4 (&obj->PivotA, 0);
 		readVector4 (&obj->AxleB, 0);
-	}
-	else if (VersionCheck (0x14020007, 0)) {
-		readVector4 (&obj->AxleA, 0);
 		readVector4 (&obj->Perp2AxleInB1, 0);
 		readVector4 (&obj->Perp2AxleInB2, 0);
+		readVector4 (&obj->PivotB, 0);
 	}
 }
 
@@ -5376,9 +5367,7 @@ readMultiTextureElement(MultiTextureElement *obj, unsigned int ARG)
 	obj->HasImage = readbool (READER);
 	if ((obj->HasImage)) {
 		obj->Image = readRef (READER);
-		obj->Clamp = readuint (READER);
-		obj->Filter = readuint (READER);
-		obj->UVSet = readuint (READER);
+		READ (uint, &(obj->Clamp), 3, SIZEOFDWORD, "readMultiTextureElement")
 		if (VersionCheck (0x03030000, 0x0A020000)) {
 			obj->PS2L = readshort (READER);
 			obj->PS2K = readshort (READER);
@@ -5759,27 +5748,16 @@ readbhkPrismaticConstraint(bhkPrismaticConstraint *obj, unsigned int ARG)
 	readbhkConstraint (obj->parent, 0);
 	if (VersionCheck (0, 0x14000005)) {
 		READ (float, &(obj->PivotA.x), 8*4, SIZEOFDWORD, "readbhkPrismaticConstraint")
-		/*readVector4 (&obj->PivotA, 0);
-		READ (float, &(obj->RotationMatrixA[0].x), 4*4, SIZEOFDWORD, "readbhkPrismaticConstraint")
-		readVector4 (&obj->PivotB, 0);
-		readVector4 (&obj->SlidingB, 0);
-		readVector4 (&obj->PlaneB, 0);*/
 	}
 	if (VersionCheck (0x14020007, 0)) {
-		READ (float, &(obj->SlidingA.x), 8*4, SIZEOFDWORD, "readbhkPrismaticConstraint")
-		/*readVector4 (&obj->SlidingA, 0);
-		readVector4 (&obj->RotationA, 0);
-		readVector4 (&obj->PlaneA, 0);
+		READ (float, &(obj->SlidingA.x), 3*4, SIZEOFDWORD, "readbhkPrismaticConstraint")
 		readVector4 (&obj->PivotA, 0);
 		readVector4 (&obj->SlidingB, 0);
 		readVector4 (&obj->RotationB, 0);
 		readVector4 (&obj->PlaneB, 0);
-		readVector4 (&obj->PivotB, 0);*/
+		readVector4 (&obj->PivotB, 0);
 	}
 	READ (float, &(obj->MinDistance), 3, SIZEOFDWORD, "readbhkPrismaticConstraint")
-	/*obj->MinDistance = readfloat (READER);
-	obj->MaxDistance = readfloat (READER);
-	obj->Friction = readfloat (READER);*/
 	if (VersionCheck (0x14020007, 0)) {
 		obj->UnknownByte1 = readbyte (READER);
 	}
@@ -6766,7 +6744,7 @@ readNiFloatExtraDataController(NiFloatExtraDataController *obj, unsigned int ARG
 		obj->NumExtraBytes = readbyte (READER);
 		READ (byte, &(obj->UnknownBytes[0]), 7, 1, "readNiFloatExtraDataController")
 		obj->UnknownExtraBytes =
-		    GETMEM ((obj->NumExtraBytes) * sizeof (byte));
+		    GETMEM (obj->NumExtraBytes);
 		READ (byte, obj->UnknownExtraBytes, obj->NumExtraBytes, 1, "readNiFloatExtraDataController")
 	}
 }
@@ -6940,7 +6918,7 @@ readNiGeometryData(NiGeometryData *obj, unsigned int ARG)
 	}
 	else {
 		NIFuint len = (obj->BSNumUVSets & 1) *obj->NumVertices;
-		dbg ("len: %d\n", len);
+		//dbg ("len: %d\n", len);
 		RANGE_CHK (len, 2000000, "readNiGeometryData");
 		obj->UVSets = GETMEM (len * sizeof (TexCoord));
 		if (len > 0)
@@ -9843,7 +9821,8 @@ readNiLinesData(NiLinesData *obj, unsigned int ARG)
 	obj->parent = GETMEM (sizeof (NiGeometryData));
 	readNiGeometryData (obj->parent, 0);
 	// init 1d array
-	obj->Lines = GETMEM ((obj->parent->NumVertices) * sizeof (byte));
+	int size = (Version > 0x04010001) ? 1 : 4;
+	obj->Lines = GETMEM (obj->parent->NumVertices * size);
 	// read 1d array
 	int i;
 	for (i = 0; i < (obj->parent->NumVertices); i++)
@@ -10523,7 +10502,7 @@ readNiDataStream(NiDataStream *obj, unsigned int ARG)
 	obj->ComponentFormats =
 	    GETMEM ((obj->NumComponents) * sizeof (unsigned int));
 	READ (uint, obj->ComponentFormats, obj->NumComponents, SIZEOFDWORD, "readNiDataStream")
-	obj->Data = GETMEM ((obj->NumBytes) * sizeof (byte));
+	obj->Data = GETMEM (obj->NumBytes);
 	READ (byte, obj->Data, obj->NumBytes, 1, "readNiDataStream")
 	obj->Streamable = readbool (READER);
 }

@@ -37,7 +37,7 @@
 
 [Done] - the "TEMPLATE" things are artificial - no single function read templates with two or more different types, so TODO: morph the TEMPLATE - remove readTEMPALTE - its useless and just slows the things down
 
-- there are fixed size records - turn their readers into a blockreaders - pragmapack will be needed
+- there are fixed size records - turn their readers into a blockreaders - pragmapack will be needed - check if fields are sequential!
 
 - argument changes to "r" - record
 
@@ -49,7 +49,7 @@
 
 - change sizeof(NIFuint) to SIZEOFDWORD, etc.
 
-- see if the generator can handle things like SkinTransform, SphereBV - all fields are the same type, except they are in different subtructures
+- see if the generator can handle things like SkinTransform, SphereBV - all fields are the same type, except they are in different substructures
 
 
 READ (WHAT, PUT_IT_WHERE, COUNT, sizeof(WHAT), PROCNAME)

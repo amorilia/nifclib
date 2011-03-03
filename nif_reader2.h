@@ -23,14 +23,6 @@
 
 #include "niff.h"
 
-#define T_BYTE 0
-#define T_FLOAT 1
-#define T_QUATERNION 2
-#define T_STRING 3
-#define T_BYTECOLOR4 4
-#define T_COLOR4 5
-#define T_VECTOR3 6
-
 int readnif(char *fname);
 // a few stat fields
 long NIFF_FSIZE;
@@ -38,12 +30,6 @@ int NIFF_BLOCK_COUNT;
 int NIFF_OBJECT_COUNT;
 int NIFF_MALLOCS;
 int NIFF_REALLOCS;
-#define byte unsigned char
-
-/*typedef struct {
-	void *d;
-	NIFint t;
-} TEMPLATE;*/
 
 enum AlphaFormat {		// uint
 	ALPHA_NONE = 0,
@@ -1651,14 +1637,8 @@ typedef struct {
 	Vector4 PivotB;
 	Vector4 PlaneB;
 	Vector4 TwistB;
-	// DUPLICATE FIELD NAME TwistA
-	// DUPLICATE FIELD NAME PlaneA
 	Vector4 MotorA;
-	// DUPLICATE FIELD NAME PivotA
-	// DUPLICATE FIELD NAME TwistB
-	// DUPLICATE FIELD NAME PlaneB
 	Vector4 MotorB;
-	// DUPLICATE FIELD NAME PivotB
 	NIFfloat ConeMaxAngle;
 	NIFfloat PlaneMinAngle;
 	NIFfloat PlaneMaxAngle;
@@ -1677,14 +1657,7 @@ typedef struct {
 	Vector4 PivotB;
 	Vector4 AxleB;
 	Vector4 Perp2AxleInB2;
-	// DUPLICATE FIELD NAME AxleA - fixed
-	// DUPLICATE FIELD NAME Perp2AxleInA1 - fixed
-	// DUPLICATE FIELD NAME Perp2AxleInA2 - fixed
-	// DUPLICATE FIELD NAME PivotA - fixed
-	// DUPLICATE FIELD NAME AxleB - fixed
 	Vector4 Perp2AxleInB1;
-	// DUPLICATE FIELD NAME Perp2AxleInB2 - fixed
-	// DUPLICATE FIELD NAME PivotB - fixed
 	NIFfloat MinAngle;
 	NIFfloat MaxAngle;
 	NIFfloat MaxFriction;
@@ -1699,13 +1672,8 @@ typedef struct {
 	Vector4 PivotB;
 	Vector4 AxleB;
 	Vector4 AxleA;
-	// DUPLICATE FIELD NAME Perp2AxleInA1
-	// DUPLICATE FIELD NAME Perp2AxleInA2
-	// DUPLICATE FIELD NAME PivotA
-	// DUPLICATE FIELD NAME AxleB
 	Vector4 Perp2AxleInB1;
 	Vector4 Perp2AxleInB2;
-	// DUPLICATE FIELD NAME PivotB
 } HingeDescriptor;
 
 typedef struct {
@@ -1982,11 +1950,7 @@ typedef struct {
 	Vector4 SlidingA;
 	Vector4 RotationA;
 	Vector4 PlaneA;
-	// DUPLICATE FIELD NAME PivotA - fixed
-	// DUPLICATE FIELD NAME SlidingB - fixed
 	Vector4 RotationB;
-	// DUPLICATE FIELD NAME PlaneB - fixed
-	// DUPLICATE FIELD NAME PivotB - fixed
 	NIFfloat MinDistance;
 	NIFfloat MaxDistance;
 	NIFfloat Friction;

@@ -111,6 +111,8 @@ static hash *rch; // read calls hash - maps basic.name to a readcall
 static hash *th; // type hash - maps basic.name to a c language type
 				 //           - maps enum.name to a c language type
 
+static hash *avoidh; // things to avoid working with
+
 static FILE *newformat;
 
 int
@@ -201,6 +203,10 @@ convert (FILE *fh, const char *fname, long fsize)
 		printf ("hash create failed\n");
 		return EXIT_FAILURE;
 	}
+	avoidh = hashcreate (20);
+	hashadd (avoidh, "Key", "");
+	hashadd (avoidh, "KeyGroup", "");
+	hashadd (avoidh, "NiObject", "");
 	// UnionBV and BoundingVolume are in circular reference so one
 	// of them not used anywhere elese - UnionBV, becomes a pointer
 	hashadd (th, strcopy( "UnionBV"), strcopy ("struct UnionBV *"));
@@ -208,6 +214,7 @@ convert (FILE *fh, const char *fname, long fsize)
 	free (buf);
 	hashrelease (rch, 1);
 	hashrelease (th, 1);
+	hashrelease (avoidh, 0);
 	return result;
 }
 
@@ -264,6 +271,10 @@ pbasic(const char *buf, int len)
 	bc++;
 	dbg ("B %d, ", len);
 	char *name = get_between (&buf[0], len, BNAME, EOA);
+	if (hashget (avoidh, (char *)name)) {
+		free (name);
+		return 1;// skip things that this generator does not use
+	}
 	char *type = get_between (&buf[0], len, BTYPE, EOA);
 	TRY (!name, MWORD" "BNAME"\n", 0)
 	TRY (!type, MWORD" "BTYPE"\n", 0)
@@ -287,6 +298,10 @@ penum(const char *buf, int len)
 	ec++;
 	dbg ("E %d, ", len);
 	char *name = get_between (&buf[0], len, ENAME, EOA);
+	if (hashget (avoidh, (char *)name)) {
+		free (name);
+		return 1;// skip things that this generator does not use
+	}
 	char *type = get_between (&buf[0], len, ETYPE, EOA);
 	TRY (!name, MWORD" "ENAME"\n", 0)
 	TRY (!type, MWORD" "ETYPE"\n", 0)
@@ -333,12 +348,15 @@ pcompound(const char *buf, int len)
 	dbg ("C %d, ", len);
 	int tlen = find (">", &buf[0], len);
 	if (tlen <= 0)
-		return 0;
-	//len -= tlen;
+		return 0;// tag closer not found => bug or malformed XML
 	char *name = get_between (&buf[0], tlen, CNAME, EOA);
 	if (starts_with (&name[0], strlen(name), "ns ")) {
 		free (name);
 		return 1;// skip things what are not for the lib
+	}
+	if (hashget (avoidh, (char *)name)) {
+		free (name);
+		return 1;// skip things that this generator does not use
 	}
 	char *inh = get_between (&buf[0], tlen, CINH, EOA);
 	char *ver1 = get_between (&buf[0], tlen, CVER1, EOA);
@@ -487,12 +505,7 @@ cg_prologue()
 {
 	printf ("#include <stdlib.h>\n\n");
 	printf ("#define READER\n");
-	printf ("#define byte unsigned char\n");
-	printf ("#define T_BYTE 0 \n");
-	printf ("#define T_FLOAT 1 \n");
-	printf ("#define T_QUATERNION 2 \n");
-	printf ("#define T_STRING 3 \n");
-	printf ("#define T_BYTECOLOR4 4 \n\n");
+
 	printf ("typedef struct {\nvoid *d;\n int t;\n} TEMPLATE;\n\n");
 	printf ("static int i, j, k;");
 	printf ("static unsigned int Version;");
@@ -511,23 +524,23 @@ cg_prologue()
 
 #define BTMAP_LEN 17
 static const char const *btmap[] = {
-	"bool", "byte",
-	"byte", "byte",
-	"uint", "unsigned int",
-	"ushort", "unsigned short",
-	"int", "int",
-	"short", "short",
-	"BlockTypeIndex", "unsigned short",
-	"char", "char",
-	"FileVersion", "unsigned int",
-	"Flags", "unsigned short",
-	"float", "float",
-	"HeaderString", "char *",
-	"LineString", "char *",
-	"Ptr", "unsigned int",
-	"Ref", "unsigned int",
-	"StringOffset", "unsigned int",
-	"StringIndex", "unsigned int"
+	"bool",				"NIFbyte",
+	"byte",				"NIFbyte",
+	"uint",				"NIFuint",
+	"ushort",			"NIFushort",
+	"int",				"NIFint",
+	"short",			"NIFshort",
+	"BlockTypeIndex",	"NIFushort",
+	"char",				"NIFchar",
+	"FileVersion",		"NIFuint",
+	"Flags",			"NIFushort",
+	"float",			"NIFfloat",
+	"HeaderString",		"NIFchar *",
+	"LineString",		"NIFchar *",
+	"Ptr",				"NIFuint",
+	"Ref",				"NIFuint",
+	"StringOffset",		"NIFuint",
+	"StringIndex",		"NIFuint"
 };
 
 // turns basic type from the xml to a c type, null if unknown
@@ -541,12 +554,30 @@ bt2ct(const char *bt)
 	return NULL;
 }
 
+// *target = *target + a
+static void
+append_to(char **target, const char *a)
+{
+	char *dst = *target;
+	if (!dst)
+		*target = concat ("", a);
+	else {
+		char *tmp = concat (dst, a);
+		free (dst);
+		*target = tmp;
+	}
+}
+
+static char *bdec = NULL;// struct %s;
+static char *bdef = NULL;// struct %s;
+
 static int
 cg_basic (const char *name, const char *type)
 {
+	//static inline NIFbyte readbool (READERARGLST);
 	fprintf (newformat, "B;%s;%s\n", name, type);
 	// code
-	printf ("%s\nread%s(READER)\n{\n\t//code_me\n}\n\n",
+	printf ("static inline %s\nread%s(READER)\n{\n\t//code_me\n}\n\n",
 		bt2ct (name), name);
 	char *tkey = strcopy (name);
 	char *tval = strcopy (bt2ct (name));
@@ -565,6 +596,8 @@ cg_basic (const char *name, const char *type)
 		free (key);
 	return r;
 }
+
+static char *enums = NULL;
 
 static int
 cg_enum_begin (const char *name, const char *type)
@@ -609,19 +642,6 @@ static char *tfdefs = NULL;// struct %s;
 static char *tdefs = NULL; // tyepdef struct {} %s;
 static char *srcalls = NULL; // read this, read that - declarations
 static char *srcode = NULL; // read this, read that - definitions
-
-static void
-append_to(char **target, const char*a)
-{
-	char *dst = *target;
-	if (!dst)
-		*target = concat ("", a);
-	else {
-		char *tmp = concat (dst, a);
-		free (dst);
-		*target = tmp;
-	}
-}
 
 static char *
 v2u(const char *version)
@@ -685,24 +705,24 @@ cg_struct_begin(const char *name, const char *inh, const char *v1,
 		append_to (&tdefs, " *parent;\n");
 	}
 	// readcall
-	//  don't register it with rch, use rch for simple types only -
-	//  basic adn enum. The field reader is able to buid the call.
+	//  Don't register it with "rch", use "rch" for simple types only -
+	//  "basic" and "enum". The field reader is able to buid the call.
 	// void read%s(%s *obj, unsigned int ARG);
-	append_to (&srcalls, "void read");
+	append_to (&srcalls, "void read");// decl.
 	append_to (&srcalls, name);
 	append_to (&srcalls, "(");
 	append_to (&srcalls, name);
-	append_to (&srcalls, " *obj, unsigned int ARG);\n");
+	append_to (&srcalls, " *r, unsigned int ARG);\n");
 	// readcode
-	append_to (&srcode, "void\nread");
+	append_to (&srcode, "void\nread");// def.
 	append_to (&srcode, name);
 	append_to (&srcode, "(");
 	append_to (&srcode, name);
-	append_to (&srcode, " *obj, unsigned int ARG)\n");
+	append_to (&srcode, " *r, unsigned int ARG)\n");
 	append_to (&srcode, "{\n");
 	// readcode read parent call
 	// VERCHK(v2u(v1), v2u(v2)
-	if (/*inh &&*/ (v1 || v2 || uv)) {
+	/*if ((v1 || v2 || uv)) {
 		if (v1 || v2) {
 			char *ver1 = v2u(v1);
 			char *ver2 = v2u(v2);
@@ -721,7 +741,7 @@ cg_struct_begin(const char *name, const char *inh, const char *v1,
 				append_to (&srcode, "))\n");
 			append_to (&srcode, "\t\treturn;\n");
 		}
-	}
+	}*/
 	if (inh) {// init parent
 		append_to (&srcode, "\tobj->parent = "SCREATE" (sizeof(");
 		append_to (&srcode, inh);
@@ -1063,10 +1083,16 @@ cg_struct_end (const char *name)
 static int
 cg_epilogue()
 {
-	printf ("%s\n", tfdefs);
-	printf ("%s\n", tdefs);
-	printf ("%s\n", srcalls);
-	printf ("%s", srcode);
+	// c
+	printf ("%s\n", bdec);		// basic types read proc declarations
+	printf ("%s\n", bdef);		// basic types read proc definitions
+	// h
+	printf ("%s\n", enums);		// enumerations
+	printf ("%s\n", tfdefs);	// typedef struct forwards
+	printf ("%s\n", tdefs);		// typedef struct
+	printf ("%s\n", srcalls);	// tyepdef struct readproc declarations
+	// c
+	printf ("%s", srcode);		// tyepdef struct readproc definitions
 	printf ("\nstatic int iamthelastline;\n");
 	free (tdefs);
 	return 1;
