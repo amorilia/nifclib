@@ -4,17 +4,17 @@
 
 [Done] - there are const sized arrays: make sure no "malloc" is used for them. There is also at least one CONST*SIZE 2d array and vice versa -> // [Count], [5]
 
-- a lot of bytes can be read at once - yet it makes it complicated on data structure change, although these changes can not happen rapidly and in large amounts
+[Done] - a lot of bytes can be read at once - yet it makes it complicated on data structure change, although these changes can not happen rapidly and in large amounts - a lot of bytes are being read at once thus making the reader a fast one
 
 [*] - there are two views: binaryreader and client. To keep existing programs working existing client view must be kept intact, except if it prevents speed-read or if it needs to replicate low-level io business logic
 
 - all read procs may become inline, because of the rprocs called by the hash table
 
-- some procs may become macros - like readVector3, readTexCoord, etc.
+[Done] - some procs may become macros - like readVector3, readTexCoord, etc. - no they won't
 
-- it seems that the "<compound" may all become "inline"
+[Done] - it seems that the "<compound" may all become "inline" - no they won't
 
-- autoremove the empty things like NiObject
+[Done] - autoremove the empty things like NiObject
 
 [Done] - use NIF types - NIFbyte, etc. (niff.h)
 
@@ -39,11 +39,11 @@
 
 - there are fixed size records - turn their readers into a blockreaders - pragmapack will be needed - check if fields are sequential!
 
-- argument changes to "r" - record
+[Done] - argument changes to "r" - record
 
 [Done] - remove all '_' - they only make the lines longer
 
-- size of things should be const
+[Done] - size of things should be const - size of const sized strings is const
 
 [Done] - change unsigned int to NIFuint, etc.
 
@@ -57,3 +57,5 @@ NIREAD NIRESULT read$NAME(NIOBJ);
 NIREAD NIRESULT read$NAME(NIOBJ, ARG);
 NIREAD NIRESULT read$NAME(NIOBJ, TARG);
 NIREAD NIRESULT read$NAME(NIOBJ, ARG, TARG);//readKey
+
+- letting the code generator to catch up
