@@ -1,0 +1,67 @@
+
+			README for Native NIFF "c" parser
+
+1. What is it?
+
+	A code generator that generates a nif parser code, for
+reading/writing of .nif (NetImmerse File Format) game state files.
+
+
+1.1. Description
+
+	file: "convert2c.c" - the code generator
+	build: make codegen
+	usage: convert2c path to "nif.xml" from the "NifTools" project
+	feats:
+[x]	- generates basic types, enums and structures
+	[x]	- handles fixed size arrays - 1d, 2d
+	[x]	- handles dynamic size arrays - 1d, 2d, jagged2d,
+		  const & field based indexes
+	[x] - handles "TEMPLATE", "Key" and "KeyGroup"
+[*]	- generates read functions
+	[x]	- auto-group by version check - sequential only
+	[ ]	- auto-group by version check - non-sequential
+	[x]	- auto-group by (userver + vercond + cond)
+	[ ]	- auto-group by (userver + vercond + cond) - non-sequential
+	[x]	- handles the expressions in "cond" and "vercond"
+	[x]	- handles 1d arrays
+	[x]	- handles 2d/jagged arrays
+	[ ]	- blockread of sequential fileds of non pointer basic types
+	[ ] - range check protections
+	[ ] - creates hashed read procs
+[ ]	- generates write functions
+	cons:
+	[x]	- complex
+	[x]	- buggy
+	[x]	- slow
+
+legend:
+	[ ] - It can't do that
+	[x] - It can do that
+	[*] - Partial support
+
+You can get the latest version here (thanks to amorilia @ NifTools):
+https://github.com/amorilia/nifreader
+
+
+2. Requirements
+
+	You may want to read about the "NifTools" project:
+http://niftools.sourceforge.net
+
+
+3. Build
+	3.1. Linux
+
+	Type "make".
+
+	3.2. Mingw32
+
+	N/A yet.
+
+
+4. Credits
+
+	Thanks to "amorilia" @ "NifTools" and all the people who created "nif.xml" and "NifSkope".
+
+	Also, my eternal Thanks to all the Open Source Free Software people.

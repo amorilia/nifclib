@@ -9,6 +9,11 @@ nifreadertest : $(OBJS)
 #nifreadertest.o : utils.o niff.o nif_reader2.o
 #nif_reader2.o : utils.o niff.o
 
+CODEGEN_SRC=convert2c.c utils.c
+CODEGEN_BINARY=-o convert2c
+
+codegen :
+	$(CC) $(CFLAGS) $(CODEGEN_SRC) $(CODEGEN_BINARY)
 
 .PHONY : clean
 clean :

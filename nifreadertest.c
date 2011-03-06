@@ -30,32 +30,30 @@
 typedef void (*actn)(char *fname);
 
 static void
-pathwalk (char *dir, actn onFile)
+pathwalk (char *folder, actn onFile)
 {
-    struct stat dirinfo;
-    struct dirent * stFiles;
-    DIR * stDirIn;
-    char path[MAXPATHLEN];
-    struct stat finfo;
-    if (lstat (dir, &dirinfo) < 0)
-    {
-        perror (dir);
-        return;// 1;
-    }
-    if (!S_ISDIR(dirinfo.st_mode))
-        return;// 1;// not a folder
-    if ((stDirIn = opendir (dir)) == NULL)
-    {
-        perror (dir);
-        return;// 1;// failed to open
-    }
-    while ((stFiles = readdir (stDirIn)) != NULL)
-    {
-        sprintf (path, "%s/%s", dir, stFiles -> d_name);
-        if (lstat (path, &finfo) < 0)
-           perror (path);
-        if (S_ISDIR(finfo.st_mode)) {
-            //printf ("Directory: %s\n", path);
+	struct stat dirinfo;
+	struct stat finfo;
+	struct dirent *file;
+	DIR *directory;
+	char path[MAXPATHLEN];
+	if (lstat (folder, &dirinfo) < 0) {
+		perror (folder);
+		return;
+	}
+	if (!S_ISDIR (dirinfo.st_mode))
+		return;
+	if ((directory = opendir (folder)) == NULL) {
+		perror (folder);
+		return;
+	}
+	while ((file = readdir (directory)) != NULL) {
+		sprintf (path, "%s/%s", folder, file->d_name);
+		if (lstat (path, &finfo) < 0) {
+			perror (path);
+			continue;
+		}
+		if (S_ISDIR (finfo.st_mode)) {
 			int pl = strlen (path);
 			if (pl > 1) {
 				if (path[pl-1] == '.' && path[pl-2] == '.')
@@ -65,18 +63,18 @@ pathwalk (char *dir, actn onFile)
 			}
 			pathwalk (path, onFile);
 		}
-        else {
-            //printf ("Filename: %s\n", path);
-			if (onFile) onFile (path);
+		else {
+			if (onFile)
+				onFile (path);
 		}
-    }
-    closedir (stDirIn);
+	}
+	closedir (directory);
 }
 
 static void DoReadNif(char *fname);
-static int cnt = 0;
+static int nifcnt = 0;
 
-/* Returns (b - a) in microseconds */
+// Returns (b - a) in microseconds
 long
 time_interval(struct timeval *a, struct timeval *b)
 {
@@ -107,16 +105,19 @@ main(int argc, char **argv)
 	pathwalk (dir, DoReadNif);
 	gettimeofday (&tstop, NULL);
 	long ttaken = time_interval (&tstart, &tstop) / (1000*1000);
-	printf ("files done: %d (%ld file(s) per second)\n", cnt, cnt / (ttaken ? ttaken : 1));
-	printf ("time taken: %ld %.2ld:%.2ld\n", ttaken, ttaken / 60, ttaken % 60);
+	printf ("files done: %d (%ld file(s) per second)\n",
+		nifcnt, nifcnt / (ttaken ? ttaken : 1));
+	printf ("time taken: %ld %.2ld:%.2ld\n",
+		ttaken, ttaken / 60, ttaken % 60);
 	printf ("total byte(s) read: %lld\n", total_bytes);
 	printf ("major niff block(s) parsed: %d\n", total_blocks);
 	printf ("niff object(s) parsed: %d\n", total_niobjects);
 	printf ("malloc call(s): %d\n", total_malloc_calls);
 	printf ("realloc(s): %d\n", total_reallocs);
-	printf ("byte(s)/second: %lld\n", (total_bytes/(ttaken ? ttaken : 1)));
+	printf ("byte(s)/second: %lld\n",
+		(total_bytes/(ttaken ? ttaken : 1)));
     return 0;
-}  // end main
+}
 
 /*static void
 simple_read(char *fname)
@@ -141,7 +142,7 @@ DoReadNif(char *fname)
 				if (fname[len-4] == '.') {
 					//simple_read (fname);
 					if (!readnif (fname)) {
-							printf ("files ok %d\n", cnt);
+							printf ("files ok %d\n", nifcnt);
 							exit (1);
 					} else {
 						total_bytes += NIFF_FSIZE;
@@ -150,7 +151,7 @@ DoReadNif(char *fname)
 						total_malloc_calls += NIFF_MALLOCS;
 						total_reallocs += NIFF_REALLOCS;
 					}
-					cnt++;
-					printf ("%5d\r", cnt); fflush (stdout);
+					nifcnt++;
+					printf ("%5d\r", nifcnt); fflush (stdout);
 	}
 }

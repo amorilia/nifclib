@@ -23,6 +23,7 @@ int starts_with(const char *buf, int len, const char *text);
 int find (const char *what, const char *buf, int maxlen);
 char *get_between(const char *buf, int maxlen, const char *f, const char *t);
 void replace(char *buf, int maxlen, char a, char b);
+char *replacestr(const char *buf, int maxlen, const char *a, const char *b);
 char *concat(const char *a, const char *b);
 char *strcopy(const char *);
 

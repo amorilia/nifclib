@@ -41,7 +41,7 @@ starts_with(const char *buf, int len, const char *text)
 // returns a index at witch 1st occurance of "what\0" starts,
 // -1 otherwise
 int
-find (const char *what, const char *buf, int maxlen)
+find(const char *what, const char *buf, int maxlen)
 {
 	int i = 0;
 	while (!starts_with (&buf[i], maxlen-i, what)) {
@@ -90,6 +90,56 @@ replace(char *buf, int maxlen, char a, char b)
 			buf[i] = b;
 }
 
+// replace all occurances "a\0" with "b\0" in "buf"
+char *
+replacestr(const char *buf, int maxlen, const char *a, const char *b)
+{
+	char *result = NULL;
+	if (!buf)
+		return result;
+	//printf ("buf: \"%s\"\n", buf);
+	int src_len = strlen (a);
+	int dst_len = strlen (b);
+	int len = 0, rlen = 0;
+	int l = 0;
+	for (; len < maxlen; len += l + src_len) {
+		l = find (a, &buf[len], maxlen - len);
+		if (l < 0) {
+			rlen += maxlen - len;
+			break;
+		}
+		//printf (" found \"%s\" at [%d:%d]\n", a, len, l);
+		rlen += l;
+		rlen += dst_len;
+	}
+	result = malloc (rlen + 1);
+	if (!result) {
+		printf ("out of memory\n");
+		return NULL;
+	}
+	result[rlen] = '\0';
+	len = 0;
+	rlen = 0;
+	l = 0;
+	for (; len < maxlen; len += l + src_len) {
+		l = find (a, &buf[len], maxlen - len);
+		if (l < 0) {
+			//printf (" 2copying from [%d] into [%d], count: %d\n", len, rlen, maxlen - len);
+			memcpy (&result[rlen], &buf[len], maxlen - len);// last block
+			break;
+		}
+		//printf (" ==found \"%s\" at [%d:%d]\n", a, len, l);
+		//printf (" 1copying from [%d] into [%d], count: %d\n", len, rlen, l);
+		memcpy (&result[rlen], &buf[len], l);
+		rlen += l;
+		//printf (" 2copying from [%d] into [%d], count: %d\n", 0, rlen, dst_len);
+		memcpy (&result[rlen], &b[0], dst_len);
+		rlen += dst_len;
+	}
+	//printf ("result: \"%s\"\n", result ? result : "-");
+	return result;
+}
+
 // return c\0 = a\0 + b\0
 char *
 concat(const char *a, const char *b)
@@ -122,7 +172,7 @@ strcopy(const char *src)
 // the hash - possibly the worst hash ever made, but it does its job
 
 hash *
-hashcreate (int cap)
+hashcreate(int cap)
 {
 	hash *tmp = malloc (sizeof(hash));
 	if (!tmp) {
@@ -146,7 +196,7 @@ hashcreate (int cap)
 }
 
 void
-hashrelease (hash *h, int kvp)
+hashrelease(hash *h, int kvp)
 {
 	int i;
 	for (i = 0; i < h->cnt; i++) {

@@ -4,19 +4,19 @@
 
 [Done] - there are const sized arrays: make sure no "malloc" is used for them. There is also at least one CONST*SIZE 2d array and vice versa -> // [Count], [5]
 
-- a lot of bytes can be read at once - yet it makes it complicated on data structure change, although these changes can not happen rapidly and in large amounts
+[Done] - a lot of bytes can be read at once - yet it makes it complicated on data structure change, although these changes can not happen rapidly and in large amounts - a lot of bytes are being read at once thus making the reader a fast one
 
-[*] - there are two views: binaryreader and client. To keep existing programs working existing client view must be kept intact, except if it prevents speed-read
+[*] - there are two views: binaryreader and client. To keep existing programs working existing client view must be kept intact, except if it prevents speed-read or if it needs to replicate low-level io business logic
 
 - all read procs may become inline, because of the rprocs called by the hash table
 
-- some procs may become macros - like readVector3, readTexCoord, etc.
+[Done] - some procs may become macros - like readVector3, readTexCoord, etc. - no they won't
 
-- it seems that the "<compound" may all become "inline"
+[Done] - it seems that the "<compound" may all become "inline" - no they won't
 
-- autoremove the empty things like NiObject
+[Done] - autoremove the empty things like NiObject
 
-- use NIF types - NIFbyte, etc. (niff.h)
+[Done] - use NIF types - NIFbyte, etc. (niff.h)
 
 - generator logic for records with same type fields (!= pointer):
 	if (AllFieldsAreTheSameType)
@@ -26,30 +26,30 @@
 	BUF - &(obj->$FIELD[0].$FIELD0)
 	- NIFbyte, NIFchar, NIFshort, NIFushort, NIFint, NIFuint, NIFfloat
 
-- in a few places, SkinPartition, NiGeometryData and NiParticlesData, a change of ** to * was needed (where the field type of the record is the same or the type is a simple type and the arrays are not jagged) - think about how it can be done in the generator because these changes are great performance boosts
+[Done] - in a few places, SkinPartition, NiGeometryData and NiParticlesData, a change of ** to * was needed (where the field type of the record is the same or the type is a simple type and the arrays are not jagged) - think about how it can be done in the generator because these changes are great performance boosts
 	- NiPersistentSrcTextureRendererData
 	- NiPixelData
 
 - NiParticlesData and NiGeometryData have quite a lot in common
 
-- the most performance gain is when replacing two dimensional arrays with block reads:
+[Done] - the most performance gain is when replacing two dimensional arrays with block reads:
 	SkinPartition, NiPixelData
 
-- the "TEMPLATE" things are artificial - no single function read templates with two or more different types, so TODO: morph the TEMPLATE - remove readTEMPALTE - its useless and just slows the things down
+[Done] - the "TEMPLATE" things are artificial - no single function read templates with two or more different types, so TODO: morph the TEMPLATE - remove readTEMPALTE - its useless and just slows the things down
 
-- there are fixed size records - turn their readers into a blockreaders - pragmapack will be needed
+- there are fixed size records - turn their readers into a blockreaders - pragmapack will be needed - check if fields are sequential!
 
-- argument changes to "r" - record
+[Done] - argument changes to "r" - record
 
-- remove all '_' - they only make the lines longer
+[Done] - remove all '_' - they only make the lines longer
 
-- size of things should be const
+[Done] - size of things should be const - size of const sized strings is const
 
-- change unsigned int to NIFuint, etc.
+[Done] - change unsigned int to NIFuint, etc.
 
 - change sizeof(NIFuint) to SIZEOFDWORD, etc.
 
-- see if the generator can handle things like SkinTransform, SphereBV - all fields are the same type, except they are in different subtructures
+- see if the generator can handle things like SkinTransform, SphereBV - all fields are the same type, except they are in different substructures
 
 
 READ (WHAT, PUT_IT_WHERE, COUNT, sizeof(WHAT), PROCNAME)
@@ -57,3 +57,5 @@ NIREAD NIRESULT read$NAME(NIOBJ);
 NIREAD NIRESULT read$NAME(NIOBJ, ARG);
 NIREAD NIRESULT read$NAME(NIOBJ, TARG);
 NIREAD NIRESULT read$NAME(NIOBJ, ARG, TARG);//readKey
+
+- letting the code generator to catch up

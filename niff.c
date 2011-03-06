@@ -23,6 +23,8 @@ static inline size_t
 read(register NifStream *s, register void *ptr, register size_t size)
 {
 	int result = 0;
+	if (size <= 0)
+		return 0;
 	for (;;) {
 		if (s->buf_pos + size <= s->buf_len) {
 			memcpy (ptr, &(s->buf[s->buf_pos]), size);
@@ -63,6 +65,8 @@ read_char(register NifStream *s, register NIFchar *buf, register int count)
 static inline int
 read_char_cond(register NifStream *s, register NIFchar *ptr, register int size, register NIFchar cond)
 {
+	if (size <= 0)
+		return 0;
 	int i, idx = s->buf_pos, rpos = 0, cnt = 0;
 	for (i = 0; i < size; i++) {
 		if (idx >= s->buf_len) {

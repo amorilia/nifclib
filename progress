@@ -12,6 +12,7 @@ blocks: 1975417
   46, 13:55,     35420016,    22909,   13043503
   48, 13:13,     35420016,    22909,   13734332
   49, 12:52,     35414022,    22900,   14107934
+  49, 13:01,     27057659,    15927,   13945358
 
 just walk a.k.a. $(find . | grep -i "\.nif$")
 4813 files per second
@@ -35,3 +36,15 @@ NifStream (with fsize):
 - inlining empty readprocs ... done.
 - joining same if operators together ...
 - optimizing if operators into if else ones ...
+- unwinding TEMPLATE (not all languages support them, neither does performance) ... done
+ 1.readQuatKey
+ 2.readMorph
+ 3.readNiBoolData
+ 4.readNiColorData
+ 5.readNiFloatData
+ 6.readNiKeyframeData
+ 7.readNiPosData
+ 8.readNiPSysEmitterCtlrData
+ 9.readNiUVData
+10.readNiVisData
+11.readNiPSSimulatorGeneralStep

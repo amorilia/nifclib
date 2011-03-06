@@ -24,7 +24,7 @@
 #include <string.h>
 
 typedef unsigned char   NIFbyte;	// 1 B
-typedef unsigned char   NIFchar;	// 1 B
+typedef char   NIFchar;	// 1 B
 typedef int             NIFint;		// 4 DW
 typedef unsigned int    NIFuint;	// 4 DW
 typedef short           NIFshort;	// 2 W
